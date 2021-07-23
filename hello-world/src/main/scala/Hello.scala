@@ -1,14 +1,14 @@
 /*
  * This code is a minimal hardware described in Chisel.
  * 
- * Blinking LED: the FPGA version of Hello World
+ * And Gate: the FPGA version of Hello World
  */
 
 import chisel3._
 import chisel3.Driver
 
 /**
- * The blinking LED component.
+ * The And Gate component.
  */
 
 class Hello extends Module {
