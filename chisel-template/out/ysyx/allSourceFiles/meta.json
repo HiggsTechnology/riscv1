@@ -1,0 +1,25 @@
+{
+    "value": [
+        "ref:cae91e51:/home/bread/chisel-template/src/main/scala/core/IDU/IDU.scala",
+        "ref:8347ed48:/home/bread/chisel-template/src/main/scala/core/IDU/Decode.scala",
+        "ref:9b548d01:/home/bread/chisel-template/src/main/scala/core/DISPATCH/IDUtoEXU.scala",
+        "ref:e6c2e70d:/home/bread/chisel-template/src/main/scala/core/TOP/TopMain.scala",
+        "ref:bc8e2f40:/home/bread/chisel-template/src/main/scala/core/TOP/Top.scala",
+        "ref:7ef9f2db:/home/bread/chisel-template/src/main/scala/core/mem_reg/regfile.scala",
+        "ref:b60a64cf:/home/bread/chisel-template/src/main/scala/core/mem_reg/mem.scala",
+        "ref:fc6d7d1c:/home/bread/chisel-template/src/main/scala/core/WRITE_BACK/WBU.scala",
+        "ref:42f85302:/home/bread/chisel-template/src/main/scala/core/EXU/BRU.scala",
+        "ref:1c8dd7e3:/home/bread/chisel-template/src/main/scala/core/EXU/LSU.scala",
+        "ref:69ec674f:/home/bread/chisel-template/src/main/scala/core/EXU/EXU.scala",
+        "ref:2e85645d:/home/bread/chisel-template/src/main/scala/core/EXU/ALU.scala",
+        "ref:0e40bb9a:/home/bread/chisel-template/src/main/scala/core/IFU/IFU.scala",
+        "ref:2fbf4489:/home/bread/chisel-template/src/main/scala/Sim/SimTop.scala",
+        "ref:ea833f6b:/home/bread/chisel-template/src/main/scala/utils/ISA.scala",
+        "ref:b6afc1f9:/home/bread/chisel-template/src/main/scala/utils/uuu.scala",
+        "ref:36569c8e:/home/bread/chisel-template/src/main/scala/utils/Bundle.scala",
+        "ref:0a0523a4:/home/bread/chisel-template/src/main/scala/utils/Config.scala",
+        "ref:152039b5:/home/bread/chisel-template/src/main/scala/utils/utils.scala"
+    ],
+    "valueHash": -1359197732,
+    "inputsHash": -977796302
+}
