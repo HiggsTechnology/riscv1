@@ -1,6 +1,0 @@
-
-mill -i __.test.runMain core.TopMain -td ./build
-
-make -C difftest emu
-
-build/emu -i ../am-kernels/tests/cpu-tests/build/add-riscv64-mycpu.bin

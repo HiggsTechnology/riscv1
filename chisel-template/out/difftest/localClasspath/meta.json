@@ -1,8 +1,0 @@
-{
-    "value": [
-        "ref:c984eca8:/home/bread/chisel-template/difftest/resources",
-        "ref:eaa32c9c:/home/bread/chisel-template/out/difftest/compile/dest/classes"
-    ],
-    "valueHash": 1209596642,
-    "inputsHash": -14018366
-}
