@@ -1,0 +1,14 @@
+{
+    "value": [
+        {
+            "analysisFile": "/home/bread/chisel-template/out/ysyx/compile/dest/zinc",
+            "classes": "ref:0c0c1eb7:/home/bread/chisel-template/out/ysyx/compile/dest/classes"
+        },
+        {
+            "analysisFile": "/home/bread/chisel-template/out/difftest/compile/dest/zinc",
+            "classes": "ref:eaa32c9c:/home/bread/chisel-template/out/difftest/compile/dest/classes"
+        }
+    ],
+    "valueHash": 1225378716,
+    "inputsHash": -635580978
+}
