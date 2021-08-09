@@ -3,7 +3,7 @@
         "ref:c984eca8:/home/bread/chisel-template/src/test/resources",
         "ref:c984eca8:/home/bread/chisel-template/out/ysyx/test/compile/dest/classes",
         "ref:c984eca8:/home/bread/chisel-template/src/main/resources",
-        "ref:0c0c1eb7:/home/bread/chisel-template/out/ysyx/compile/dest/classes",
+        "ref:98a4888d:/home/bread/chisel-template/out/ysyx/compile/dest/classes",
         "ref:c984eca8:/home/bread/chisel-template/difftest/resources",
         "ref:eaa32c9c:/home/bread/chisel-template/out/difftest/compile/dest/classes",
         "qref:837ae1df:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.13/scala-library-2.12.13.jar",
@@ -38,6 +38,6 @@
         "qref:543cb31f:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/joda-time/joda-time/2.10.1/joda-time-2.10.1.jar",
         "qref:1839baaa:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/org/joda/joda-convert/2.2.0/joda-convert-2.2.0.jar"
     ],
-    "valueHash": 443772252,
-    "inputsHash": 2144840165
+    "valueHash": -465979496,
+    "inputsHash": -1925580501
 }

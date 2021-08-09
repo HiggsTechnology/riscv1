@@ -11,7 +11,7 @@
     },
     {
         "label": "mill.scalalib.ZincWorkerModule.worker",
-        "millis": 35,
+        "millis": 36,
         "cached": false
     },
     {
@@ -26,7 +26,7 @@
     },
     {
         "label": "difftest.generatedSources",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -36,12 +36,12 @@
     },
     {
         "label": "difftest.allSourceFiles",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "difftest.transitiveLocalClasspath",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -51,7 +51,7 @@
     },
     {
         "label": "difftest.unmanagedClasspath",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -71,27 +71,27 @@
     },
     {
         "label": "difftest.transitiveCompileIvyDeps",
-        "millis": 1,
-        "cached": true
-    },
-    {
-        "label": "difftest.scalaOrganization",
         "millis": 0,
         "cached": true
     },
     {
+        "label": "difftest.scalaOrganization",
+        "millis": 1,
+        "cached": true
+    },
+    {
         "label": "difftest.scalaLibraryIvyDeps",
-        "millis": 14,
+        "millis": 13,
         "cached": true
     },
     {
         "label": "difftest.ivyDeps",
-        "millis": 1,
+        "millis": 2,
         "cached": true
     },
     {
         "label": "difftest.transitiveIvyDeps",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -116,7 +116,7 @@
     },
     {
         "label": "difftest.scalaCompilerClasspath",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -136,28 +136,28 @@
     },
     {
         "label": "ysyx.upstreamCompileOutput",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
         "label": "ysyx.sources",
-        "millis": 5,
+        "millis": 6,
         "cached": false
     },
     {
         "label": "ysyx.generatedSources",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
         "label": "ysyx.allSources",
-        "millis": 2,
-        "cached": false
+        "millis": 0,
+        "cached": true
     },
     {
         "label": "ysyx.allSourceFiles",
-        "millis": 10,
-        "cached": false
+        "millis": 1,
+        "cached": true
     },
     {
         "label": "difftest.localClasspath",
@@ -171,7 +171,7 @@
     },
     {
         "label": "ysyx.resources",
-        "millis": 3,
+        "millis": 2,
         "cached": false
     },
     {
@@ -181,7 +181,7 @@
     },
     {
         "label": "ysyx.scalaVersion",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
@@ -201,12 +201,12 @@
     },
     {
         "label": "ysyx.scalaOrganization",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "ysyx.scalaLibraryIvyDeps",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -216,12 +216,12 @@
     },
     {
         "label": "ysyx.transitiveIvyDeps",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "ysyx.resolvedIvyDeps",
-        "millis": 1,
+        "millis": 0,
         "cached": true
     },
     {
@@ -231,7 +231,7 @@
     },
     {
         "label": "ysyx.javacOptions",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
@@ -246,7 +246,7 @@
     },
     {
         "label": "ysyx.scalacPluginIvyDeps",
-        "millis": 1,
+        "millis": 2,
         "cached": true
     },
     {
@@ -256,17 +256,17 @@
     },
     {
         "label": "ysyx.compile",
-        "millis": 3161,
-        "cached": false
+        "millis": 0,
+        "cached": true
     },
     {
         "label": "ysyx.test.upstreamCompileOutput",
-        "millis": 2,
-        "cached": false
+        "millis": 1,
+        "cached": true
     },
     {
         "label": "ysyx.test.sources",
-        "millis": 2,
+        "millis": 3,
         "cached": false
     },
     {
@@ -281,27 +281,27 @@
     },
     {
         "label": "ysyx.test.allSourceFiles",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "ysyx.localClasspath",
-        "millis": 1,
-        "cached": false
-    },
-    {
-        "label": "ysyx.test.transitiveLocalClasspath",
-        "millis": 1,
-        "cached": false
-    },
-    {
-        "label": "ysyx.test.unmanagedClasspath",
         "millis": 0,
         "cached": true
     },
     {
-        "label": "ysyx.test.scalaVersion",
+        "label": "ysyx.test.transitiveLocalClasspath",
+        "millis": 0,
+        "cached": true
+    },
+    {
+        "label": "ysyx.test.unmanagedClasspath",
         "millis": 1,
+        "cached": true
+    },
+    {
+        "label": "ysyx.test.scalaVersion",
+        "millis": 0,
         "cached": true
     },
     {
@@ -316,7 +316,7 @@
     },
     {
         "label": "ysyx.test.transitiveCompileIvyDeps",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
@@ -346,18 +346,18 @@
     },
     {
         "label": "ysyx.test.compileClasspath",
-        "millis": 3,
-        "cached": false
+        "millis": 1,
+        "cached": true
     },
     {
         "label": "ysyx.test.scalaCompilerClasspath",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "ysyx.test.compile",
-        "millis": 15,
-        "cached": false
+        "millis": 0,
+        "cached": true
     },
     {
         "label": "ysyx.test.localClasspath",
@@ -366,7 +366,7 @@
     },
     {
         "label": "ysyx.test.runIvyDeps",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
@@ -376,13 +376,13 @@
     },
     {
         "label": "ysyx.test.upstreamAssemblyClasspath",
-        "millis": 3,
-        "cached": false
+        "millis": 1,
+        "cached": true
     },
     {
         "label": "ysyx.test.runClasspath",
-        "millis": 2,
-        "cached": false
+        "millis": 1,
+        "cached": true
     },
     {
         "label": "ysyx.test.forkArgs",
@@ -391,7 +391,7 @@
     },
     {
         "label": "ysyx.test.forkEnv",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
@@ -401,12 +401,12 @@
     },
     {
         "label": "ysyx.test.runUseArgsFile",
-        "millis": 0,
+        "millis": 1,
         "cached": true
     },
     {
         "label": "ysyx.test.runMain",
-        "millis": 2784,
+        "millis": 2691,
         "cached": false
     }
 ]

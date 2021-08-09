@@ -26,6 +26,10 @@ class Top extends Module {
     exu.io.reg_write_back   <>  wbu.io.in
     exu.io.branch           <>  ifu.io.in
     wbu.io.out              <>  reg.io.rd
+    reg.io.src1.addr := idu.io.out.ctrl.rfSrc1
+    reg.io.src2.addr := idu.io.out.ctrl.rfSrc2
+    dis.io.src1      := reg.io.src1.data
+    dis.io.src2      := reg.io.src2.data
 
     io.diffreg              <>  wbu.io.out
 

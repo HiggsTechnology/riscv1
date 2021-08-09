@@ -19,14 +19,14 @@ Global Statistics:
   Optimizations, Const bit op reduction                     0
   Optimizations, Delayed shared-sets                        0
   Optimizations, Gate assign merged                         0
-  Optimizations, Gate inputs replaced                    1528
+  Optimizations, Gate inputs replaced                    1660
   Optimizations, Gate sigs deduped                          0
-  Optimizations, Gate sigs deleted                        752
+  Optimizations, Gate sigs deleted                        824
   Optimizations, Inline unsupported                         0
   Optimizations, Inlined instances                         16
   Optimizations, Lifetime assign deletions                  0
   Optimizations, Lifetime constant prop                     0
-  Optimizations, Lifetime postassign deletions             45
+  Optimizations, Lifetime postassign deletions             77
   Optimizations, MergeCond longest merge                    4
   Optimizations, MergeCond merged items                    32
   Optimizations, MergeCond merges                          12
@@ -55,211 +55,211 @@ Global Statistics:
 Performance Statistics:
 
   Stage, Elapsed time (sec), 001_cells               0.000000
-  Stage, Elapsed time (sec), 002_linkparse           0.000862
-  Stage, Elapsed time (sec), 003_linkdot             0.001877
-  Stage, Elapsed time (sec), 004_linkresolve         0.000242
-  Stage, Elapsed time (sec), 005_linklvalue          0.000108
-  Stage, Elapsed time (sec), 006_link                0.000089
-  Stage, Elapsed time (sec), 007_linkInc             0.000109
-  Stage, Elapsed time (sec), 008_param               0.000653
-  Stage, Elapsed time (sec), 009_paramlink           0.000858
-  Stage, Elapsed time (sec), 010_deadModules         0.000204
-  Stage, Elapsed time (sec), 011_width               0.000937
-  Stage, Elapsed time (sec), 012_widthcommit         0.000254
-  Stage, Elapsed time (sec), 013_const               0.000127
-  Stage, Elapsed time (sec), 014_assertpre           0.000488
-  Stage, Elapsed time (sec), 015_assert              0.000085
-  Stage, Elapsed time (sec), 016_wraptop             0.000017
-  Stage, Elapsed time (sec), 017_const               0.000155
-  Stage, Elapsed time (sec), 018_split_var           0.000097
+  Stage, Elapsed time (sec), 002_linkparse           0.000890
+  Stage, Elapsed time (sec), 003_linkdot             0.001931
+  Stage, Elapsed time (sec), 004_linkresolve         0.000244
+  Stage, Elapsed time (sec), 005_linklvalue          0.000166
+  Stage, Elapsed time (sec), 006_link                0.000099
+  Stage, Elapsed time (sec), 007_linkInc             0.000118
+  Stage, Elapsed time (sec), 008_param               0.000621
+  Stage, Elapsed time (sec), 009_paramlink           0.000944
+  Stage, Elapsed time (sec), 010_deadModules         0.000231
+  Stage, Elapsed time (sec), 011_width               0.000982
+  Stage, Elapsed time (sec), 012_widthcommit         0.000285
+  Stage, Elapsed time (sec), 013_const               0.000181
+  Stage, Elapsed time (sec), 014_assertpre           0.000547
+  Stage, Elapsed time (sec), 015_assert              0.000095
+  Stage, Elapsed time (sec), 016_wraptop             0.000015
+  Stage, Elapsed time (sec), 017_const               0.000168
+  Stage, Elapsed time (sec), 018_split_var           0.000096
   Stage, Elapsed time (sec), 019_split_var           0.000012
-  Stage, Elapsed time (sec), 020_dearray             0.000086
-  Stage, Elapsed time (sec), 021_linkdot             0.000953
-  Stage, Elapsed time (sec), 022_begin               0.000118
-  Stage, Elapsed time (sec), 023_tristate            0.000334
+  Stage, Elapsed time (sec), 020_dearray             0.000093
+  Stage, Elapsed time (sec), 021_linkdot             0.001042
+  Stage, Elapsed time (sec), 022_begin               0.000156
+  Stage, Elapsed time (sec), 023_tristate            0.000393
   Stage, Elapsed time (sec), 024_unknown             0.000118
-  Stage, Elapsed time (sec), 025_inline              0.003967
-  Stage, Elapsed time (sec), 026_linkdot             0.000649
-  Stage, Elapsed time (sec), 027_const               0.000133
-  Stage, Elapsed time (sec), 028_deadDtypes          0.000192
-  Stage, Elapsed time (sec), 029_inst                0.000040
-  Stage, Elapsed time (sec), 030_const               0.000098
-  Stage, Elapsed time (sec), 031_scope               0.001562
-  Stage, Elapsed time (sec), 032_linkdot             0.000467
-  Stage, Elapsed time (sec), 033_class               0.000047
-  Stage, Elapsed time (sec), 034_const               0.000093
-  Stage, Elapsed time (sec), 035_deadDtypesScoped    0.000160
-  Stage, Elapsed time (sec), 036_case                0.000125
-  Stage, Elapsed time (sec), 037_task                0.000516
-  Stage, Elapsed time (sec), 038_name                0.000236
-  Stage, Elapsed time (sec), 039_unroll              0.000090
-  Stage, Elapsed time (sec), 040_slice               0.000086
-  Stage, Elapsed time (sec), 041_const               0.000110
-  Stage, Elapsed time (sec), 042_life                0.000086
-  Stage, Elapsed time (sec), 043_table               0.000083
-  Stage, Elapsed time (sec), 044_const               0.000138
-  Stage, Elapsed time (sec), 045_deadDtypesScoped    0.000181
-  Stage, Elapsed time (sec), 046_active              0.000100
-  Stage, Elapsed time (sec), 047_split               0.000557
-  Stage, Elapsed time (sec), 048_splitas             0.000129
-  Stage, Elapsed time (sec), 049_gate                0.003365
-  Stage, Elapsed time (sec), 050_const               0.000148
-  Stage, Elapsed time (sec), 051_deadAllScoped       0.000170
-  Stage, Elapsed time (sec), 052_reorder             0.000110
-  Stage, Elapsed time (sec), 053_delayed             0.000125
-  Stage, Elapsed time (sec), 054_activetop           0.000248
-  Stage, Elapsed time (sec), 055_order               0.001380
-  Stage, Elapsed time (sec), 056_genclk              0.000140
-  Stage, Elapsed time (sec), 057_clock               0.000090
-  Stage, Elapsed time (sec), 058_const               0.000153
-  Stage, Elapsed time (sec), 059_life                0.000137
-  Stage, Elapsed time (sec), 060_life_post           0.000222
-  Stage, Elapsed time (sec), 061_const               0.000136
-  Stage, Elapsed time (sec), 062_deadAllScoped       0.000138
-  Stage, Elapsed time (sec), 063_changed             0.000038
-  Stage, Elapsed time (sec), 064_descope             0.000759
-  Stage, Elapsed time (sec), 065_localize            0.000162
-  Stage, Elapsed time (sec), 066_combine             0.000197
-  Stage, Elapsed time (sec), 067_const               0.000140
-  Stage, Elapsed time (sec), 068_deadAll             0.000143
-  Stage, Elapsed time (sec), 069_clean               0.000200
-  Stage, Elapsed time (sec), 070_premit              0.000196
-  Stage, Elapsed time (sec), 071_expand              0.000270
-  Stage, Elapsed time (sec), 072_const_cpp           0.000314
-  Stage, Elapsed time (sec), 073_subst               0.000798
-  Stage, Elapsed time (sec), 074_const_cpp           0.000223
+  Stage, Elapsed time (sec), 025_inline              0.003837
+  Stage, Elapsed time (sec), 026_linkdot             0.000655
+  Stage, Elapsed time (sec), 027_const               0.000196
+  Stage, Elapsed time (sec), 028_deadDtypes          0.000148
+  Stage, Elapsed time (sec), 029_inst                0.000029
+  Stage, Elapsed time (sec), 030_const               0.000101
+  Stage, Elapsed time (sec), 031_scope               0.001654
+  Stage, Elapsed time (sec), 032_linkdot             0.000495
+  Stage, Elapsed time (sec), 033_class               0.000048
+  Stage, Elapsed time (sec), 034_const               0.000103
+  Stage, Elapsed time (sec), 035_deadDtypesScoped    0.000180
+  Stage, Elapsed time (sec), 036_case                0.000151
+  Stage, Elapsed time (sec), 037_task                0.000482
+  Stage, Elapsed time (sec), 038_name                0.000208
+  Stage, Elapsed time (sec), 039_unroll              0.000088
+  Stage, Elapsed time (sec), 040_slice               0.000111
+  Stage, Elapsed time (sec), 041_const               0.000124
+  Stage, Elapsed time (sec), 042_life                0.000125
+  Stage, Elapsed time (sec), 043_table               0.000097
+  Stage, Elapsed time (sec), 044_const               0.000115
+  Stage, Elapsed time (sec), 045_deadDtypesScoped    0.000193
+  Stage, Elapsed time (sec), 046_active              0.000102
+  Stage, Elapsed time (sec), 047_split               0.000436
+  Stage, Elapsed time (sec), 048_splitas             0.000090
+  Stage, Elapsed time (sec), 049_gate                0.003204
+  Stage, Elapsed time (sec), 050_const               0.000126
+  Stage, Elapsed time (sec), 051_deadAllScoped       0.000271
+  Stage, Elapsed time (sec), 052_reorder             0.000155
+  Stage, Elapsed time (sec), 053_delayed             0.000132
+  Stage, Elapsed time (sec), 054_activetop           0.000245
+  Stage, Elapsed time (sec), 055_order               0.001632
+  Stage, Elapsed time (sec), 056_genclk              0.000163
+  Stage, Elapsed time (sec), 057_clock               0.000141
+  Stage, Elapsed time (sec), 058_const               0.000149
+  Stage, Elapsed time (sec), 059_life                0.000156
+  Stage, Elapsed time (sec), 060_life_post           0.000306
+  Stage, Elapsed time (sec), 061_const               0.000146
+  Stage, Elapsed time (sec), 062_deadAllScoped       0.000153
+  Stage, Elapsed time (sec), 063_changed             0.000039
+  Stage, Elapsed time (sec), 064_descope             0.000706
+  Stage, Elapsed time (sec), 065_localize            0.000167
+  Stage, Elapsed time (sec), 066_combine             0.000198
+  Stage, Elapsed time (sec), 067_const               0.000142
+  Stage, Elapsed time (sec), 068_deadAll             0.000118
+  Stage, Elapsed time (sec), 069_clean               0.000231
+  Stage, Elapsed time (sec), 070_premit              0.000205
+  Stage, Elapsed time (sec), 071_expand              0.000246
+  Stage, Elapsed time (sec), 072_const_cpp           0.000278
+  Stage, Elapsed time (sec), 073_subst               0.000676
+  Stage, Elapsed time (sec), 074_const_cpp           0.000204
   Stage, Elapsed time (sec), 075_deadAll             0.000150
-  Stage, Elapsed time (sec), 076_merge_cond          0.000080
-  Stage, Elapsed time (sec), 077_reloop              0.000036
-  Stage, Elapsed time (sec), 078_depth               0.000102
-  Stage, Elapsed time (sec), 079_cast                0.000241
-  Stage, Elapsed time (sec), 080_cuse                0.000132
-  Stage, Memory (MB), 001_cells                     20.746094
-  Stage, Memory (MB), 002_linkparse                 20.746094
-  Stage, Memory (MB), 003_linkdot                   21.746094
-  Stage, Memory (MB), 004_linkresolve               21.746094
-  Stage, Memory (MB), 005_linklvalue                21.746094
-  Stage, Memory (MB), 006_link                      21.746094
-  Stage, Memory (MB), 007_linkInc                   21.746094
-  Stage, Memory (MB), 008_param                     22.382812
-  Stage, Memory (MB), 009_paramlink                 22.382812
-  Stage, Memory (MB), 010_deadModules               22.382812
-  Stage, Memory (MB), 011_width                     22.382812
-  Stage, Memory (MB), 012_widthcommit               22.382812
-  Stage, Memory (MB), 013_const                     22.382812
-  Stage, Memory (MB), 014_assertpre                 22.382812
-  Stage, Memory (MB), 015_assert                    22.382812
-  Stage, Memory (MB), 016_wraptop                   22.382812
-  Stage, Memory (MB), 017_const                     22.382812
-  Stage, Memory (MB), 018_split_var                 22.382812
-  Stage, Memory (MB), 019_split_var                 22.382812
-  Stage, Memory (MB), 020_dearray                   22.382812
-  Stage, Memory (MB), 021_linkdot                   22.382812
-  Stage, Memory (MB), 022_begin                     22.382812
-  Stage, Memory (MB), 023_tristate                  22.382812
-  Stage, Memory (MB), 024_unknown                   22.382812
-  Stage, Memory (MB), 025_inline                    26.382812
-  Stage, Memory (MB), 026_linkdot                   26.382812
-  Stage, Memory (MB), 027_const                     26.382812
-  Stage, Memory (MB), 028_deadDtypes                26.382812
-  Stage, Memory (MB), 029_inst                      26.382812
-  Stage, Memory (MB), 030_const                     26.382812
-  Stage, Memory (MB), 031_scope                     26.382812
-  Stage, Memory (MB), 032_linkdot                   26.382812
-  Stage, Memory (MB), 033_class                     26.382812
-  Stage, Memory (MB), 034_const                     26.382812
-  Stage, Memory (MB), 035_deadDtypesScoped          26.382812
-  Stage, Memory (MB), 036_case                      26.382812
-  Stage, Memory (MB), 037_task                      26.382812
-  Stage, Memory (MB), 038_name                      26.382812
-  Stage, Memory (MB), 039_unroll                    26.382812
-  Stage, Memory (MB), 040_slice                     26.382812
-  Stage, Memory (MB), 041_const                     26.382812
-  Stage, Memory (MB), 042_life                      26.382812
-  Stage, Memory (MB), 043_table                     26.382812
-  Stage, Memory (MB), 044_const                     26.382812
-  Stage, Memory (MB), 045_deadDtypesScoped          26.382812
-  Stage, Memory (MB), 046_active                    26.382812
-  Stage, Memory (MB), 047_split                     26.382812
-  Stage, Memory (MB), 048_splitas                   26.382812
-  Stage, Memory (MB), 049_gate                      26.382812
-  Stage, Memory (MB), 050_const                     26.382812
-  Stage, Memory (MB), 051_deadAllScoped             26.382812
-  Stage, Memory (MB), 052_reorder                   26.382812
-  Stage, Memory (MB), 053_delayed                   26.382812
-  Stage, Memory (MB), 054_activetop                 26.382812
-  Stage, Memory (MB), 055_order                     26.382812
-  Stage, Memory (MB), 056_genclk                    26.382812
-  Stage, Memory (MB), 057_clock                     26.382812
-  Stage, Memory (MB), 058_const                     26.382812
-  Stage, Memory (MB), 059_life                      26.382812
-  Stage, Memory (MB), 060_life_post                 26.382812
-  Stage, Memory (MB), 061_const                     26.382812
-  Stage, Memory (MB), 062_deadAllScoped             26.382812
-  Stage, Memory (MB), 063_changed                   26.382812
-  Stage, Memory (MB), 064_descope                   27.382812
-  Stage, Memory (MB), 065_localize                  27.382812
-  Stage, Memory (MB), 066_combine                   27.382812
-  Stage, Memory (MB), 067_const                     27.382812
-  Stage, Memory (MB), 068_deadAll                   27.382812
-  Stage, Memory (MB), 069_clean                     27.382812
-  Stage, Memory (MB), 070_premit                    27.382812
-  Stage, Memory (MB), 071_expand                    27.382812
-  Stage, Memory (MB), 072_const_cpp                 27.382812
-  Stage, Memory (MB), 073_subst                     27.382812
-  Stage, Memory (MB), 074_const_cpp                 27.382812
-  Stage, Memory (MB), 075_deadAll                   27.382812
-  Stage, Memory (MB), 076_merge_cond                27.382812
-  Stage, Memory (MB), 077_reloop                    27.382812
-  Stage, Memory (MB), 078_depth                     27.382812
-  Stage, Memory (MB), 079_cast                      27.382812
-  Stage, Memory (MB), 080_cuse                      27.382812
+  Stage, Elapsed time (sec), 076_merge_cond          0.000075
+  Stage, Elapsed time (sec), 077_reloop              0.000053
+  Stage, Elapsed time (sec), 078_depth               0.000109
+  Stage, Elapsed time (sec), 079_cast                0.000263
+  Stage, Elapsed time (sec), 080_cuse                0.000142
+  Stage, Memory (MB), 001_cells                     21.742188
+  Stage, Memory (MB), 002_linkparse                 21.742188
+  Stage, Memory (MB), 003_linkdot                   22.742188
+  Stage, Memory (MB), 004_linkresolve               22.742188
+  Stage, Memory (MB), 005_linklvalue                22.742188
+  Stage, Memory (MB), 006_link                      22.742188
+  Stage, Memory (MB), 007_linkInc                   22.742188
+  Stage, Memory (MB), 008_param                     23.378906
+  Stage, Memory (MB), 009_paramlink                 23.378906
+  Stage, Memory (MB), 010_deadModules               23.378906
+  Stage, Memory (MB), 011_width                     23.378906
+  Stage, Memory (MB), 012_widthcommit               23.378906
+  Stage, Memory (MB), 013_const                     23.378906
+  Stage, Memory (MB), 014_assertpre                 23.378906
+  Stage, Memory (MB), 015_assert                    23.378906
+  Stage, Memory (MB), 016_wraptop                   23.378906
+  Stage, Memory (MB), 017_const                     23.378906
+  Stage, Memory (MB), 018_split_var                 23.378906
+  Stage, Memory (MB), 019_split_var                 23.378906
+  Stage, Memory (MB), 020_dearray                   23.378906
+  Stage, Memory (MB), 021_linkdot                   23.378906
+  Stage, Memory (MB), 022_begin                     23.378906
+  Stage, Memory (MB), 023_tristate                  23.378906
+  Stage, Memory (MB), 024_unknown                   23.378906
+  Stage, Memory (MB), 025_inline                    28.378906
+  Stage, Memory (MB), 026_linkdot                   28.378906
+  Stage, Memory (MB), 027_const                     28.378906
+  Stage, Memory (MB), 028_deadDtypes                28.378906
+  Stage, Memory (MB), 029_inst                      28.378906
+  Stage, Memory (MB), 030_const                     28.378906
+  Stage, Memory (MB), 031_scope                     28.378906
+  Stage, Memory (MB), 032_linkdot                   28.378906
+  Stage, Memory (MB), 033_class                     28.378906
+  Stage, Memory (MB), 034_const                     28.378906
+  Stage, Memory (MB), 035_deadDtypesScoped          28.378906
+  Stage, Memory (MB), 036_case                      28.378906
+  Stage, Memory (MB), 037_task                      28.378906
+  Stage, Memory (MB), 038_name                      28.378906
+  Stage, Memory (MB), 039_unroll                    28.378906
+  Stage, Memory (MB), 040_slice                     28.378906
+  Stage, Memory (MB), 041_const                     28.378906
+  Stage, Memory (MB), 042_life                      28.378906
+  Stage, Memory (MB), 043_table                     28.378906
+  Stage, Memory (MB), 044_const                     28.378906
+  Stage, Memory (MB), 045_deadDtypesScoped          28.378906
+  Stage, Memory (MB), 046_active                    28.378906
+  Stage, Memory (MB), 047_split                     28.378906
+  Stage, Memory (MB), 048_splitas                   28.378906
+  Stage, Memory (MB), 049_gate                      28.378906
+  Stage, Memory (MB), 050_const                     28.378906
+  Stage, Memory (MB), 051_deadAllScoped             28.378906
+  Stage, Memory (MB), 052_reorder                   28.378906
+  Stage, Memory (MB), 053_delayed                   28.378906
+  Stage, Memory (MB), 054_activetop                 28.378906
+  Stage, Memory (MB), 055_order                     28.378906
+  Stage, Memory (MB), 056_genclk                    28.378906
+  Stage, Memory (MB), 057_clock                     28.378906
+  Stage, Memory (MB), 058_const                     28.378906
+  Stage, Memory (MB), 059_life                      28.378906
+  Stage, Memory (MB), 060_life_post                 28.378906
+  Stage, Memory (MB), 061_const                     28.378906
+  Stage, Memory (MB), 062_deadAllScoped             28.378906
+  Stage, Memory (MB), 063_changed                   28.378906
+  Stage, Memory (MB), 064_descope                   28.378906
+  Stage, Memory (MB), 065_localize                  28.378906
+  Stage, Memory (MB), 066_combine                   28.378906
+  Stage, Memory (MB), 067_const                     28.378906
+  Stage, Memory (MB), 068_deadAll                   28.378906
+  Stage, Memory (MB), 069_clean                     28.378906
+  Stage, Memory (MB), 070_premit                    28.378906
+  Stage, Memory (MB), 071_expand                    28.378906
+  Stage, Memory (MB), 072_const_cpp                 28.378906
+  Stage, Memory (MB), 073_subst                     28.378906
+  Stage, Memory (MB), 074_const_cpp                 28.378906
+  Stage, Memory (MB), 075_deadAll                   28.378906
+  Stage, Memory (MB), 076_merge_cond                28.378906
+  Stage, Memory (MB), 077_reloop                    28.378906
+  Stage, Memory (MB), 078_depth                     28.378906
+  Stage, Memory (MB), 079_cast                      28.378906
+  Stage, Memory (MB), 080_cuse                      28.378906
 
 Stage Statistics:
   Stat                                                          Link       PreOrder   Scoped     Final      Final_Fast
   --------                                                      -------    -------    -------    -------    -------  
 
-  Branch prediction,                                                160        140        141        142        136
-  Branch prediction, VL_UNLIKELY                                                                      15         11
+  Branch prediction,                                                164        142        143        142        136
+  Branch prediction, VL_UNLIKELY                                                                      17         13
 
-  Instruction count, TOTAL                                        11152      26297      26031      30045       6533
-  Instruction count, fast critical                                    0      16010      21744      23423       6489
+  Instruction count, TOTAL                                        13662      29057      28535      33526       7489
+  Instruction count, fast critical                                    0      16010      22636      24391       7445
 
-  Node count, ACTIVE                                                            58
-  Node count, ADD                                                     7         12         12         12          7
-  Node count, ALWAYS                                                 19         58
-  Node count, AND                                                    14        325        327        495        252
+  Node count, ACTIVE                                                            90
+  Node count, ADD                                                     6         11         11         11          6
+  Node count, ALWAYS                                                 19         89
+  Node count, AND                                                    14        325        327        501        254
   Node count, ARG                                                   214
-  Node count, ASSIGN                                                 90        102        104        170         30
-  Node count, ASSIGNDLY                                              81         77         77         77         45
-  Node count, ASSIGNPOST                                                        45
-  Node count, ASSIGNPRE                                                         45
-  Node count, ASSIGNW                                               602         62         62         74         29
-  Node count, ATTROF                                                107
-  Node count, BASICDTYPE                                           1285         41         41         48
-  Node count, BEGIN                                                 183
+  Node count, ASSIGN                                                154        166        168        234         30
+  Node count, ASSIGNDLY                                             113        109        109        109         77
+  Node count, ASSIGNPOST                                                        77
+  Node count, ASSIGNPRE                                                         77
+  Node count, ASSIGNW                                               673         72         72         84         34
+  Node count, ATTROF                                                139
+  Node count, BASICDTYPE                                           1426         41         41         48
+  Node count, BEGIN                                                 187
   Node count, CCALL                                                              9         14         14          9
-  Node count, CCAST                                                                                  776        352
+  Node count, CCAST                                                                                 1038        418
   Node count, CELL                                                   15          1          1          1
   Node count, CFILE                                                                                   10
   Node count, CFUNC                                                             32         42         45          9
   Node count, CHANGEDET                                                                     1          1
   Node count, CMATH                                                              5          5          5          2
   Node count, CONCAT                                                 81         38         38
-  Node count, COND                                                  231        426        426        488        255
-  Node count, CONST                                                2533       1654       1654       1886        927
-  Node count, CRESET                                                                                 136
+  Node count, COND                                                  295        556        556        618        319
+  Node count, CONST                                                2976       1821       1821       2057        994
+  Node count, CRESET                                                                                 205
   Node count, CRETURN                                                                       1          1
   Node count, CSTMT                                                            447        449        455        159
   Node count, CUSE                                                                                     1
-  Node count, DISPLAY                                                11         11         11         11         11
-  Node count, EQ                                                    200        509        509        591        305
+  Node count, DISPLAY                                                13         13         13         13         13
+  Node count, EQ                                                    262        633        633        715        367
   Node count, EXTEND                                                            69         69         32         16
   Node count, FUNC                                                    3
   Node count, FUNCREF                                                 3
   Node count, GTE                                                     2          1          1          5          3
   Node count, GTES                                                               1          1          1          1
-  Node count, IF                                                    160        140        141        157        147
+  Node count, IF                                                    164        142        143        159        149
   Node count, INITIAL                                                 3          6
   Node count, LOGAND                                                  1
   Node count, LT                                                      4          3          3          3          2
@@ -268,24 +268,24 @@ Stage Statistics:
   Node count, NEGATE                                                                                   2          1
   Node count, NEQ                                                    65         83         83         83         42
   Node count, NETLIST                                                 1          1          1          1
-  Node count, NOT                                                    14         29         31         31         16
-  Node count, OR                                                     47         81         81        163         75
+  Node count, NOT                                                    16         33         35         35         18
+  Node count, OR                                                     49         85         85        199         77
   Node count, PACKAGE                                                 1          1          1          1
   Node count, PARSEREF                                              171
-  Node count, PIN                                                   171
+  Node count, PIN                                                   177
   Node count, PORT                                                  159
-  Node count, RAND                                                   45         45         45         82
-  Node count, RANGE                                                 796
-  Node count, REPLICATE                                             137         40         40
+  Node count, RAND                                                   77         77         77        146
+  Node count, RANGE                                                 935
+  Node count, REPLICATE                                             169         72         72
   Node count, SCOPE                                                              2          2          2
-  Node count, SEL                                                              142        142
+  Node count, SEL                                                              144        144
   Node count, SELBIT                                                 19
-  Node count, SELEXTRACT                                             88
+  Node count, SELEXTRACT                                            120
   Node count, SENITEM                                                19          4
   Node count, SENTREE                                                19          4
-  Node count, SFORMATF                                               11         11         11         11         11
-  Node count, SHIFTL                                                  2          3          3         73         24
-  Node count, SHIFTR                                                  2          4          4         64         34
+  Node count, SFORMATF                                               13         13         13         13         13
+  Node count, SHIFTL                                                  2          3          3        105         24
+  Node count, SHIFTR                                                  2          4          4         66         34
   Node count, SHIFTRS                                                 2          4          4          4          2
   Node count, SIGNED                                                  8
   Node count, SUB                                                     3          7          7          7          4
@@ -294,20 +294,19 @@ Stage Statistics:
   Node count, TEXT                                                             452        454        460        161
   Node count, TOPSCOPE                                                           1          1          1
   Node count, TYPETABLE                                               1          1          1          1
-  Node count, VAR                                                  1244        614        570        604         94
-  Node count, VARREF                                               2463       1595       1422       1881        860
-  Node count, VARSCOPE                                                         399        355
+  Node count, VAR                                                  1385        715        639        673         94
+  Node count, VARREF                                               2937       2167       1866       2394       1066
+  Node count, VARSCOPE                                                         500        424
   Node count, WORDSEL                                                                                176         72
   Node count, XOR                                                     1          2          2          2          1
 
   Node pairs, ACTIVE_ALWAYS                                                     10
-  Node pairs, ACTIVE_ASSIGNPRE                                                  45
+  Node pairs, ACTIVE_ASSIGNPRE                                                  77
   Node pairs, ACTIVE_ASSIGNW                                                     2
   Node pairs, ACTIVE_INITIAL                                                     1
-  Node pairs, ADD_COND                                                           1          1          1          1
-  Node pairs, ADD_CONST                                               3          5          5          5          3
-  Node pairs, ADD_VARREF                                             11         18         18         18         10
-  Node pairs, ALWAYS_ASSIGNDLY                                                  13
+  Node pairs, ADD_CONST                                               2          4          4          4          2
+  Node pairs, ADD_VARREF                                             10         18         18         18         10
+  Node pairs, ALWAYS_ASSIGNDLY                                                  44
   Node pairs, ALWAYS_BEGIN                                           19
   Node pairs, ALWAYS_CCALL                                                       8
   Node pairs, ALWAYS_IF                                                         37
@@ -316,18 +315,18 @@ Stage Statistics:
   Node pairs, AND_CCAST                                                                               69         45
   Node pairs, AND_CMATH                                                                                2
   Node pairs, AND_COND                                                                                 4          2
-  Node pairs, AND_CONST                                               4        294        294        462        231
+  Node pairs, AND_CONST                                               4        294        294        468        233
   Node pairs, AND_EQ                                                  2         12         12         12         11
   Node pairs, AND_GTE                                                            1          1          1          1
   Node pairs, AND_GTES                                                           1          1          1          1
   Node pairs, AND_LT                                                             1          1          1          1
   Node pairs, AND_LTS                                                            1          1          1          1
   Node pairs, AND_NEQ                                                           19         19         19         10
-  Node pairs, AND_NOT                                                            2          4         29         15
+  Node pairs, AND_NOT                                                            2          4         33         17
   Node pairs, AND_OR                                                             3          3          5          3
   Node pairs, AND_SEL                                                            1          1
   Node pairs, AND_SHIFTL                                                                               3          2
-  Node pairs, AND_SHIFTR                                                                              34         19
+  Node pairs, AND_SHIFTR                                                                              36         19
   Node pairs, AND_VARREF                                             22        298        300        326        152
   Node pairs, AND_WORDSEL                                                                              4          1
   Node pairs, ARG_LOGAND                                              1
@@ -340,12 +339,12 @@ Stage Statistics:
   Node pairs, ASSIGNDLY_FUNCREF                                       2
   Node pairs, ASSIGNDLY_NOT                                                      1          1
   Node pairs, ASSIGNDLY_PARSEREF                                      2
-  Node pairs, ASSIGNDLY_VARREF                                      125        120        120        120         88
-  Node pairs, ASSIGNPOST_VARREF                                                 90
-  Node pairs, ASSIGNPRE_VARREF                                                  90
-  Node pairs, ASSIGNW_ADD                                             7          8          8          8          4
+  Node pairs, ASSIGNDLY_VARREF                                      189        184        184        184        152
+  Node pairs, ASSIGNPOST_VARREF                                                154
+  Node pairs, ASSIGNPRE_VARREF                                                 154
+  Node pairs, ASSIGNW_ADD                                             6          8          8          8          4
   Node pairs, ASSIGNW_AND                                             7                                4          2
-  Node pairs, ASSIGNW_COND                                          230         38         38         32         16
+  Node pairs, ASSIGNW_COND                                          294         44         44         38         19
   Node pairs, ASSIGNW_CONST                                          32                               16
   Node pairs, ASSIGNW_EQ                                             86
   Node pairs, ASSIGNW_FUNCREF                                         1
@@ -353,8 +352,8 @@ Stage Statistics:
   Node pairs, ASSIGNW_LT                                              4
   Node pairs, ASSIGNW_LTS                                                        2          2          2          1
   Node pairs, ASSIGNW_NEQ                                             1
-  Node pairs, ASSIGNW_NOT                                             7
-  Node pairs, ASSIGNW_OR                                             29         12         12         10          5
+  Node pairs, ASSIGNW_NOT                                             9
+  Node pairs, ASSIGNW_OR                                             31         16         16         14          7
   Node pairs, ASSIGNW_REPLICATE                                      37
   Node pairs, ASSIGNW_SELBIT                                         13
   Node pairs, ASSIGNW_SELEXTRACT                                     22
@@ -362,27 +361,27 @@ Stage Statistics:
   Node pairs, ASSIGNW_SHIFTR                                          2
   Node pairs, ASSIGNW_SHIFTRS                                         2
   Node pairs, ASSIGNW_SUB                                             3          2          2          2          1
-  Node pairs, ASSIGNW_VARREF                                        716         62         62         74         29
+  Node pairs, ASSIGNW_VARREF                                        791         72         72         84         34
   Node pairs, ASSIGNW_XOR                                             1
   Node pairs, ASSIGN_AND                                                                              12          1
   Node pairs, ASSIGN_CMATH                                                       5          5          3          2
   Node pairs, ASSIGN_COND                                                                             14          7
   Node pairs, ASSIGN_CONST                                                       3          3          3
   Node pairs, ASSIGN_EXTEND                                                                           32         16
-  Node pairs, ASSIGN_OR                                                                               37
+  Node pairs, ASSIGN_OR                                                                               69
   Node pairs, ASSIGN_RAND                                                        8          8          8
-  Node pairs, ASSIGN_REPLICATE                                       45         37         37
+  Node pairs, ASSIGN_REPLICATE                                       77         69         69
   Node pairs, ASSIGN_SEL                                                         6          6
-  Node pairs, ASSIGN_SELEXTRACT                                      45
+  Node pairs, ASSIGN_SELEXTRACT                                      77
   Node pairs, ASSIGN_SHIFTL                                                                            2          1
-  Node pairs, ASSIGN_VARREF                                          90        145        149        183         25
+  Node pairs, ASSIGN_VARREF                                         154        241        245        279         25
   Node pairs, ASSIGN_WORDSEL                                                                          46          8
-  Node pairs, ATTROF_VARREF                                         107
-  Node pairs, BASICDTYPE_RANGE                                      796
+  Node pairs, ATTROF_VARREF                                         139
+  Node pairs, BASICDTYPE_RANGE                                      935
   Node pairs, BEGIN_ASSIGN                                            3
   Node pairs, BEGIN_ASSIGNDLY                                        70
-  Node pairs, BEGIN_DISPLAY                                          11
-  Node pairs, BEGIN_IF                                               87
+  Node pairs, BEGIN_DISPLAY                                          13
+  Node pairs, BEGIN_IF                                               89
   Node pairs, BEGIN_TASKREF                                          12
   Node pairs, CCALL_AND                                                                                3          2
   Node pairs, CCALL_CONST                                                        4          4          4          4
@@ -390,12 +389,12 @@ Stage Statistics:
   Node pairs, CCALL_EXTEND                                                       1          1
   Node pairs, CCALL_NOT                                                          2          2
   Node pairs, CCAST_AND                                                                               25         19
-  Node pairs, CCAST_CCAST                                                                            131         36
+  Node pairs, CCAST_CCAST                                                                            195         36
   Node pairs, CCAST_COND                                                                              14          7
   Node pairs, CCAST_OR                                                                                 6          3
-  Node pairs, CCAST_RAND                                                                              74
+  Node pairs, CCAST_RAND                                                                             138
   Node pairs, CCAST_SHIFTR                                                                            18          9
-  Node pairs, CCAST_VARREF                                                                           502        275
+  Node pairs, CCAST_VARREF                                                                           636        341
   Node pairs, CCAST_WORDSEL                                                                            6          3
   Node pairs, CELL_PIN                                               15
   Node pairs, CFUNC_ASSIGN                                                                  2          2          1
@@ -415,38 +414,38 @@ Stage Statistics:
   Node pairs, CONCAT_SEL                                                        32         32
   Node pairs, CONCAT_SELEXTRACT                                       1
   Node pairs, CONCAT_VARREF                                          89
-  Node pairs, COND_ADD                                                           4          4          4          3
-  Node pairs, COND_AND                                                1          3          3         47         25
-  Node pairs, COND_CCAST                                                                              37         20
+  Node pairs, COND_ADD                                                           3          3          3          2
+  Node pairs, COND_AND                                                1          3          3         49         25
+  Node pairs, COND_CCAST                                                                              43         22
   Node pairs, COND_CONCAT                                                       18         18
-  Node pairs, COND_COND                                                        312        312        360        185
-  Node pairs, COND_CONST                                            192        355        355        341        177
-  Node pairs, COND_EQ                                                48        390        390        448        233
+  Node pairs, COND_COND                                                        431        431        479        245
+  Node pairs, COND_CONST                                            194        361        361        347        179
+  Node pairs, COND_EQ                                               110        514        514        572        295
   Node pairs, COND_EXTEND                                                       42         42
   Node pairs, COND_GTE                                                                                 4          2
   Node pairs, COND_NEGATE                                                                              2          1
   Node pairs, COND_NOT                                                1          2          2          2          1
   Node pairs, COND_OR                                                 1          2          2         25         14
   Node pairs, COND_REPLICATE                                         18          3          3
-  Node pairs, COND_SEL                                                          54         54
+  Node pairs, COND_SEL                                                          56         56
   Node pairs, COND_SELBIT                                             5
   Node pairs, COND_SELEXTRACT                                        10
   Node pairs, COND_SHIFTL                                                        2          2
   Node pairs, COND_SHIFTR                                                                              4          2
   Node pairs, COND_SHIFTRS                                                                             2          1
-  Node pairs, COND_VARREF                                           417         91         91         68         41
+  Node pairs, COND_VARREF                                           545        231        231        202        108
   Node pairs, COND_WORDSEL                                                                           120         60
-  Node pairs, CRESET_VARREF                                                                          136
+  Node pairs, CRESET_VARREF                                                                          205
   Node pairs, CRETURN_CCALL                                                                 1          1
   Node pairs, CSTMT_TEXT                                                       447        449        455        159
-  Node pairs, DISPLAY_CONST                                          11         11         11         11         11
-  Node pairs, DISPLAY_SFORMATF                                       11         11         11         11         11
+  Node pairs, DISPLAY_CONST                                          13         13         13         13         13
+  Node pairs, DISPLAY_SFORMATF                                       13         13         13         13         13
   Node pairs, EQ_AND                                                           276        276        300        150
-  Node pairs, EQ_CCAST                                                                               290        154
-  Node pairs, EQ_CONST                                              199        508        508        590        304
+  Node pairs, EQ_CCAST                                                                               414        216
+  Node pairs, EQ_CONST                                              261        632        632        714        366
   Node pairs, EQ_SEL                                                            24         24
   Node pairs, EQ_SELEXTRACT                                           8
-  Node pairs, EQ_VARREF                                             193        210        210          2          2
+  Node pairs, EQ_VARREF                                             255        334        334          2          2
   Node pairs, EXTEND_AND                                                         2          2          2          1
   Node pairs, EXTEND_CCAST                                                                             4          2
   Node pairs, EXTEND_COND                                                       18         18          6          3
@@ -466,21 +465,21 @@ Stage Statistics:
   Node pairs, GTE_CONST                                                                                4          2
   Node pairs, GTE_SIGNED                                              2
   Node pairs, GTE_VARREF                                              2          2          2          2          2
-  Node pairs, IF_AND                                                                        2         32         12
+  Node pairs, IF_AND                                                                        2         36         14
   Node pairs, IF_ASSIGN                                                                                8          2
   Node pairs, IF_ASSIGNDLY                                                      64         64         64         32
   Node pairs, IF_ASSIGNW                                                                              16          4
-  Node pairs, IF_BEGIN                                              161
+  Node pairs, IF_BEGIN                                              165
   Node pairs, IF_CCALL                                                           1          2          2          2
-  Node pairs, IF_CONST                                               22
+  Node pairs, IF_CONST                                               26
   Node pairs, IF_CSTMT                                                                                 4
-  Node pairs, IF_DISPLAY                                                        11         11         11         11
+  Node pairs, IF_DISPLAY                                                        13         13         13         13
   Node pairs, IF_EQ                                                  64         64         64         88         38
   Node pairs, IF_IF                                                  33         96         96         96         96
   Node pairs, IF_NEQ                                                 64         64         64         64         32
-  Node pairs, IF_NOT                                                  6         22         22
+  Node pairs, IF_NOT                                                  6         26         26
   Node pairs, IF_PARSEREF                                            14
-  Node pairs, IF_VARREF                                             150        130        130        130         65
+  Node pairs, IF_VARREF                                             154        130        130        130         65
   Node pairs, INITIAL_ASSIGN                                                     6
   Node pairs, INITIAL_BEGIN                                           3
   Node pairs, LOGAND_VARREF                                           2
@@ -497,47 +496,47 @@ Stage Statistics:
   Node pairs, NETLIST_CFILE                                                                            1
   Node pairs, NETLIST_MODULE                                          1          1          1          1
   Node pairs, NETLIST_TYPETABLE                                       1          1          1          1
-  Node pairs, NOT_CCAST                                                                               27         14
+  Node pairs, NOT_CCAST                                                                               31         16
   Node pairs, NOT_SEL                                                            4          4
   Node pairs, NOT_SELBIT                                              1
   Node pairs, NOT_SHIFTR                                                                               4          2
-  Node pairs, NOT_VARREF                                             13         25         27
+  Node pairs, NOT_VARREF                                             15         29         31
   Node pairs, OR_AND                                                  6          8          8         28         17
-  Node pairs, OR_CCAST                                                                                68         17
-  Node pairs, OR_COND                                                           35         35         41         24
+  Node pairs, OR_CCAST                                                                               100         17
+  Node pairs, OR_COND                                                           43         43         49         28
   Node pairs, OR_EQ                                                             40         40         41         22
   Node pairs, OR_EXTEND                                                         17         17
   Node pairs, OR_OR                                                  17         58         58         76         47
-  Node pairs, OR_SHIFTL                                                                               68         21
-  Node pairs, OR_VARREF                                              71          4          4          4          2
+  Node pairs, OR_SHIFTL                                                                              100         21
+  Node pairs, OR_VARREF                                              75          4          4          4          2
   Node pairs, PACKAGE_FUNC                                            1
   Node pairs, PACKAGE_SCOPE                                                      1          1          1
-  Node pairs, PIN_VARREF                                            171
-  Node pairs, RANGE_CONST                                          1592
+  Node pairs, PIN_VARREF                                            177
+  Node pairs, RANGE_CONST                                          1870
   Node pairs, REPLICATE_CONCAT                                       57
-  Node pairs, REPLICATE_CONST                                       172         40         40
-  Node pairs, REPLICATE_RAND                                         45         37         37
+  Node pairs, REPLICATE_CONST                                       204         72         72
+  Node pairs, REPLICATE_RAND                                         77         69         69
   Node pairs, REPLICATE_SEL                                                      3          3
   Node pairs, SCOPE_CFUNC                                                        2          2
   Node pairs, SCOPE_VARSCOPE                                                     2          2
   Node pairs, SELBIT_ATTROF                                          19
   Node pairs, SELBIT_CONST                                           19
   Node pairs, SELBIT_VARREF                                          19
-  Node pairs, SELEXTRACT_ATTROF                                      88
-  Node pairs, SELEXTRACT_CONST                                      176
-  Node pairs, SELEXTRACT_VARREF                                      88
-  Node pairs, SEL_CONST                                                        284        284
+  Node pairs, SELEXTRACT_ATTROF                                     120
+  Node pairs, SELEXTRACT_CONST                                      240
+  Node pairs, SELEXTRACT_VARREF                                     120
+  Node pairs, SEL_CONST                                                        288        288
   Node pairs, SEL_SUB                                                            5          5
-  Node pairs, SEL_VARREF                                                       137        137
+  Node pairs, SEL_VARREF                                                       139        139
   Node pairs, SENITEM_PARSEREF                                       10
   Node pairs, SENITEM_VARREF                                          9          1
   Node pairs, SENTREE_SENITEM                                        19          4
-  Node pairs, SFORMATF_COND                                           1          3          3          3          3
-  Node pairs, SFORMATF_VARREF                                         9          7          7          7          7
+  Node pairs, SFORMATF_COND                                           1          1          1          1          1
+  Node pairs, SFORMATF_VARREF                                        11         11         11         11         11
   Node pairs, SHIFTL_AND                                                                               1          1
-  Node pairs, SHIFTL_CCAST                                                                            58         16
+  Node pairs, SHIFTL_CCAST                                                                            90         16
   Node pairs, SHIFTL_COND                                                                             12          6
-  Node pairs, SHIFTL_CONST                                                                            70         22
+  Node pairs, SHIFTL_CONST                                                                           102         22
   Node pairs, SHIFTL_EXTEND                                                      3          3
   Node pairs, SHIFTL_OR                                                                                1          1
   Node pairs, SHIFTL_SEL                                                         1          1
@@ -548,11 +547,11 @@ Stage Statistics:
   Node pairs, SHIFTRS_SIGNED                                          2
   Node pairs, SHIFTRS_VARREF                                          2          6          6          2          1
   Node pairs, SHIFTR_CCAST                                                                            15          8
-  Node pairs, SHIFTR_CONST                                                                            60         32
+  Node pairs, SHIFTR_CONST                                                                            62         32
   Node pairs, SHIFTR_SEL                                                         2          2
   Node pairs, SHIFTR_SELEXTRACT                                       1
   Node pairs, SHIFTR_SUB                                                                               5          3
-  Node pairs, SHIFTR_VARREF                                           3          6          6         48         25
+  Node pairs, SHIFTR_VARREF                                           3          6          6         50         25
   Node pairs, SIGNED_VARREF                                           8
   Node pairs, SUB_CONST                                               2          5          5          5          3
   Node pairs, SUB_VARREF                                              4          9          9          9          5
@@ -561,13 +560,13 @@ Stage Statistics:
   Node pairs, TOPSCOPE_SCOPE                                                     1          1          1
   Node pairs, TOPSCOPE_SENTREE                                                   1
   Node pairs, TYPETABLE_BASICDTYPE                                    1          1          1          1
-  Node pairs, VAR_BASICDTYPE                                       1244
+  Node pairs, VAR_BASICDTYPE                                       1385
   Node pairs, WORDSEL_CONST                                                                          176         72
   Node pairs, WORDSEL_VARREF                                                                         176         72
   Node pairs, XOR_VARREF                                              2          4          4          4          2
 
-  Var space, non-arrays, bytes                                        0       3158       2849       3393        779
-  Var space, scoped, bytes                                                    2164       1855
+  Var space, non-arrays, bytes                                        0       3952       3387       3931        779
+  Var space, scoped, bytes                                                    2958       2393
 
   Vars, clock attribute                                               0          1          1          1          0
   Vars, unpacked arrayed                                              0          0          0          0          0
@@ -608,6 +607,8 @@ Stage Statistics:
   Vars, width     3 SimTop.rvcore.idu_io_out_ctrl_funcType                       1          1          1
   Vars, width     5 SimTop.REG_10                                                1          1          1
   Vars, width     5 SimTop.REG_11                                                1          1          1
+  Vars, width     5 SimTop.rvcore.idu_io_out_ctrl_rfSrc1                         1          1          1
+  Vars, width     5 SimTop.rvcore.idu_io_out_ctrl_rfSrc2                         1          1          1
   Vars, width     5 SimTop.rvcore.idu_io_out_ctrl_rfrd                           1          1          1
   Vars, width     5 __Vdly__SimTop.REG_10                                        1
   Vars, width     5 __Vdly__SimTop.REG_11                                        1
@@ -731,9 +732,43 @@ Stage Statistics:
   Vars, width    64 SimTop.rvcore.exu_io_reg_write_back_data                     1          1          1
   Vars, width    64 SimTop.rvcore.idu_io_out_data_imm                            1          1          1
   Vars, width    64 SimTop.rvcore.ifu._RAND_0                                    1          1          1
-  Vars, width    64 SimTop.rvcore.ifu._pc_T_3                                    1          1          1
+  Vars, width    64 SimTop.rvcore.ifu._pc_T_1                                    1          1          1
   Vars, width    64 SimTop.rvcore.ifu.pc                                         1          1          1
   Vars, width    64 SimTop.rvcore.ifu.ram_rdata                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_0                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_1                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_10                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_11                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_12                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_13                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_14                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_15                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_16                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_17                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_18                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_19                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_2                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_20                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_21                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_22                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_23                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_24                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_25                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_26                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_27                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_28                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_29                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_3                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_30                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_31                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_4                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_5                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_6                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_7                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_8                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_.REG_9                                     1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._GEN_149                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._GEN_181                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._GEN_21                                   1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_0                                   1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_1                                   1          1          1
@@ -761,9 +796,41 @@ Stage Statistics:
   Vars, width    64 SimTop.rvcore.reg_._RAND_3                                   1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_30                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_31                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_32                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_33                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_34                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_35                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_36                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_37                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_38                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_39                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_4                                   1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_40                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_41                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_42                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_43                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_44                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_45                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_46                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_47                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_48                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_49                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_5                                   1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_50                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_51                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_52                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_53                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_54                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_55                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_56                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_57                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_58                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_59                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_6                                   1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_60                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_61                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_62                                  1          1          1
+  Vars, width    64 SimTop.rvcore.reg_._RAND_63                                  1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_7                                   1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_8                                   1          1          1
   Vars, width    64 SimTop.rvcore.reg_._RAND_9                                   1          1          1
@@ -799,11 +866,44 @@ Stage Statistics:
   Vars, width    64 SimTop.rvcore.reg_.regs_7                                    1          1          1
   Vars, width    64 SimTop.rvcore.reg_.regs_8                                    1          1          1
   Vars, width    64 SimTop.rvcore.reg_.regs_9                                    1          1          1
+  Vars, width    64 SimTop.rvcore.reg__io_src1_data                              1          1          1
   Vars, width    64 __Vdly__SimTop.REG_2                                         1
   Vars, width    64 __Vdly__SimTop.REG_3                                         1
   Vars, width    64 __Vdly__SimTop.REG_8                                         1
   Vars, width    64 __Vdly__SimTop.REG_9                                         1
   Vars, width    64 __Vdly__SimTop.rvcore.ifu.pc                                 1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_0                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_1                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_10                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_11                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_12                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_13                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_14                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_15                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_16                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_17                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_18                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_19                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_2                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_20                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_21                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_22                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_23                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_24                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_25                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_26                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_27                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_28                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_29                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_3                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_30                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_31                            1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_4                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_5                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_6                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_7                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_8                             1
+  Vars, width    64 __Vdly__SimTop.rvcore.reg_.REG_9                             1
   Vars, width    64 __Vdly__SimTop.rvcore.reg_.regs_0                            1
   Vars, width    64 __Vdly__SimTop.rvcore.reg_.regs_1                            1
   Vars, width    64 __Vdly__SimTop.rvcore.reg_.regs_10                           1

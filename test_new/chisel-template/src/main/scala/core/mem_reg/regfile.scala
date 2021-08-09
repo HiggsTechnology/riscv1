@@ -33,8 +33,8 @@ class RegWriteIO extends Bundle with Config {
 }
 
 class RegfileIO extends Bundle {
-  // val src1  = new RegReadIO_1 
-  // val src2  = new RegReadIO_2 
+  val src1  = new RegReadIO_1 
+  val src2  = new RegReadIO_2 
   val rd   = new RegWriteIO
 }
 
@@ -50,9 +50,12 @@ class Regfile extends Module {
   when(io.rd.ena) {
     regfile.write(io.rd.addr, io.rd.data)
   }
+  io.src1.data := regfile.read(io.src1.addr)
+  io.src2.data := regfile.read(io.src2.addr)
+  printf("Print during simulation: io.src1.data is %x\n", io.src1.data)
 
   val mod = Module(new difftest.DifftestArchIntRegState)
   mod.io.clock := clock
   mod.io.coreid := 0.U
-  mod.io.gpr := regfile.regs
+  mod.io.gpr := RegNext(regfile.regs)
 }

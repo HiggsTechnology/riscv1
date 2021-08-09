@@ -2,16 +2,19 @@ package core
 import chisel3._
 import chisel3.util._
 
-class IDUtoEXUIO extends Bundle {
+class IDUtoEXUIO extends Bundle with Config {
     val in  = Flipped(new CfCtrl)
+    val src1 = Input(UInt(XLEN.W))
+    val src2 = Input(UInt(XLEN.W))
     val out = new CfCtrl
 }
 
 class IDUtoEXU extends Module with Config {
     val io = IO(new IDUtoEXUIO)
     val regfile = new RegfileFunc
-    val src1Data = regfile.read(io.in.ctrl.rfSrc1)
-    val src2Data = regfile.read(io.in.ctrl.rfSrc2)
+    val src1Data = io.src1
+    val src2Data = io.src2
+
     printf("Print during simulation: io.in.ctrl.rfSrc1 is %d\n", io.in.ctrl.rfSrc1)
     printf("Print during simulation: io.in.ctrl.rfSrc2 is %d\n", io.in.ctrl.rfSrc2)
 
