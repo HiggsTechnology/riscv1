@@ -31,4 +31,5 @@ class IFU extends Module with Config {
   io.out.instr := Mux(pc(2),rdata(63,32),rdata(31,0))
   printf("Print during simulation: io.out.pc is %x\n", io.out.pc)
   printf("Print during simulation: io.out.instr is %x\n", io.out.instr)
+  printf("************************************\n")
 }

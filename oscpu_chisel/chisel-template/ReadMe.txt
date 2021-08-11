@@ -10,3 +10,9 @@
     make -C difftest emu
 6. 对add.bin进行仿真
     build/emu -i ./add-riscv64-mycpu.bin
+    build/emu -i ./bit-riscv64-mycpu.bin
+    build/emu -i ./div-riscv64-mycpu.bin
+    build/emu -i ./bubble-sort-riscv64-mycpu.bin
+    build/emu -i ./fib-riscv64-mycpu.bin
+    build/emu -i ./mov-c-riscv64-mycpu.bin
+    build/emu -i ./load-store-riscv64-mycpu.bin

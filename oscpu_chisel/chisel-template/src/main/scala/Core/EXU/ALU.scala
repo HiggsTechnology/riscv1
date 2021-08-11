@@ -53,7 +53,7 @@ class ALU extends Module with Config {
     (ALUOpType.sra ,  (src1.asSInt >> shamt).asUInt),
     (ALUOpType.addw,  src1 + src2),
     (ALUOpType.subw,  src1 - src2),
-    (ALUOpType.sllw,  Cat(0.U((XLEN - 1).W), src1.asSInt < src2.asSInt)),
+    (ALUOpType.sllw,  src1 << shamt),
     (ALUOpType.srlw,  src1(31,0) >> shamt),
     (ALUOpType.sraw,  (src1(31,0).asSInt() >> shamt).asUInt()),
     (ALUOpType.lui,   src2)

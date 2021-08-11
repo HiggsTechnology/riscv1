@@ -18,8 +18,8 @@ class IDUtoEXU extends Module with Config {
     val src1Data = io.src1
     val src2Data = io.src2
 
-    printf("Print during simulation: io.in.ctrl.rfSrc1 is %d\n", io.in.ctrl.rfSrc1)
-    printf("Print during simulation: io.in.ctrl.rfSrc2 is %d\n", io.in.ctrl.rfSrc2)
+    // printf("Print during simulation: io.in.ctrl.rfSrc1 is %d\n", io.in.ctrl.rfSrc1)
+    // printf("Print during simulation: io.in.ctrl.rfSrc2 is %d\n", io.in.ctrl.rfSrc2)
 
     io.out.data.src1 := LookupTree(io.in.ctrl.src1Type, List(
         SrcType.reg  -> src1Data,
@@ -29,8 +29,8 @@ class IDUtoEXU extends Module with Config {
         SrcType.reg  -> src2Data,
         SrcType.imm  -> io.in.data.imm
     ))
-    printf("Print during simulation: io.out.data.src1 is %x\n", io.out.data.src1)
-    printf("Print during simulation: io.out.data.src2 is %x\n", io.out.data.src2)
+    // printf("Print during simulation: io.out.data.src1 is %x\n", io.out.data.src1)
+    // printf("Print during simulation: io.out.data.src2 is %x\n", io.out.data.src2)
 
     io.out.data.imm := io.in.data.imm
     io.in.cf    <>  io.out.cf

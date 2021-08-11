@@ -12,7 +12,7 @@ class WBUIO extends Bundle {
 class WBU extends Module {
     val io = IO(new WBUIO)
     
-    printf("**************************************************\n")
-    printf("Print during simulation: io.in.wdata is %x\n", io.in.data)
+    // printf("**************************************************\n")
+    // printf("Print during simulation: io.in.wdata is %x\n", io.in.data)
     io.out <> io.in 
 }
