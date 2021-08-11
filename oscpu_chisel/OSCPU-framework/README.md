@@ -17,7 +17,15 @@ oscpu-framework
 
 
 
-本次上传的OSCPU为新下载的框架后替换完成的版本,可直接进行操作
+本次上传的OSCPU为新下载的框架后替换完成的版本,已经接入trap，需更改am后直接进行操作
+
+修改abstract-machine/am/src/mycpu/trm.c
+改为
+void halt(int code) {
+  asm volatile("mv a0, %0; .word 0x0000006b" : :"r"(code));
+  while (1);
+}
+
 
 (1) nemu编译			//可以根据官方教程调整内存为256m
 
