@@ -9,7 +9,7 @@
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|RAMHelper_1",
     "duplicate":"~SimTop|SimTop/rvcore:Top/exu:EXU/lsu:LSU/ram:RAMHelper",
-    "index":0.3333333333333333
+    "index":0.3125
   },
   {
     "class":"firrtl.EmitCircuitAnnotation",

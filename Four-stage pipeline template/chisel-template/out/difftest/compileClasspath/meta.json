@@ -1,6 +1,6 @@
 {
     "value": [
-        "ref:c984eca8:/home/bread/chisel-template/difftest/resources",
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/difftest/resources",
         "qref:837ae1df:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.13/scala-library-2.12.13.jar",
         "qref:98031407:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chisel3_2.12/3.4.3/chisel3_2.12-3.4.3.jar",
         "qref:c19dfb6d:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chisel3-macros_2.12/3.4.3/chisel3-macros_2.12-3.4.3.jar",
@@ -24,5 +24,5 @@
         "qref:30e43ab0:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.jar"
     ],
     "valueHash": -1002595219,
-    "inputsHash": 1038877110
+    "inputsHash": 1282601865
 }

@@ -1,8 +1,8 @@
 {
     "value": {
-        "analysisFile": "/home/bread/chisel-template/out/difftest/compile/dest/zinc",
-        "classes": "ref:eaa32c9c:/home/bread/chisel-template/out/difftest/compile/dest/classes"
+        "analysisFile": "/home/bread/huxuan/chisel-template/out/difftest/compile/dest/zinc",
+        "classes": "ref:4471c103:/home/bread/huxuan/chisel-template/out/difftest/compile/dest/classes"
     },
-    "valueHash": -727060491,
-    "inputsHash": -1854579366
+    "valueHash": 484258348,
+    "inputsHash": 1089478542
 }

@@ -1,8 +1,8 @@
 {
     "value": [
-        "ref:c984eca8:/home/bread/chisel-template/src/main/resources",
-        "ref:98a4888d:/home/bread/chisel-template/out/ysyx/compile/dest/classes"
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/src/main/resources",
+        "ref:e33cf173:/home/bread/huxuan/chisel-template/out/ysyx/compile/dest/classes"
     ],
-    "valueHash": -937199358,
-    "inputsHash": 466386262
+    "valueHash": 1059265419,
+    "inputsHash": -1438795463
 }

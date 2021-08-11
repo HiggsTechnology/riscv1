@@ -1,11 +1,11 @@
 {
     "value": [
-        "ref:c984eca8:/home/bread/chisel-template/src/test/resources",
-        "ref:c984eca8:/home/bread/chisel-template/out/ysyx/test/compile/dest/classes",
-        "ref:c984eca8:/home/bread/chisel-template/src/main/resources",
-        "ref:98a4888d:/home/bread/chisel-template/out/ysyx/compile/dest/classes",
-        "ref:c984eca8:/home/bread/chisel-template/difftest/resources",
-        "ref:eaa32c9c:/home/bread/chisel-template/out/difftest/compile/dest/classes",
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/src/test/resources",
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/out/ysyx/test/compile/dest/classes",
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/src/main/resources",
+        "ref:e33cf173:/home/bread/huxuan/chisel-template/out/ysyx/compile/dest/classes",
+        "ref:c984eca8:/home/bread/huxuan/chisel-template/difftest/resources",
+        "ref:4471c103:/home/bread/huxuan/chisel-template/out/difftest/compile/dest/classes",
         "qref:837ae1df:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.13/scala-library-2.12.13.jar",
         "qref:98031407:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chisel3_2.12/3.4.3/chisel3_2.12-3.4.3.jar",
         "qref:680217d1:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chiseltest_2.12/0.3.3/chiseltest_2.12-0.3.3.jar",
@@ -38,6 +38,6 @@
         "qref:543cb31f:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/joda-time/joda-time/2.10.1/joda-time-2.10.1.jar",
         "qref:1839baaa:/home/bread/.cache/coursier/v1/https/repo1.maven.org/maven2/org/joda/joda-convert/2.2.0/joda-convert-2.2.0.jar"
     ],
-    "valueHash": -465979496,
-    "inputsHash": -1925580501
+    "valueHash": -1072086421,
+    "inputsHash": 2079887039
 }

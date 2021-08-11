@@ -1,4 +1,7 @@
-package core
+package utils
+
+import Core.IDU.{FuncOpType, FuncType, SrcType}
+import Core.MemReg.RegWriteIO
 import chisel3._
 import chisel3.util._
 

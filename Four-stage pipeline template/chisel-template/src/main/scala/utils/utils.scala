@@ -1,4 +1,4 @@
-package core
+package utils
 
 import chisel3._
 import chisel3.util._
@@ -9,7 +9,7 @@ object LookupTree {
 }   // mux select
 
 object SignExt {
-  def apply(a: UInt, len: Int) = {
+  def apply(a: UInt, len: Int) : UInt = {
     val aLen = a.getWidth
     val signBit = a(aLen-1)
     if (aLen >= len) a(len-1,0) else Cat(Fill(len - aLen, signBit), a)
@@ -17,8 +17,17 @@ object SignExt {
 }  //bread says it is buqi weishu
 
 object ZeroExt {
-  def apply(a: UInt, len: Int) = {
+  def apply(a: UInt, len: Int) : UInt = {
     val aLen = a.getWidth
     if (aLen >= len) a(len-1,0) else Cat(0.U((len - aLen).W), a)
+  }
+}
+
+object zext {
+  def apply(src: UInt, width: Int) : UInt = {
+    if (width - src.getWidth == 0)
+      src
+    else
+      Cat(Fill(width - src.getWidth, 0.U(1.W)), src)
   }
 }

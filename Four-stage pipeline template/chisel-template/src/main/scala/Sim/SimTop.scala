@@ -1,10 +1,11 @@
-package core
+package Sim
 
 import chisel3._
 import chisel3.util._
-// import core._
 import difftest._
 import Chisel.unless
+import Core.TOP.Top
+
 
 class SimTopIO extends Bundle {
   val logCtrl = new LogCtrlIO
@@ -58,6 +59,15 @@ class SimTop extends Module {
   csrCommit.io.sscratch       := 0.U
   csrCommit.io.mideleg        := 0.U
   csrCommit.io.medeleg        := 0.U
+
+  val trap = Module(new DifftestTrapEvent)
+  trap.io.clock    := clock
+  trap.io.coreid   := 0.U
+  trap.io.valid    := RegNext(RegNext(rvcore.io.out.instr)) === BigInt("0000006b", 16).U
+  trap.io.code     := 0.U // GoodTrap
+  trap.io.pc       := RegNext(RegNext(rvcore.io.out.pc))
+  trap.io.cycleCnt := 0.U
+  trap.io.instrCnt := 0.U
 }
 
 

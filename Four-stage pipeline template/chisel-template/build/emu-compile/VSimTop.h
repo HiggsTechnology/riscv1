@@ -69,7 +69,6 @@ VL_MODULE(VSimTop) {
         CData/*6:0*/ SimTop__DOT__rvcore__DOT__idu__DOT___T_223;
         CData/*6:0*/ SimTop__DOT__rvcore__DOT__idu__DOT___T_238;
         CData/*5:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT__shamt;
-        CData/*0:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT__lo;
         IData/*31:0*/ SimTop__DOT___RAND_0;
         IData/*31:0*/ SimTop__DOT___RAND_1;
         IData/*31:0*/ SimTop__DOT___RAND_4;
@@ -78,30 +77,40 @@ VL_MODULE(VSimTop) {
         IData/*31:0*/ SimTop__DOT___RAND_7;
         IData/*31:0*/ SimTop__DOT___RAND_10;
         IData/*31:0*/ SimTop__DOT___RAND_11;
+        IData/*31:0*/ SimTop__DOT___RAND_12;
+        IData/*31:0*/ SimTop__DOT___RAND_13;
         IData/*31:0*/ SimTop__DOT__REG_4;
         IData/*31:0*/ SimTop__DOT__REG_5;
+        IData/*31:0*/ SimTop__DOT__REG_12;
+        IData/*31:0*/ SimTop__DOT__REG_13;
         IData/*31:0*/ SimTop__DOT__rvcore__DOT__ifu_io_out_instr;
+        VlWide<4>/*126:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT___T_2;
         VlWide<4>/*126:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT___res_T_27;
         VlWide<4>/*126:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT___res_T_31;
         QData/*63:0*/ SimTop__DOT___RAND_2;
         QData/*63:0*/ SimTop__DOT___RAND_3;
         QData/*63:0*/ SimTop__DOT___RAND_8;
         QData/*63:0*/ SimTop__DOT___RAND_9;
+        QData/*63:0*/ SimTop__DOT___RAND_14;
+        QData/*63:0*/ SimTop__DOT___RAND_15;
         QData/*63:0*/ SimTop__DOT__REG_2;
         QData/*63:0*/ SimTop__DOT__REG_3;
         QData/*63:0*/ SimTop__DOT__REG_8;
         QData/*63:0*/ SimTop__DOT__REG_9;
+        QData/*63:0*/ SimTop__DOT__REG_14;
+        QData/*63:0*/ SimTop__DOT__REG_15;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__idu_io_out_data_imm;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__dis_io_out_data_src1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__dis_io_out_data_src2;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu_io_reg_write_back_data;
-        QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___05Fio_src1_data;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__ifu__DOT___RAND_0;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__ifu__DOT__ram_rdata;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__ifu__DOT__pc;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__ifu__DOT___pc_T_1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT___T_1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__alu__DOT___T_12;
+    };
+    struct {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__lsu__DOT__ram_rdata;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__lsu__DOT__addr;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__exu__DOT__lsu__DOT__rdataSel;
@@ -109,8 +118,6 @@ VL_MODULE(VSimTop) {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_0;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_2;
-    };
-    struct {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_3;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_4;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_5;
@@ -168,6 +175,8 @@ VL_MODULE(VSimTop) {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_57;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_58;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_59;
+    };
+    struct {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_60;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_61;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___RAND_62;
@@ -175,8 +184,6 @@ VL_MODULE(VSimTop) {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_0;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_2;
-    };
-    struct {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_3;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_4;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_5;
@@ -206,9 +213,8 @@ VL_MODULE(VSimTop) {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_29;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_30;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__regs_31;
-        QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___GEN_21;
+        QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___GEN_117;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___GEN_149;
-        QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT___GEN_181;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_0;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_1;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_2;
@@ -235,6 +241,8 @@ VL_MODULE(VSimTop) {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_23;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_24;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_25;
+    };
+    struct {
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_26;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_27;
         QData/*63:0*/ SimTop__DOT__rvcore__DOT__reg___DOT__REG_28;
