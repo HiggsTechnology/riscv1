@@ -23,11 +23,3 @@ object ZeroExt {
   }
 }
 
-object zext {
-  def apply(src: UInt, width: Int) : UInt = {
-    if (width - src.getWidth == 0)
-      src
-    else
-      Cat(Fill(width - src.getWidth, 0.U(1.W)), src)
-  }
-}

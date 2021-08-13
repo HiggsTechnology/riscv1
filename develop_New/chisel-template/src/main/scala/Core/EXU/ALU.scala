@@ -37,51 +37,25 @@ class ALU extends Module with Config {
   val src2 = Wire(UInt(XLEN.W))
   src1 := io.in.data.src1
   src2 := io.in.data.src2
-  // printf("Print during simulation: io.in.data.src1 is %d\n", io.in.data.src1)
-  // printf("Print during simulation: io.in.data.src2 is %d\n", io.in.data.src2)
   val shamt = Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), src2(4, 0), src2(5, 0))
-  val ALUop = List(
-    (ALUOpType.add ,  src1 + src2),
-    (ALUOpType.sll ,  src1 << shamt),
-    (ALUOpType.slt ,  Cat(0.U((XLEN - 1).W), src1.asSInt() < src2.asSInt())),
-    (ALUOpType.sltu,  src1 < src2),
-    (ALUOpType.xor ,  src1 ^ src2),
-    (ALUOpType.srl ,  src1 >> shamt),
-    (ALUOpType.or  ,  src1 | src2),
-    (ALUOpType.and ,  src1 & src2),
-    (ALUOpType.sub ,  src1 - src2),
-    (ALUOpType.sra ,  (src1.asSInt >> shamt).asUInt),
-    (ALUOpType.addw,  src1 + src2),
-    (ALUOpType.subw,  src1 - src2),
-    (ALUOpType.sllw,  src1 << shamt),
-    (ALUOpType.srlw,  src1(31,0) >> shamt),
-    (ALUOpType.sraw,  (src1(31,0).asSInt() >> shamt).asUInt()),
-    (ALUOpType.lui,   src2)
-  )
-
-  val res : UInt = Wire(UInt(XLEN.W))
-  res := MuxLookup(io.in.ctrl.funcOpType, 0.U, ALUop)
-
-  
-
-  // val res = LookupTree(io.in.ctrl.funcOpType, List(
-  //   ALUOpType.add   ->  (src1 + src2),
-  //   ALUOpType.sll   ->  (src1 << shamt),
-  //   ALUOpType.slt   ->  (Cat(0.U(63.W), src1.asSInt < src2.asSInt)),
-  //   ALUOpType.sltu  ->  (Cat((0.U(63.W), src1 < src2)),
-  //   ALUOpType.xor   ->  (src1 ^ src2),
-  //   ALUOpType.srl   ->  (src1 >> shamt),  // Logical
-  //   ALUOpType.or    ->  (src1 | src2),
-  //   ALUOpType.and   ->  (src1 & src2),
-  //   ALUOpType.sub   ->  (src1 - src2),
-  //   ALUOpType.sra   ->  ((src1.asSInt >> shamt).asUInt),  // Arithmetic
-  //   ALUOpType.addw  ->  (src1 + src2),
-  //   ALUOpType.subw  ->  (src1 - src2),
-  //   ALUOpType.sllw  ->  (src1 << shamt),
-  //   ALUOpType.srlw  ->  (src1(31,0)),
-  //   ALUOpType.sraw  ->  (src1(31,0).asSInt() >> shamt).asUInt()),
-  //   ALUOpType.subw  ->  (src2)  //imm fixed
-  // ))
+  val res = LookupTree(io.in.ctrl.funcOpType, List(
+    ALUOpType.add   ->   (src1 + src2),
+    ALUOpType.sll   ->   (src1 << shamt),
+    ALUOpType.slt   ->   (Cat(0.U((XLEN - 1).W), src1.asSInt() < src2.asSInt())),
+    ALUOpType.sltu  ->   (src1 < src2),
+    ALUOpType.xor   ->   (src1 ^ src2),
+    ALUOpType.srl   ->   (src1 >> shamt),
+    ALUOpType.or    ->   (src1 | src2),
+    ALUOpType.and   ->   (src1 & src2),
+    ALUOpType.sub   ->   (src1 - src2),
+    ALUOpType.sra   ->   ((src1.asSInt >> shamt).asUInt),
+    ALUOpType.addw  ->   (src1 + src2),
+    ALUOpType.subw  ->   (src1 - src2),
+    ALUOpType.sllw  ->   (src1 << shamt),
+    ALUOpType.srlw  ->   (src1(31,0) >> shamt),
+    ALUOpType.sraw  ->   ((src1(31,0).asSInt() >> shamt).asUInt()),
+    ALUOpType.lui  ->    (src2)
+  ))
 
   io.out.aluRes := Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), SignExt(res(31,0), 64), res)
 
