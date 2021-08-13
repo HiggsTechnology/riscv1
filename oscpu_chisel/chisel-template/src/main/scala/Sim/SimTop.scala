@@ -37,28 +37,6 @@ class SimTop extends Module {
   instrCommit.io.wen   := RegNext(RegNext(rvcore.io.diffreg.ena))
   instrCommit.io.wdata := RegNext(RegNext(rvcore.io.diffreg.data))
   instrCommit.io.wdest := RegNext(RegNext(rvcore.io.diffreg.addr))
-  
-
-  val csrCommit = Module(new DifftestCSRState)
-  csrCommit.io.clock          := clock
-  csrCommit.io.priviledgeMode := 0.U
-  csrCommit.io.mstatus        := 0.U
-  csrCommit.io.sstatus        := 0.U
-  csrCommit.io.mepc           := 0.U
-  csrCommit.io.sepc           := 0.U
-  csrCommit.io.mtval          := 0.U
-  csrCommit.io.stval          := 0.U
-  csrCommit.io.mtvec          := 0.U
-  csrCommit.io.stvec          := 0.U
-  csrCommit.io.mcause         := 0.U
-  csrCommit.io.scause         := 0.U
-  csrCommit.io.satp           := 0.U
-  csrCommit.io.mip            := 0.U
-  csrCommit.io.mie            := 0.U
-  csrCommit.io.mscratch       := 0.U
-  csrCommit.io.sscratch       := 0.U
-  csrCommit.io.mideleg        := 0.U
-  csrCommit.io.medeleg        := 0.U
 
   val trap = Module(new DifftestTrapEvent)
   trap.io.clock    := clock

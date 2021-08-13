@@ -1,5 +1,6 @@
 package Core.EXU
 
+import Core.Config.Config
 import chisel3._
 import chisel3.util._
 import utils._

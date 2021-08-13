@@ -1,8 +1,9 @@
 package Core.IFU
 
+import Core.Config.Config
 import Core.MemReg.RAMHelper
 import chisel3._
-import utils.{BRU_OUTIO, Config, Pc_Instr}
+import utils.{BRU_OUTIO, Pc_Instr}
 
 class IFUIO extends Bundle {
   val in  = Flipped(new BRU_OUTIO)  //branch
@@ -11,15 +12,15 @@ class IFUIO extends Bundle {
 
 class IFU extends Module with Config {
   val io = IO(new IFUIO)
-  val pc = RegInit(pc_start.U(XLEN.W))
-  pc        := Mux(io.in.valid, io.in.newPC, pc + 4.U)
+  val pc = RegInit(PC_START.U(XLEN.W))
+  pc        := Mux(io.in.valid, io.in.new_pc, pc + 4.U)
   io.out.pc := pc
 
   val ram = Module(new RAMHelper)
   ram.io.clk := clock
   ram.io.en  := !reset.asBool()
 
-  val idx = (pc - pc_start.U) >> 3
+  val idx = (pc - PC_START.U) >> 3
 
   ram.io.rIdx := idx
   val rdata = ram.io.rdata

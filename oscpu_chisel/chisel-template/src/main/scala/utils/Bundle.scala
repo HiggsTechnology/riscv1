@@ -1,5 +1,6 @@
 package utils
 
+import Core.Config.Config
 import Core.IDU.{FuncOpType, FuncType, SrcType}
 import Core.MemReg.RegWriteIO
 import chisel3._
@@ -7,7 +8,7 @@ import chisel3.util._
 
 class Pc_Instr extends Bundle with Config {
   val pc    = Input(UInt(XLEN.W))
-  val instr = Input(UInt(INST_WIDTH.W))
+  val instr = Input(UInt(INST_WIDTH))
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -25,6 +26,7 @@ class DataSrcIO extends Bundle with Config {
   val src1 = Output(UInt(XLEN.W))
   val src2 = Output(UInt(XLEN.W))
   val imm  = Output(UInt(XLEN.W))
+  val uimm_ext = Output(UInt(XLEN.W))
 }
 
 class CfCtrl extends Bundle with Config {
@@ -38,7 +40,7 @@ class ALU_OUTIO extends Bundle with Config {
 }
 
 class BRU_OUTIO extends Bundle with Config {
-  val newPC = Output(UInt(XLEN.W))
+  val new_pc = Output(UInt(XLEN.W))
   val valid = Output(Bool())
 }
 

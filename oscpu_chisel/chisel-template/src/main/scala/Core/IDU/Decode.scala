@@ -14,18 +14,21 @@ trait InstrType {
   def InstrJ  = "b0111".U
 
   def isrfWen(instrType : UInt): Bool = instrType(2)
+  val table : Array[(BitPat, List[UInt])]
 }
 
+// todo: 将两个数据通路的选择信号分开
+// todo: 使用width代替apply表示宽度
 object SrcType {
-  def reg = "b0".U
-  def pc  = "b1".U
-  def imm = "b1".U
-  // def isReg(srcType: UInt) = srcType===reg
-  // def isPc(srcType: UInt) = srcType===pc
-  // def isImm(srcType: UInt) = srcType===imm
-  // def isPcImm(srcType: UInt) = srcType(0)
-  // def isReg(srcType: UInt) = !srcType(0)
-  def apply() = UInt(1.W)
+  def typeSize = 3
+  // src1
+  def reg = 0.U
+  def pc  = 1.U
+  def uimm= 2.U
+  // src2
+  def imm = 1.U
+  def apply() = UInt(log2Up(typeSize).W)
+  def width = UInt(log2Up(typeSize).W)
 }
 
 object FuncType {
@@ -40,5 +43,6 @@ object FuncType {
 
 object FuncOpType {
   def apply() = UInt(7.W)
+  def width = 7.W
 }
 

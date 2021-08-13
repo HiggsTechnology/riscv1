@@ -1,6 +1,6 @@
 package utils
 
-import Core.EXU.{ALUOpType, BRUOpType, LSUOpType}
+import Core.EXU.{ALUOpType, BRUOpType, CsrOpType, LSUOpType}
 import Core.IDU.{FuncType, InstrType}
 import chisel3._
 import chisel3.util._
@@ -135,7 +135,36 @@ object RV64IInstr extends InstrType {
   )
 }
 
+object RV64I_CSRInstr extends InstrType {
+  //                              |------------|-----|func3|--rd-|-opcode-|
+  val ECALL   : BitPat  = BitPat("b000000000000_00000__000__00000_1110011")
+  val EBREAK  : BitPat  = BitPat("b000000000001_00000__000__00000_1110011")
+  val MRET    : BitPat  = BitPat("b001100000010_00000__000__00000_1110011")
+  val SRET    : BitPat  = BitPat("b000100000010_00000__000__00000_1110011")
+  val WFI     : BitPat  = BitPat("b000100000101_00000__000__00000_1110011")
+  //                              |----CSR-----|-rs1-|func3|--rd-|-opcode-|
+  val CSRRW   : BitPat  = BitPat("b????????????_?????__001__?????_1110011")
+  val CSRRS   : BitPat  = BitPat("b????????????_?????__010__?????_1110011")
+  val CSRRC   : BitPat  = BitPat("b????????????_?????__011__?????_1110011")
+  //                              |----CSR-----|-zimm|func3|--rd-|-opcode-|
+  val CSRRWI  : BitPat  = BitPat("b????????????_?????__101__?????_1110011")
+  val CSRRSI  : BitPat  = BitPat("b????????????_?????__110__?????_1110011")
+  val CSRRCI  : BitPat  = BitPat("b????????????_?????__111__?????_1110011")
+
+  val table : Array[(BitPat, List[UInt])] = Array (
+    ECALL         ->  List( InstrI, FuncType.csr, CsrOpType.ECALL),
+    EBREAK        ->  List( InstrI, FuncType.csr, CsrOpType.EBREAK),
+    CSRRW         ->  List( InstrI, FuncType.csr, CsrOpType.RW),
+    CSRRS         ->  List( InstrI, FuncType.csr, CsrOpType.RS),
+    CSRRC         ->  List( InstrI, FuncType.csr, CsrOpType.RC),
+    CSRRWI        ->  List( InstrI, FuncType.csr, CsrOpType.RWI),
+    CSRRSI        ->  List( InstrI, FuncType.csr, CsrOpType.RSI),
+    CSRRCI        ->  List( InstrI, FuncType.csr, CsrOpType.RCI),
+    MRET          ->  List( InstrI, FuncType.csr, CsrOpType.MRET),
+  )
+}
+
 object RVIInstr extends InstrType {
-  val table = RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++ RV32I_LSUInstr.table ++ RV64IInstr.table
+  val table : Array[(BitPat, List[UInt])] = RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++ RV32I_LSUInstr.table ++ RV64IInstr.table
   val defaultTable = List(InstrN, FuncType.alu, ALUOpType.add)
 }

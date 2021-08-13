@@ -4,6 +4,9 @@
 /target/
 /test_run_dir/
 /build_test/
+/bin/
+/build/
+
 ### Project Specific stuff
 test_run_dir/*
 ### XilinxISE template

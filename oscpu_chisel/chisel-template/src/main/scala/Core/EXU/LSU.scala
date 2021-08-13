@@ -1,10 +1,10 @@
 package Core.EXU
 
+import Core.Config.Config
 import Core.IDU.FuncType
 import Core.MemReg.RAMHelper
 import chisel3._
-import chisel3.util._
-import utils.{CfCtrl, Config, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
+import utils.{CfCtrl, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U
@@ -66,20 +66,10 @@ class LSU extends Module with Config {
   ram.io.en := io.valid
   
   //Load
-  val idx = (addr - pc_start.U) >> 3
+  val idx = (addr - PC_START.U) >> 3
   ram.io.rIdx := idx
   val rdata = ram.io.rdata
 
-  // val rdataSel = LookupTree(addr(2, 0), List(
-  //   "b000".U -> rdata(63, 0),
-  //   "b001".U -> rdata(63, 8),
-  //   "b010".U -> rdata(63, 16),
-  //   "b011".U -> rdata(63, 24),
-  //   "b100".U -> rdata(63, 32),
-  //   "b101".U -> rdata(63, 40),
-  //   "b110".U -> rdata(63, 48),
-  //   "b111".U -> rdata(63, 56)
-  // ))
   val rdataSel = rdata >> (addr(2, 0) * 8.U)
   io.out.rdata := LookupTree(io.in.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),

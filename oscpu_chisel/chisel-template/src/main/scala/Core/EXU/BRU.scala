@@ -1,9 +1,10 @@
 package Core.EXU
 
+import Core.Config.Config
 import Core.IDU.FuncType
 import chisel3._
 import chisel3.util._
-import utils.{BRU_OUTIO, CfCtrl, Config, LookupTree}
+import utils.{BRU_OUTIO, CfCtrl, LookupTree}
 
 object BRUOpType {
   def jal  = "b1011000".U
@@ -14,6 +15,7 @@ object BRUOpType {
   def bge  = "b0010101".U
   def bltu = "b0010110".U
   def bgeu = "b0010111".U
+  // todo Jal_r -> Jalr
   def isJal_r(func: UInt): Bool = func(6)
 }
 
@@ -40,7 +42,7 @@ class BRU extends Module with Config {
     BRUOpType.bgeu  ->  (src1 >= src2)
   ))
   
-  io.out.newPC := Mux((io.in.ctrl.funcOpType === BRUOpType.jalr),
+  io.out.new_pc := Mux((io.in.ctrl.funcOpType === BRUOpType.jalr),
     io.in.data.src1 + io.in.data.imm, io.in.cf.pc + io.in.data.imm)
 
 }

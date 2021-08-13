@@ -1,10 +1,11 @@
 package Core.EXU
 
+import Core.Config.Config
 import Core.IDU.FuncType
 import Core.MemReg.RegWriteIO
 import chisel3._
 import chisel3.util._
-import utils.{BRU_OUTIO, CfCtrl, Config}
+import utils.{BRU_OUTIO, CfCtrl}
 
 class EXUIO extends Bundle {
     val in             = Flipped(new CfCtrl)
@@ -13,46 +14,49 @@ class EXUIO extends Bundle {
 }
 
 class EXU extends Module with Config {
-    val io = IO(new EXUIO)
-    val alu = Module(new ALU)
-    val lsu = Module(new LSU)
-    val bru = Module(new BRU)
+    val io : EXUIO = IO(new EXUIO)
+    private val func = io.in.ctrl.funcType
+    private val op = io.in.ctrl.funcOpType
+    val alu : ALU = Module(new ALU)
+    val lsu : LSU = Module(new LSU)
+    val bru : BRU = Module(new BRU)
+    val csr : CSR = Module(new CSR)
+    private val alu_ena = func === FuncType.alu
+    private val lsu_ena = func === FuncType.lsu
+    private val bru_ena = func === FuncType.bru
+    private val csr_ena = func === FuncType.csr
 
-    val alu_ena = Wire(Bool())
-    val lsu_ena = Wire(Bool())
-    val bru_ena = Wire(Bool())
-    alu_ena := io.in.ctrl.funcType === FuncType.alu
-    lsu_ena := io.in.ctrl.funcType === FuncType.lsu
-    bru_ena := io.in.ctrl.funcType === FuncType.bru
     lsu.io.valid := lsu_ena
-
+    // csr 维护内部状态需要启用信号
+    csr.io.ena  := csr_ena
     alu.io.in <> io.in
     lsu.io.in <> io.in
     bru.io.in <> io.in
+    csr.io.in <> io.in
 
-    val wb_ena = Wire(Bool())
-    when(alu_ena) {
-        wb_ena := true.B
-    }.elsewhen(lsu_ena) {
-        wb_ena := Mux(LSUOpType.isLoad(io.in.ctrl.funcOpType), true.B, false.B)
-    }.otherwise {
-        wb_ena := Mux(BRUOpType.isJal_r(io.in.ctrl.funcOpType), true.B, false.B)
-    }
+    private val wb_ena = Wire(Bool())
+    private val wdata = Wire(UInt(XLEN.W))
+    wb_ena := MuxLookup(op, false.B, Array(
+        FuncType.alu -> true.B,
+        FuncType.lsu -> LSUOpType.isLoad(op),
+        FuncType.bru -> BRUOpType.isJal_r(io.in.ctrl.funcOpType),
+        // csrr*[i]指令都需要写入寄存器堆，ecall ebreak mret等指令的rd对应位置为x0，置true也没有影响
+        FuncType.csr -> true.B
+    ))
+    wdata := MuxLookup(op, 0.U(XLEN.W), Array(
+        FuncType.alu -> alu.io.out.aluRes,
+        FuncType.lsu -> lsu.io.out.rdata,
+        FuncType.bru -> (io.in.cf.pc + 4.U),
+        FuncType.csr -> csr.io.out.rdata
+    ))
+    io.reg_write_back.ena   := wb_ena
+    io.reg_write_back.addr  := io.in.ctrl.rfrd
+    io.reg_write_back.data  := wdata
 
-    when(alu_ena) {
-        io.reg_write_back.data := alu.io.out.aluRes
-        io.reg_write_back.ena  := wb_ena
-        io.reg_write_back.addr := io.in.ctrl.rfrd
-    }.elsewhen(lsu_ena && LSUOpType.isLoad(io.in.ctrl.funcOpType)) {
-        io.reg_write_back.data := lsu.io.out.rdata
-        io.reg_write_back.ena  := wb_ena
-        io.reg_write_back.addr := io.in.ctrl.rfrd
-    }.otherwise {
-        io.reg_write_back.data := io.in.cf.pc + 4.U
-        io.reg_write_back.ena  := wb_ena
-        io.reg_write_back.addr := io.in.ctrl.rfrd
-    }
+    // lsu和csr都会影响pc的值
+    io.branch <> MuxLookup(func, 0.U.asTypeOf(new BRU_OUTIO), Array(
+        FuncType.bru -> bru.io.out,
+        FuncType.csr -> csr.io.out.jmp
+    ))
 
-    io.branch.valid := bru.io.out.valid
-    io.branch.newPC := bru.io.out.newPC
 }

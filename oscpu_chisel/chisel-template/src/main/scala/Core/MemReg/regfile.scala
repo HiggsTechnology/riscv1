@@ -1,7 +1,7 @@
 package Core.MemReg
 
+import Core.Config.Config
 import chisel3._
-import utils.Config
 
 class RegfileFunc extends Config {
   val regs = RegInit(VecInit(Seq.fill(32)(0.U(XLEN.W))))
@@ -18,12 +18,7 @@ class RegfileFunc extends Config {
   }
 }
  
-class RegReadIO_1 extends Bundle with Config {
-  val addr = Input(UInt(5.W))
-  val data = Output(UInt(XLEN.W))
-}
-
-class RegReadIO_2 extends Bundle with Config {
+class RegReadIO extends Bundle with Config {
   val addr = Input(UInt(5.W))
   val data = Output(UInt(XLEN.W))
 }
@@ -35,8 +30,8 @@ class RegWriteIO extends Bundle with Config {
 }
 
 class RegfileIO extends Bundle {
-  val src1  = new RegReadIO_1 
-  val src2  = new RegReadIO_2 
+  val src1  = new RegReadIO
+  val src2  = new RegReadIO
   val rd   = new RegWriteIO
 }
 
