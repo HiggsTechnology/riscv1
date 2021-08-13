@@ -41,17 +41,14 @@ class EXU extends Module with Config {
 
     when(alu_ena) {
         io.reg_write_back.data := alu.io.out.aluRes
-        // printf("Print during simulation: alu.io.out.aluRes is %d\n", alu.io.out.aluRes)
         io.reg_write_back.ena  := wb_ena
         io.reg_write_back.addr := io.in.ctrl.rfrd
     }.elsewhen(lsu_ena && LSUOpType.isLoad(io.in.ctrl.funcOpType)) {
         io.reg_write_back.data := lsu.io.out.rdata
-        // printf("Print during simulation: lsu.io.out.rdata is %d\n", lsu.io.out.rdata)
         io.reg_write_back.ena  := wb_ena
         io.reg_write_back.addr := io.in.ctrl.rfrd
     }.otherwise {
         io.reg_write_back.data := io.in.cf.pc + 4.U
-        // printf("Print during simulation: io.in.cf.pc is %d\n", io.in.cf.pc)
         io.reg_write_back.ena  := wb_ena
         io.reg_write_back.addr := io.in.ctrl.rfrd
     }

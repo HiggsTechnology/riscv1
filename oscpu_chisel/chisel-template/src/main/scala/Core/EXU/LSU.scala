@@ -4,7 +4,7 @@ import Core.IDU.FuncType
 import Core.MemReg.RAMHelper
 import chisel3._
 import chisel3.util._
-import utils.{CfCtrl, Config, LSU_OUTIO, LookupTree, SignExt, ZeroExt, zext}
+import utils.{CfCtrl, Config, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U
@@ -49,10 +49,10 @@ class LSU extends Module with Config {
 
   def genWdata(data: UInt, sizeEncode: UInt): UInt = {
     LookupTree(sizeEncode, List(
-      "b00".U -> zext(data(7, 0) , XLEN),
-      "b01".U -> zext(data(15, 0), XLEN),
-      "b10".U -> zext(data(31, 0), XLEN),
-      "b11".U -> zext(data(63, 0), XLEN)
+      "b00".U -> ZeroExt(data(7, 0) , XLEN),
+      "b01".U -> ZeroExt(data(15, 0), XLEN),
+      "b10".U -> ZeroExt(data(31, 0), XLEN),
+      "b11".U -> ZeroExt(data(63, 0), XLEN)
     ))
   }
 
@@ -61,10 +61,8 @@ class LSU extends Module with Config {
   val addr = Mux(io.valid, io.in.data.src1 + io.in.data.imm, 0.U)
   val storedata = io.in.data.src2
   val isStore = LSUOpType.isStore(io.in.ctrl.funcOpType)
-  printf("Print during simulation: addr %x\n", addr)
   val ram = Module(new RAMHelper)
   ram.io.clk := clock
-  printf("io.valid is %d\n", io.valid)
   ram.io.en := io.valid
   
   //Load
@@ -88,9 +86,9 @@ class LSU extends Module with Config {
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
     LSUOpType.lw   -> SignExt(rdataSel(31, 0), XLEN),
     LSUOpType.ld   -> SignExt(rdataSel(63, 0), XLEN),
-    LSUOpType.lbu  -> zext(rdataSel(7, 0) , XLEN),
-    LSUOpType.lhu  -> zext(rdataSel(15, 0), XLEN),
-    LSUOpType.lwu  -> zext(rdataSel(31, 0), XLEN)
+    LSUOpType.lbu  -> ZeroExt(rdataSel(7, 0) , XLEN),
+    LSUOpType.lhu  -> ZeroExt(rdataSel(15, 0), XLEN),
+    LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
 
   //Store
