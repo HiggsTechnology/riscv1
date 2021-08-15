@@ -8,9 +8,9 @@ import chisel3.util._
 import utils.{BRU_OUTIO, CfCtrl}
 
 class EXUIO extends Bundle {
-    val in             = Flipped(new CfCtrl)
-    val reg_write_back = Flipped(new RegWriteIO)
-    val branch         = new BRU_OUTIO
+    val in              : CfCtrl        = Flipped(new CfCtrl)
+    val reg_write_back  : RegWriteIO    = Flipped(new RegWriteIO)
+    val branch                          = new BRU_OUTIO
 }
 
 class EXU extends Module with Config {
@@ -36,14 +36,14 @@ class EXU extends Module with Config {
 
     private val wb_ena = Wire(Bool())
     private val wdata = Wire(UInt(XLEN.W))
-    wb_ena := MuxLookup(op, false.B, Array(
+    wb_ena := MuxLookup(func, false.B, Array(
         FuncType.alu -> true.B,
         FuncType.lsu -> LSUOpType.isLoad(op),
         FuncType.bru -> BRUOpType.isJal_r(io.in.ctrl.funcOpType),
         // csrr*[i]指令都需要写入寄存器堆，ecall ebreak mret等指令的rd对应位置为x0，置true也没有影响
         FuncType.csr -> true.B
     ))
-    wdata := MuxLookup(op, 0.U(XLEN.W), Array(
+    wdata := MuxLookup(func, 0.U(XLEN.W), Array(
         FuncType.alu -> alu.io.out.aluRes,
         FuncType.lsu -> lsu.io.out.rdata,
         FuncType.bru -> (io.in.cf.pc + 4.U),

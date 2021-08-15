@@ -7,3 +7,12 @@
 [submodule "ThirdParty/difftest"]
 	path = ThirdParty/difftest
 	url = https://hub.fastgit.org/huxuan0307/difftest.git
+[submodule "ThirdParty/am-kernels"]
+	path = ThirdParty/am-kernels
+	url = https://github.com/huxuan0307/am-kernels.git
+[submodule "ThirdParty/abstract-machine"]
+	path = ThirdParty/abstract-machine
+	url = https://github.com/huxuan0307/abstract-machine.git
+[submodule "ThirdParty/riscv-test"]
+	path = ThirdParty/riscv-test
+	url = https://github.com/huxuan0307/riscv-tests.git

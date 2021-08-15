@@ -27,6 +27,7 @@ create_soft_link() {
     mkdir ${1} 1>/dev/null 2>&1
     find -L ${1} -type l -delete
     FILES=`eval "find ${2} -name ${3}"`
+    echo $FILES
     for FILE in ${FILES[@]}
     do
         eval "ln -s \"`realpath --relative-to="${1}" "$FILE"`\" \"${1}/${FILE##*/}\" 1>/dev/null 2>&1"
@@ -112,6 +113,7 @@ build_proj() {
 
 # Initialize variables
 OSCPU_PATH=$(dirname $(readlink -f "$0"))
+PROJECT_PATH=$OSCPU_PATH
 MYINFO_FILE=$OSCPU_PATH"/myinfo.txt"
 EMU_FILE="emu"
 PROJECT_FOLDER="cpu"
@@ -130,13 +132,13 @@ CFLAGS=
 LDFLAGS=
 GDB="false"
 DIFFTEST="false"
-DIFFTEST_FOLDER="libraries/difftest"
+DIFFTEST_FOLDER="ThirdParty/difftest"
 DIFFTEST_TOP_FILE="SimTop.v"
-NEMU_FOLDER="libraries/NEMU"
+NEMU_FOLDER="ThirdParty/NEMU"
 DIFFTEST_HELPER_PATH="src/test/vsrc/common"
 DIFFTEST_PARAM=
 RUNALL="false"
-DRAMSIM3_FOLDER="libraries/DRAMsim3"
+DRAMSIM3_FOLDER="ThirdParty/DRAMsim3"
 
 # Check parameters
 while getopts 'he:bt:sa:f:l:gwcdm:r' OPT; do
@@ -162,22 +164,21 @@ done
 [[ $RUNALL == "true" ]] && DIFFTEST="true"
 [[ $LDFLAGS ]] && LDFLAGS="-LDFLAGS "\"$LDFLAGS\"
 
-PROJECT_PATH=$OSCPU_PATH/projects/$PROJECT_FOLDER
 [[ "$DIFFTEST" == "true" ]] && BUILD_PATH=$PROJECT_PATH/$DIFF_BUILD_FOLDER || BUILD_PATH=$PROJECT_PATH/$BUILD_FOLDER
 [[ "$DIFFTEST" == "true" ]] && V_TOP_FILE=$DIFFTEST_TOP_FILE
 export NEMU_HOME=$OSCPU_PATH/$NEMU_FOLDER
 export NOOP_HOME=$PROJECT_PATH
 export DRAMSIM3_HOME=$OSCPU_PATH/$DRAMSIM3_FOLDER
 
-# Get id and name
-ID=`sed '/^ID=/!d;s/.*=//' $MYINFO_FILE`
-NAME=`sed '/^Name=/!d;s/.*=//' $MYINFO_FILE`
-if [[ ${#ID} -le 7 ]] || [[ ${#NAME} -le 1 ]]; then
-    echo "Please fill your information in myinfo.txt!!!"
-    exit 1
-fi
-ID="${ID##*\r}"
-NAME="${NAME##*\r}"
+# # Get id and name
+# ID=`sed '/^ID=/!d;s/.*=//' $MYINFO_FILE`
+# NAME=`sed '/^Name=/!d;s/.*=//' $MYINFO_FILE`
+# if [[ ${#ID} -le 7 ]] || [[ ${#NAME} -le 1 ]]; then
+#     echo "Please fill your information in myinfo.txt!!!"
+#     exit 1
+# fi
+# ID="${ID##*\r}"
+# NAME="${NAME##*\r}"
 
 # Clean
 if [[ "$CLEAN" == "true" ]]; then
@@ -191,8 +192,8 @@ if [[ "$BUILD" == "true" ]]; then
     [[ "$DIFFTEST" == "true" ]] && build_diff_proj || build_proj
 
     #git commit
-    git add . -A --ignore-errors
-    (echo $NAME && echo $ID && hostnamectl && uptime) | git commit -F - -q --author='tracer-oscpu2021 <tracer@oscpu.org>' --no-verify --allow-empty 1>/dev/null 2>&1
+    # git add . -A --ignore-errors
+    # (echo $NAME && echo $ID && hostnamectl && uptime) | git commit -F - -q --author='tracer-oscpu2021 <tracer@oscpu.org>' --no-verify --allow-empty 1>/dev/null 2>&1
     sync
 fi
 
