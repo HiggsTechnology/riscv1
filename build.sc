@@ -35,7 +35,7 @@ object ysyx extends SbtModule { m =>
 
 object difftest extends ScalaModule {
   override def scalaVersion = "2.12.13"
-  override def millSourcePath = os.pwd / "difftest"
+  override def millSourcePath = os.pwd / "ThirdParty/difftest"
   override def ivyDeps = Agg(
     ivy"edu.berkeley.cs::chisel3:3.4.3"
   )
