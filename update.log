@@ -1,0 +1,16 @@
+# 请把新log添加在横线上方
+
+------------------------------------
+2021-08-15 胡轩创建
+接入CSR模块，项目结构有较大改动，移除了无用的文件(夹)，所有依赖的第三方项目以submodule的形式放在ThirdParty中。
++ 添加CSR模块，尚未完成测试
++ 添加CSR模块后，用`riscv-test`测试RV64I基础指令，全部通过
++ 引入oscpu-framework最新的有关DRAMsim3的修改
++ 添加我个人实现的abstract-machine和am-kernels，未来可以fork出来一起维护，提PR亦可
++ 添加riscv-test，用法就是make ARCH=riscv64-mycpu
++ 生成的`SimTop.v`文件请放在项目根目录下的build文件夹中
++ build.sh的用法与oscpu-framework中完全相同，我未测试非difftest的部分，可能有bug
++ 需要批量测试请将*.bin放在根目录下的bin文件夹中
++ 因为有较大改动，merge到本地有冲突时，烦请耐心解决（或者git clone一个全新的项目
++ 如果submodule未更新请git submodule init/update --force二连
++ 未尽事宜请随时联系

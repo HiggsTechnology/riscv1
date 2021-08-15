@@ -6,7 +6,7 @@
 /build_test/
 /bin/
 /build/
-
+!update.log
 ### Project Specific stuff
 test_run_dir/*
 ### XilinxISE template
