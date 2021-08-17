@@ -1,12 +1,12 @@
 [submodule "ThirdParty/DRAMsim3"]
 	path = ThirdParty/DRAMsim3
-	url = https://hub.fastgit.org/OpenXiangShan/DRAMsim3.git
+	url = https://github.com/OpenXiangShan/DRAMsim3.git
 [submodule "ThirdParty/NEMU"]
 	path = ThirdParty/NEMU
-	url = https://hub.fastgit.org/huxuan0307/NEMU.git
+	url = https://github.com/huxuan0307/NEMU.git
 [submodule "ThirdParty/difftest"]
 	path = ThirdParty/difftest
-	url = https://hub.fastgit.org/huxuan0307/difftest.git
+	url = https://github.com/huxuan0307/difftest.git
 [submodule "ThirdParty/am-kernels"]
 	path = ThirdParty/am-kernels
 	url = https://github.com/huxuan0307/am-kernels.git
