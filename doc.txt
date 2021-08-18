@@ -1,0 +1,63 @@
+项目分析：
+
+测试模块：SimTop  ### 测试模块在该项目中会被编译为顶级模块
+SimTop包含的输入：
+[1] clock
+[2] reset
+[3] logCtrl_log_begin
+[4] logCtrl_log_end
+[5] logCtrl_log_level
+[6] perfInfo_clean
+[7] perfInfo_dump
+[8] uart_in_ch
+包含的输出：
+[1] uart_out_valid
+[2] uart_out_ch
+[3] uart_in_valid
+该模块的功能简介：
+将Top模块的输入输出与DifftestInstrCommit以及DifftestTrapEvent两个模块相连接，用于测试。
+其中，DifftestInstrCommit以及DifftestTrapEvent两个模块由/ThirdParty/difftest/src的difftest包定义。
+
+执行模块：Top  ### 实际的顶级模块，与模拟模块相对接
+Top包含的输入：
+[1] clock
+[2] reset
+包含的输出：
+[1] pc
+[2] instr
+[3] valid
+[4] diffreg_addr
+[5] diffreg_data
+[6] diffreg_ena
+该模块的功能简介：
+连接自身以及6个子模块的输入输出，包括：
+[a] IFU
+[b] IDU
+[c] IDUtoEXU
+[d] EXU
+[e] WBU
+[f] Regfile
+
+
+取指模块：IFU  ### 实际的顶级模块，与模拟模块相对接
+Top包含的输入：
+[1] clock
+[2] reset
+[3] in_new_pc  // 来源复杂，之后讨论
+[4] in_valid
+包含的输出：
+[1] out_pc
+[2] out_instr
+该模块的功能简介：
+该模块从内存中取出指令。
+详细介绍：
+(a) 先确定pc的值。 in_valid? yes -> pc = in_new_pc : no -> pc = pc + 4 (这里的4代表4 bytes = 32 bits，即每条指令的长度)
+(b) 将ram.io.wen设成false从而读取在idx处的内存，指令默认从idx=0处储存，由于内存宽度为64位，故每个idx对应两条指令，需要pc(2)进行辅助判断
+(c) 取出内存后，通过pc(2)判断该取出哪条指令，然后传给out_instr
+(d) 可能的问题：内存读取与写入可能存在竞争，其它位置ram.io.wen可能需要设成true写入内存。
+
+
+
+附录A：scala中插入的黑盒模块定义：
+RAMHelper: 内存模块
+请参考/ThirdParty/difftest下文档的相关说明。
