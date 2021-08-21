@@ -152,6 +152,7 @@ EXU包含的输入：
 将模块的输入于ALU, BRU, LSU与CSR相连，输出则根据in_ctrl_funcType选择与何者子模块相连。
 备注：
 (a) EXU模块这里会根据reg_write_back_ena和reg_write_back_data统一处理对rd寄存器的写入。
+    也就是说，EXU会借由WBU写回模块与Regfile寄存器模块进行交互。
 (b) EXU目前未实现RV32I中的[Synch]类指令：包括fence和fence.i两条指令。
 
 
