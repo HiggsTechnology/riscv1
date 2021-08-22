@@ -165,6 +165,8 @@ object RV64I_CSRInstr extends InstrType {
 }
 
 object RVIInstr extends InstrType {
-  val table : Array[(BitPat, List[UInt])] = RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++ RV32I_LSUInstr.table ++ RV64IInstr.table
+  val table : Array[(BitPat, List[UInt])] =
+    RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++
+    RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table
   val defaultTable = List(InstrN, FuncType.alu, ALUOpType.add)
 }

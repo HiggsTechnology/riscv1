@@ -15,8 +15,7 @@ object BRUOpType {
   def bge  = "b0010101".U
   def bltu = "b0010110".U
   def bgeu = "b0010111".U
-  // todo Jal_r -> Jalr
-  def isJal_r(func: UInt): Bool = func(6)
+  def isJalr(func: UInt): Bool = func(6)
 }
 
 class BRUIO extends Bundle {
@@ -43,6 +42,6 @@ class BRU extends Module with Config {
   ))
   
   io.out.new_pc := Mux((io.in.ctrl.funcOpType === BRUOpType.jalr),
-    io.in.data.src1 + io.in.data.imm, io.in.cf.pc + io.in.data.imm)
+    Cat(io.in.data.src1(XLEN - 1,1), 0.U(1.W)) + io.in.data.imm, io.in.cf.pc + io.in.data.imm)
 
 }

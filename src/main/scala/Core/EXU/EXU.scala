@@ -39,7 +39,7 @@ class EXU extends Module with Config {
     wb_ena := MuxLookup(func, false.B, Array(
         FuncType.alu -> true.B,
         FuncType.lsu -> LSUOpType.isLoad(op),
-        FuncType.bru -> BRUOpType.isJal_r(io.in.ctrl.funcOpType),
+        FuncType.bru -> BRUOpType.isJalr(io.in.ctrl.funcOpType),
         // csrr*[i]指令都需要写入寄存器堆，ecall ebreak mret等指令的rd对应位置为x0，置true也没有影响
         FuncType.csr -> true.B
     ))
