@@ -39,12 +39,12 @@ class LSUIO extends Bundle with Config {
 class LSU extends Module with Config {
 
   def genWmask(addr: UInt, sizeEncode: UInt): UInt = {
-    (LookupTree(sizeEncode, List(
-      "b00".U -> BigInt(0xff).U(XLEN.W), //0001 << addr(2:0)
-      "b01".U -> BigInt(0xffff).U(XLEN.W), //0011
-      "b10".U -> BigInt(0xffffffffL).U(XLEN.W), //1111
-      "b11".U -> (BigInt(Long.MaxValue) * 2 + 1).U(XLEN.W) //11111111
-    )) ).asUInt()
+    LookupTree(sizeEncode, List(
+      "b00".U -> 0x1.U, //0001 << addr(2:0)
+      "b01".U -> 0x3.U, //0011
+      "b10".U -> 0xf.U, //1111
+      "b11".U -> 0xff.U //11111111
+    )) << addr(2, 0)
   }
 
   def genWdata(data: UInt, sizeEncode: UInt): UInt = {
@@ -137,7 +137,6 @@ class LSU extends Module with Config {
 
   //-------------------------store--------------------------------
   val size = io.in.ctrl.funcOpType(1,0)
-  val wdata = genWdata(storedata, size)
   axi.aw.bits.id    := 3.U
   axi.aw.bits.len   := 0.U
   axi.aw.bits.size  := 1.U(3.W)
@@ -154,12 +153,14 @@ class LSU extends Module with Config {
     aw_addr  := addr
     setState(axi_w)
   }
-  axi.w.bits.strb  := 0.U
-  axi.w.bits.last  := true.B
+  val w_strb = RegInit(0.U(8.W))
   val w_data = RegInit(0.U(ADDR_WIDTH))
+  axi.w.bits.strb  := w_strb
+  axi.w.bits.last  := true.B
   axi.w.bits.data := w_data
   when(w_hs) {
-    w_data := wdata
+    w_data := genWdata(storedata, size)
+    w_strb := genWmask(addr, size)
     setState(axi_b)
   }
   axi.b.ready := isState(axi_b)
