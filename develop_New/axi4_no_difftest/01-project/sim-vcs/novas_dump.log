@@ -1,0 +1,331 @@
+#######################################################################################
+# log primitive debug message of FSDB dumping                                         #
+# This is for R&D to analyze when there are issues happening when FSDB dump           #
+#######################################################################################
+ANF: vcsd_get_serial_mode_status('./sugar_1.0: undefined symbol: vcsd_get_serial_mode_status')
+ANF: vcsd_enable_sva_success_callback('./sugar_1.0: undefined symbol: vcsd_enable_sva_success_callback')
+ANF: vcsd_disable_sva_success_callback('./sugar_1.0: undefined symbol: vcsd_disable_sva_success_callback')
+ANF: vcsd_get_power_scope_name('./sugar_1.0: undefined symbol: vcsd_get_power_scope_name')
+ANF: vcsd_begin_no_value_var_info('./sugar_1.0: undefined symbol: vcsd_begin_no_value_var_info')
+ANF: vcsd_end_no_value_var_info('./sugar_1.0: undefined symbol: vcsd_end_no_value_var_info')
+ANF: vcsd_remove_xprop_merge_mode_callback('./sugar_1.0: undefined symbol: vcsd_remove_xprop_merge_mode_callback')
+ANF: vcsd_node_check_native_callback('./sugar_1.0: undefined symbol: vcsd_node_check_native_callback')
+ANF: vcsd_node_add_native_callback('./sugar_1.0: undefined symbol: vcsd_node_add_native_callback')
+ANF: vhpi_get_cb_info('./sugar_1.0: undefined symbol: vhpi_get_cb_info')
+ANF: vhpi_free_handle('./sugar_1.0: undefined symbol: vhpi_free_handle')
+ANF: vhpi_fetch_vcsd_handle('./sugar_1.0: undefined symbol: vhpi_fetch_vcsd_handle')
+ANF: vhpi_fetch_vpi_handle('./sugar_1.0: undefined symbol: vhpi_fetch_vpi_handle')
+ANF: vhpi_has_verilog_parent('./sugar_1.0: undefined symbol: vhpi_has_verilog_parent')
+ANF: vhpi_is_verilog_scope('./sugar_1.0: undefined symbol: vhpi_is_verilog_scope')
+ANF: scsd_xprop_is_enabled('./sugar_1.0: undefined symbol: scsd_xprop_is_enabled')
+ANF: scsd_xprop_sig_is_promoted('./sugar_1.0: undefined symbol: scsd_xprop_sig_is_promoted')
+ANF: scsd_xprop_int_xvalue('./sugar_1.0: undefined symbol: scsd_xprop_int_xvalue')
+ANF: scsd_xprop_bool_xvalue('./sugar_1.0: undefined symbol: scsd_xprop_bool_xvalue')
+ANF: scsd_xprop_enum_xvalue('./sugar_1.0: undefined symbol: scsd_xprop_enum_xvalue')
+ANF: scsd_xprop_register_merge_mode_cb('./sugar_1.0: undefined symbol: scsd_xprop_register_merge_mode_cb')
+ANF: scsd_xprop_delete_merge_mode_cb('./sugar_1.0: undefined symbol: scsd_xprop_delete_merge_mode_cb')
+ANF: scsd_xprop_get_merge_mode('./sugar_1.0: undefined symbol: scsd_xprop_get_merge_mode')
+ANF: scsd_thread_get_info('./sugar_1.0: undefined symbol: scsd_thread_get_info')
+ANF: scsd_thread_vc_init('./sugar_1.0: undefined symbol: scsd_thread_vc_init')
+ANF: scsd_master_set_delta_sync_cbk('./sugar_1.0: undefined symbol: scsd_master_set_delta_sync_cbk')
+ANF: scsd_fgp_get_fsdb_cores('./sugar_1.0: undefined symbol: scsd_fgp_get_fsdb_cores')
+ANF: msvEnableDumpingMode('./sugar_1.0: undefined symbol: msvEnableDumpingMode')
+ANF: msvGetVersion('./sugar_1.0: undefined symbol: msvGetVersion')
+ANF: msvGetInstProp('./sugar_1.0: undefined symbol: msvGetInstProp')
+ANF: msvIsSpiceEngineReady('./sugar_1.0: undefined symbol: msvIsSpiceEngineReady')
+ANF: msvSetAddProbeCallback('./sugar_1.0: undefined symbol: msvSetAddProbeCallback')
+ANF: msvGetInstHandle('./sugar_1.0: undefined symbol: msvGetInstHandle')
+ANF: msvGetProbeByInst('./sugar_1.0: undefined symbol: msvGetProbeByInst')
+ANF: msvGetSigHandle('./sugar_1.0: undefined symbol: msvGetSigHandle')
+ANF: msvGetProbeBySig('./sugar_1.0: undefined symbol: msvGetProbeBySig')
+ANF: msvGetProbeInfo('./sugar_1.0: undefined symbol: msvGetProbeInfo')
+ANF: msvRelease('./sugar_1.0: undefined symbol: msvRelease')
+ANF: msvSetVcCallbackFunc('./sugar_1.0: undefined symbol: msvSetVcCallbackFunc')
+ANF: msvCheckVcCallback('./sugar_1.0: undefined symbol: msvCheckVcCallback')
+ANF: msvAddVcCallback('./sugar_1.0: undefined symbol: msvAddVcCallback')
+ANF: msvRemoveVcCallback('./sugar_1.0: undefined symbol: msvRemoveVcCallback')
+ANF: msvGetLatestValue('./sugar_1.0: undefined symbol: msvGetLatestValue')
+ANF: msvSetEndofSimCallback('./sugar_1.0: undefined symbol: msvSetEndofSimCallback')
+ANF: msvIgnoredProbe('./sugar_1.0: undefined symbol: msvIgnoredProbe')
+ANF: msvGetThruNetInfo('./sugar_1.0: undefined symbol: msvGetThruNetInfo')
+ANF: msvFreeThruNetInfo('./sugar_1.0: undefined symbol: msvFreeThruNetInfo')
+ANF: PI_ace_get_output_time_unit('./sugar_1.0: undefined symbol: PI_ace_get_output_time_unit')
+ANF: PI_ace_sim_sync('./sugar_1.0: undefined symbol: PI_ace_sim_sync')
+ANF: msvGetRereadInitFile('./sugar_1.0: undefined symbol: msvGetRereadInitFile')
+ANF: msvSetBeforeRereadCallback('./sugar_1.0: undefined symbol: msvSetBeforeRereadCallback')
+ANF: msvSetAfterRereadCallback('./sugar_1.0: undefined symbol: msvSetAfterRereadCallback')
+ANF: msvSetForceCallback('./sugar_1.0: undefined symbol: msvSetForceCallback')
+ANF: msvSetReleaseCallback('./sugar_1.0: undefined symbol: msvSetReleaseCallback')
+ANF: msvGetForceStatus('./sugar_1.0: undefined symbol: msvGetForceStatus')
+ANF: vdi_fn_trigger_native_init_force('./sugar_1.0: undefined symbol: vdi_fn_trigger_native_init_force')
+ANF: vdi_set_native_callback('./sugar_1.0: undefined symbol: vdi_set_native_callback')
+ANF: vdi_fn_check_native_callback('./sugar_1.0: undefined symbol: vdi_fn_check_native_callback')
+ANF: vdi_fn_add_native_callback('./sugar_1.0: undefined symbol: vdi_fn_add_native_callback')
+ANF: vhdi_dt_get_type('./sugar_1.0: undefined symbol: vhdi_dt_get_type')
+ANF: vhdi_dt_get_key('./sugar_1.0: undefined symbol: vhdi_dt_get_key')
+ANF: vhdi_dt_get_vhdl_enum_info('./sugar_1.0: undefined symbol: vhdi_dt_get_vhdl_enum_info')
+ANF: vhdi_dt_get_vhdl_physical_info('./sugar_1.0: undefined symbol: vhdi_dt_get_vhdl_physical_info')
+ANF: vhdi_dt_get_vhdl_array_info('./sugar_1.0: undefined symbol: vhdi_dt_get_vhdl_array_info')
+ANF: vhdi_dt_get_vhdl_record_info('./sugar_1.0: undefined symbol: vhdi_dt_get_vhdl_record_info')
+ANF: vhdi_def_traverse_module('./sugar_1.0: undefined symbol: vhdi_def_traverse_module')
+ANF: vhdi_def_traverse_scope('./sugar_1.0: undefined symbol: vhdi_def_traverse_scope')
+ANF: vhdi_def_traverse_variable('./sugar_1.0: undefined symbol: vhdi_def_traverse_variable')
+ANF: vhdi_def_get_module_id_by_vhpi('./sugar_1.0: undefined symbol: vhdi_def_get_module_id_by_vhpi')
+ANF: vhdi_def_get_handle_by_module_id('./sugar_1.0: undefined symbol: vhdi_def_get_handle_by_module_id')
+ANF: vhdi_def_get_variable_info_by_vhpi('./sugar_1.0: undefined symbol: vhdi_def_get_variable_info_by_vhpi')
+ANF: vhdi_def_free('./sugar_1.0: undefined symbol: vhdi_def_free')
+ANF: vhdi_ist_traverse_scope('./sugar_1.0: undefined symbol: vhdi_ist_traverse_scope')
+ANF: vhdi_ist_traverse_variable('./sugar_1.0: undefined symbol: vhdi_ist_traverse_variable')
+ANF: vhdi_ist_convert_by_vhpi('./sugar_1.0: undefined symbol: vhdi_ist_convert_by_vhpi')
+ANF: vhdi_ist_clone('./sugar_1.0: undefined symbol: vhdi_ist_clone')
+ANF: vhdi_ist_free('./sugar_1.0: undefined symbol: vhdi_ist_free')
+ANF: vhdi_ist_hash_key('./sugar_1.0: undefined symbol: vhdi_ist_hash_key')
+ANF: vhdi_ist_compare('./sugar_1.0: undefined symbol: vhdi_ist_compare')
+ANF: vhdi_ist_get_value_addr('./sugar_1.0: undefined symbol: vhdi_ist_get_value_addr')
+ANF: vhdi_set_scsd_callback('./sugar_1.0: undefined symbol: vhdi_set_scsd_callback')
+ANF: vhdi_cbk_set_force_callback('./sugar_1.0: undefined symbol: vhdi_cbk_set_force_callback')
+ANF: vhdi_trigger_init_force('./sugar_1.0: undefined symbol: vhdi_trigger_init_force')
+ANF: vhdi_ist_check_scsd_callback('./sugar_1.0: undefined symbol: vhdi_ist_check_scsd_callback')
+ANF: vhdi_ist_add_scsd_callback('./sugar_1.0: undefined symbol: vhdi_ist_add_scsd_callback')
+ANF: vhdi_ist_remove_scsd_callback('./sugar_1.0: undefined symbol: vhdi_ist_remove_scsd_callback')
+ANF: vhdi_ist_get_scsd_user_data('./sugar_1.0: undefined symbol: vhdi_ist_get_scsd_user_data')
+ANF: vhdi_add_time_change_callback('./sugar_1.0: undefined symbol: vhdi_add_time_change_callback')
+ANF: vhdi_get_real_value_by_value_addr('./sugar_1.0: undefined symbol: vhdi_get_real_value_by_value_addr')
+ANF: vhdi_get_64_value_by_value_addr('./sugar_1.0: undefined symbol: vhdi_get_64_value_by_value_addr')
+ANF: vhdi_xprop_inst_is_promoted('./sugar_1.0: undefined symbol: vhdi_xprop_inst_is_promoted')
+ANF: vdi_ist_convert_by_vhdi('./sugar_1.0: undefined symbol: vdi_ist_convert_by_vhdi')
+ANF: vhdi_ist_get_module_id('./sugar_1.0: undefined symbol: vhdi_ist_get_module_id')
+ANF: vhdi_refine_foreign_scope_type('./sugar_1.0: undefined symbol: vhdi_refine_foreign_scope_type')
+ANF: vhdi_flush_callback('./sugar_1.0: undefined symbol: vhdi_flush_callback')
+ANF: vhdi_set_orig_name('./sugar_1.0: undefined symbol: vhdi_set_orig_name')
+ANF: vhdi_set_dump_pt('./sugar_1.0: undefined symbol: vhdi_set_dump_pt')
+ANF: vhdi_get_fsdb_option('./sugar_1.0: undefined symbol: vhdi_get_fsdb_option')
+ANF: vhdi_fgp_get_mode('./sugar_1.0: undefined symbol: vhdi_fgp_get_mode')
+ANF: vhdi_node_register_composite_var('./sugar_1.0: undefined symbol: vhdi_node_register_composite_var')
+ANF: vhdi_node_analysis('./sugar_1.0: undefined symbol: vhdi_node_analysis')
+ANF: vhdi_node_id('./sugar_1.0: undefined symbol: vhdi_node_id')
+ANF: vhdi_node_ist_check_scsd_callback('./sugar_1.0: undefined symbol: vhdi_node_ist_check_scsd_callback')
+ANF: vhdi_node_ist_add_scsd_callback('./sugar_1.0: undefined symbol: vhdi_node_ist_add_scsd_callback')
+ANF: vhdi_node_ist_get_value_addr('./sugar_1.0: undefined symbol: vhdi_node_ist_get_value_addr')
+VCS compile option:
+ option[0]: ./sugar_1.0
+ option[1]: -l
+ option[2]: vcs.log
+ option[3]: +ram_init_file=uart_ok.vh
+ option[4]: +define+DUMP_FSDB
+ option[5]: /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/bin/vcs1
+ option[6]: -Mcc=gcc
+ option[7]: -Mcplusplus=g++
+ option[8]: -Masflags=
+ option[9]: -Mcfl= -pipe -fPIC -O -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include 
+ option[10]: -Mxcflags= -pipe -fPIC -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include
+ option[11]: -Mldflags= -rdynamic 
+ option[12]: -Mout=sugar_1.0
+ option[13]: -Mamsrun=
+ option[14]: -Mvcsaceobjs=
+ option[15]: -Mobjects= /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvirsim.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/liberrorinf.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libsnpsmalloc.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvfs.so /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a 
+ option[16]: -Mexternalobj=
+ option[17]: -Msaverestoreobj=/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/vcs_save_restore_new.o
+ option[18]: -Mcrt0=
+ option[19]: -Mcrtn=
+ option[20]: -Mcsrc=
+ option[21]: -Msyslibs=/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a -ldl -lm 
+ option[22]: -full64
+ option[23]: -top
+ option[24]: sugar_tb
+ option[25]: -o
+ option[26]: sugar_1.0
+ option[27]: 
+ option[28]: 
+ option[29]: -P
+ option[30]: /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/novas.tab
+ option[31]: -debug_access+pp
+ option[32]: +vpi
+ option[33]: +vcsd1
+ option[34]: +itf+/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/vcsdp_lite.tab
+ option[35]: -debug_access+all
+ option[36]: +define+DUMP_FSDB
+ option[37]: -kdb
+ option[38]: -Xufe=2steps
+ option[39]: -timescale=1ns/100ps
+ option[40]: +define+VCS_VPI
+ option[41]: -picarchive
+ option[42]: -P
+ option[43]: /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/verdi.tab
+ option[44]: -fsdb
+ option[45]: +vpi
+ option[46]: -gen_obj
+ option[47]: -f
+ option[48]: sugar_1.0.scr
+ option[49]: -load
+ option[50]: /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/libnovas.so:FSDBDumpCmd
+ option[51]: timescale=1ns/100ps
+ option[52]: timescale=1ns/1ns
+Chronologic Simulation VCS Release O-2018.09-SP1_Full64
+Linux 3.10.0-957.1.3.el7.x86_64 #1 SMP Thu Nov 29 14:49:43 UTC 2018 x86_64
+CPU cores: 40
+Limit information:
+======================================
+cputime		unlimited
+filesize		unlimited
+datasize		unlimited
+stacksize		8193 kbytes
+coredumpsize		0 kbytes
+memoryuse		unlimited
+vmemoryuse		unlimited
+descriptors		4096
+memorylocked		64 kbytes
+maxproc		4096
+======================================
+(Special)Runtime environment variables:
+
+Runtime environment variables:
+KONSOLE_DBUS_WINDOW=/Windows/2
+XMODIFIERS=@im=none
+SHELL=/bin/csh
+_=/usr/libexec/kde4/start_kdeinit_wrapper
+XDG_DATA_DIRS=/usr/share/kde-settings/kde-profile/default/share:/usr/local/share:/usr/share
+DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-26BporDdHT,guid=0930824a5cf45b827d5062385e5de47d
+MACHTYPE=x86_64
+QT_PLUGIN_PATH=/usr/lib64/kde4/plugins:/usr/lib/kde4/plugins:/home/jun.yang/.kde/lib64/kde4/plugins/:/usr/lib64/kde4/plugins/
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+SSH_CONNECTION=172.16.10.25 53400 172.16.1.20 22
+PATH=/project/riscv_toolchain/bin:/home/utils/Anaconda3-5.0.1/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/usr/synopsys/verdi/Verdi_O-2018.09-SP1/bin:/usr/synopsys/vcs-mx/O-2018.09-SP1/bin:/home/utils/Anaconda3-5.0.1/bin:/usr/synopsys/verdi/Verdi_O-2018.09-SP1/bin:/usr/synopsys/vcs-mx/O-2018.09-SP1/bin:/home/utils/Anaconda3-5.0.1/bin:/project/eda/synopsys/synplify/fpga/O-2018.09-SP1/bin:/project/eda/Xilinx/Vivado/2019.1/bin
+LM_LICENSE_FILE=27008@10.88.12.201
+XCURSOR_THEME=Adwaita
+SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/146912,unix/unix:/tmp/.ICE-unix/146912
+SSH_TTY=/dev/pts/43
+XDG_RUNTIME_DIR=/run/user/1011
+VENDOR=unknown
+WINDOWID=35651640
+KONSOLE_PROFILE_NAME=
+XDG_MENU_PREFIX=kde4-
+GTK2_RC_FILES=/home/jun.yang/.gtkrc-2.0-kde4
+PROFILEHOME=/home/jun.yang
+LS_COLORS=rs=0:di=38;5;27:ln=38;5;51:mh=44;38;5;15:pi=40;38;5;11:so=38;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38;5;9:mi=05;48;5;232;38;5;15:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;5;15:ex=38;5;34:*.tar=38;5;9:*.tgz=38;5;9:*.arc=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.lha=38;5;9:*.lz4=38;5;9:*.lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.tzo=38;5;9:*.t7z=38;5;9:*.zip=38;5;9:*.z=38;5;9:*.Z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lrz=38;5;9:*.lz=38;5;9:*.lzo=38;5;9:*.xz=38;5;9:*.bz2=38;5;9:*.bz=38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.tz=38;5;9:*.deb=38;5;9:*.rpm=38;5;9:*.jar=38;5;9:*.war=38;5;9:*.ear=38;5;9:*.sar=38;5;9:*.rar=38;5;9:*.alz=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cpio=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.cab=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.gif=38;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=38;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.webm=38;5;13:*.ogm=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.qt=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmvb=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=38;5;13:*.emf=38;5;13:*.axv=38;5;13:*.anx=38;5;13:*.ogv=38;5;13:*.ogx=38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.mid=38;5;45:*.midi=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=38;5;45:*.wav=38;5;45:*.axa=38;5;45:*.oga=38;5;45:*.spx=38;5;45:*.xspf=38;5;45:
+PERL_HOMEDIR=0
+SSH_AUTH_SOCK=/tmp/ssh-bMS9IP6xrRGN/agent.146639
+KDEDIRS=/usr
+DISPLAY=:10
+GTK_IM_MODULE=gtk-im-context-simple
+IMSETTINGS_INTEGRATE_DESKTOP=yes
+VCS_HOME=/usr/synopsys/vcs-mx/O-2018.09-SP1
+PWD=/project/riscv/wenqiu.zhang/sugar/sim-vcs
+KDE_SESSION_VERSION=4
+SSH_AGENT_PID=146794
+VERDI_HOME=/usr/synopsys/verdi/Verdi_O-2018.09-SP1
+HOME=/home/jun.yang
+LOGNAME=jun.yang
+KDE_FULL_SESSION=true
+HOSTNAME=lenovo-sr570
+QT_GRAPHICSSYSTEM_CHECKED=1
+SSH_ASKPASS=/usr/bin/ksshaskpass
+KONSOLE_DBUS_SESSION=/Sessions/2
+QT_IM_MODULE=xim
+OSTYPE=linux
+SHLVL=5
+XDG_SESSION_ID=13122
+KDE_MULTIHEAD=false
+QTLIB=/usr/lib64/qt-3.3/lib
+XDG_CURRENT_DESKTOP=KDE
+VNCDESKTOP=lenovo-sr570:10 (jun.yang)
+REMOTEHOST=172.16.10.25
+IMSETTINGS_MODULE=none
+LANGUAGE=
+MAKEFLAGS=
+MFLAGS=
+SSH_CLIENT=172.16.10.25 53400 22
+MAIL=/var/spool/mail/jun.yang
+SHELL_SESSION_ID=17bc4d51be754000a75f15c79f0f2686
+KDE_SESSION_UID=1011
+COLORFGBG=15;0
+USER=jun.yang
+NOVAS_HOME=/usr/synopsys/verdi/Verdi_O-2018.09-SP1
+HOSTTYPE=x86_64-linux
+GS_LIB=
+GROUP=jun.yang
+KONSOLE_DBUS_SERVICE=:1.476080
+QTINC=/usr/lib64/qt-3.3/include
+QTDIR=/usr/lib64/qt-3.3
+LANG=en_US
+TERM=xterm-256color
+HOST=lenovo-sr570
+MAKELEVEL=1
+VCS_HEAP_EXEC=true
+VCS_PATHMAP_PRELOAD_DONE=1
+VCS_STACK_EXEC=true
+VCS_EXEC_DONE=1
+LC_ALL=C
+DVE=/usr/synopsys/vcs-mx/O-2018.09-SP1/gui/dve
+SPECMAN_OUTPUT_TO_TTY=1
+Runtime command line arguments:
+argv[0]=./sugar_1.0
+argv[1]=-l
+argv[2]=vcs.log
+argv[3]=+ram_init_file=uart_ok.vh
+argv[4]=+define+DUMP_FSDB
+266 profile - 100
+          CPU/Mem usage: 0.070 sys,  0.310 user,  258.03M mem
+267 Thu Aug 26 14:41:57 2021
+268 pliAppInit
+269 FSDB_GATE is set.
+270 FSDB_RTL is set.
+271 Enable Parallel Dumping.
+272 pliAppMiscSet: New Sim Round
+273 pliEntryInit
+274 LIBSSCORE=found /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/lib/LINUXAMD64/libsscore_vcs201809.so through $NOVAS_HOME setting.
+275 FSDB Dumper for VCS, Release Verdi_O-2018.09-SP1, Linux x86_64/64bit, 11/22/2018
+276 (C) 1996 - 2018 by Synopsys, Inc.
+277 sps_call_fsdbDumpfile_main at 0 : ../src/sugar_1.0/tb/sugar_tb.sv(69)
+278 argv[0]: (trace.fsdb)
+279 *Verdi* FSDB WARNING: The FSDB file already exists. Overwriting the FSDB file may crash the programs that are using this file.
+280 *Verdi* : Create FSDB file 'trace.fsdb'
+281 compile option from '/project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir/vcs_rebuild'.
+282   "vcs '-full64' '-top' 'sugar_tb' '-f' 'sugar_1.0.scr' '-o' 'sugar_1.0' '-assert' 'svaext' '-P' '/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/novas.tab' '/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a' '-debug_access+pp' '-debug_access+all' '+define+DUMP_FSDB' '-kdb' '-timescale=1ns/100ps' '+vpi' '+define+VCS_VPI' 2>&1"
+283 FSDB_VCS_ENABLE_FAST_VC is enable
+284 sps_call_fsdbDumpvars_vd_main at 0 : ../src/sugar_1.0/tb/sugar_tb.sv(70)
+285 argv[0]: (0)
+286 argv[1]: (handle) sugar_tb
+287 argv[2]: (+all)
+288 argv[3]: (+struct)
+289 argv[4]: (+parameter)
+290 [spi_vcs_vd_ppi_create_root]: no upf option
+291 FSDB dumper cannot dump UPF related power signal ($power_tree): no ppiPowerNetwork.
+292 *Verdi* : Begin traversing the scope (sugar_tb), layer (0).
+293 *Verdi* : Enable +all, +struct and +parameter dumping.
+294 *Verdi* : End of traversing.
+295 pliAppHDL_DumpVarComplete traverse var: profile - 
+          CPU/Mem usage: 0.120 sys,  0.580 user,  404.71M mem
+                   incr: 0.040 sys,  0.260 user,  58.72M mem
+                   accu: 0.040 sys,  0.260 user,  58.72M mem
+              accu incr: 0.040 sys,  0.260 user,  58.72M mem
+
+          Count usage: 600628 var,  599218 idcode,  1750 callback
+                 incr: 600628 var,  599218 idcode,  1750 callback
+                 accu: 600628 var,  599218 idcode,  1750 callback
+            accu incr: 600628 var,  599218 idcode,  1750 callback
+296 Thu Aug 26 14:41:58 2021
+297 pliAppHDL_DumpVarComplete: profile - 
+          CPU/Mem usage: 0.130 sys,  0.700 user,  436.58M mem
+                   incr: 0.010 sys,  0.120 user,  31.87M mem
+                   accu: 0.050 sys,  0.380 user,  90.60M mem
+              accu incr: 0.010 sys,  0.120 user,  31.87M mem
+
+          Count usage: 600628 var,  599218 idcode,  1750 callback
+                 incr: 0 var,  0 idcode,  0 callback
+                 accu: 600628 var,  599218 idcode,  1750 callback
+            accu incr: 0 var,  0 idcode,  0 callback
+298 Thu Aug 26 14:41:58 2021
+299 *Verdi* FSDB: For performance reasons, the Memory Size Limit has been increased to 128M.
+300 *Verdi* FSDB: For performance reasons, the Memory Size Limit has been increased to 256M.
+301 End of simulation at 114251620
+302 Thu Aug 26 14:50:39 2021
+303 Begin FSDB profile info:
+304 FSDB Writer : bc1(2758099151) bcn(3784762102) mtf/stf(15/0)
+FSDB Writer elapsed time : flush(25.537631) io wait(0.000000) theadpool wait(0.176615) target functin(0.000000)
+FSDB Writer cpu time : MT Compression : thread 0(0.519461805) thread 1(5.657149667) thread 2(5.679165963) 
+305 End FSDB profile info
+306 Parallel profile    -  Flush:3 Expand:14 ProduceWait:6968 ConsumerWait:0 BlockUsed:7407
+307                        ProduceTime:251.627245446 ConsumerTime:518.670683527 Buffer:512MB
+308 SimExit
+309 Sim process exit

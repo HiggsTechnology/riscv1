@@ -1,0 +1,84 @@
+@verdi rc file Version 1.0
+[General]
+saveDB = TRUE
+relativePath = FALSE
+saveSingleView = FALSE
+saveNWaveWinId = 
+VerdiVersion = Verdi_O-2018.09-SP1
+[KeyNote]
+Line1 = Automatic Backup 0
+Line2 = Save Open Database Information: Yes
+Line3 = Path Option: Absolute Paths
+Line4 = Windows Option: All Windows
+[TestBench]
+ConstrViewShow = 0
+InherViewShow = 0
+FSDBMsgShow = 0
+AnnotationShow = 0
+Console = FALSE
+powerDumped = 0
+[hb]
+postSimFile = /project/riscv/wenqiu.zhang/sugar/sim-vcs/trace.fsdb
+syncTime = 0
+viewport = 0 27 1920 998 0 0 377 1918
+activeNode = "sugar_tb.u_sugar_top.axi_intercon"
+activeScope = "sugar_tb.u_sugar_top.axi_intercon"
+activeFile = "../src/sugar-intercon_1.0/axi_intercon.v"
+interactiveMode = False
+viewType = Source
+simulatorMode = False
+sourceBeginLine = 3
+baMode = False
+srcLineNum = True
+AutoWrap = True
+IdentifyFalseLogic = False
+syncSignal = False
+traceMode = Hierarchical
+showTraceInSchema = True
+paMode = False
+funcMode = False
+powerAwareAnnot = True
+amsAnnot = True
+traceCrossHier = True
+DnDtraceCrossHierOnly = True
+traceIncTopPort = False
+leadingZero = False
+signalPane = False
+Scope1 = "sugar_tb.u_sugar_top.axi_intercon"
+Scope2 = "sugar_tb.u_sugar_top"
+Scope3 = "sugar_tb"
+multipleSelection = 18 7 11 0 0 6 11 0 0 8 11 0 0 9 11 0 0 10 11 0 0 11 5 0 0 12 11 0 0 13 11 0 0 14 11 0 0 15 11 0 0 16 5 0 0 17 5 0 0 18 11 0 0 19 11 0 0 20 11 0 0 21 5 0 0 22 5 0 0 23 5 0 0
+sdfCheckUndef = FALSE
+simFlow = FALSE
+[hb.design]
+importCmd = "-simflow" "-dbdir" "sugar_1.0.daidir" 
+invokeDir = /project/riscv/wenqiu.zhang/sugar/sim-vcs
+[hb.sourceTab.1]
+scope = sugar_tb.u_sugar_top.axi_intercon
+File = /project/riscv/wenqiu.zhang/sugar/src/sugar-intercon_1.0/axi_intercon.v
+Line = 4
+[nMemoryManager]
+FsdbFile = /project/riscv/wenqiu.zhang/sugar/sim-vcs/trace.fsdb
+UserActionNum = 0
+nMemWindowNum = 0
+[wave.0]
+viewPort = 0 27 1920 403 384 174
+primaryWindow = TRUE
+SessionFile = /project/riscv/wenqiu.zhang/sugar/sim-vcs/verdiLog/novas_autosave.ses.wave.0
+displayGrid = FALSE
+hierarchicalName = FALSE
+snap = TRUE
+displayLeadingZeros = FALSE
+fixDelta = FALSE
+displayCursorMarker = FALSE
+autoUpdate = FALSE
+highlightGlitchs = FALSE
+waveformSyncCursorMarker = FALSE
+waveformSyncHorizontalRange = FALSE
+waveformSyncVerticalscroll = FALSE
+displayErrors = TRUE
+displayMsgSymbols = TRUE
+showMsgDescriptions = TRUE
+autoFit = FALSE
+displayDeltaY = FALSE
+centerCursor = FALSE

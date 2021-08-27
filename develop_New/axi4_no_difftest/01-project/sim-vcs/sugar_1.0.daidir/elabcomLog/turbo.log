@@ -1,0 +1,7 @@
+Command Line: /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/bin/elabcom -logdir /project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir/elabcomLog -simvdaidir /project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir -lib /project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir/work -saveLevel -elab /project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir/kdb -simflow -simdir /project/riscv/wenqiu.zhang/sugar/sim-vcs/sugar_1.0.daidir/kdb_libs -top sugar_tb -ssv -ssy -Lf work +disable_message+C00380+C00381 +disable_message+C00388+C00389
+uname(Linux lenovo-sr570 3.10.0-957.1.3.el7.x86_64 #1 SMP Thu Nov 29 14:49:43 UTC 2018 x86_64)
+[INFO] error/warning message 'C00380' has been suppressed.
+[INFO] error/warning message 'C00381' has been suppressed.
+[INFO] error/warning message 'C00388' has been suppressed.
+[INFO] error/warning message 'C00389' has been suppressed.
+au time 0.247262 0.112708 0.051158 delta 101584896 101584896 total 194199552 194199552

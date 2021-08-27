@@ -1,0 +1,83 @@
+Magic 271485
+Revision Verdi_O-2018.09-SP1
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 0 27 1920 403 384 174
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/project/riscv/wenqiu.zhang/sugar/sim-vcs/trace.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+; waveform viewport range
+zoom 3755.292699 15313.308135
+cursor 0.000000
+marker 0.000000
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 15
+; marker line index
+markerPos 29
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+addGroup "G1"
+activeDirFile "" "/project/riscv/wenqiu.zhang/sugar/sim-vcs/trace.fsdb"
+addSignal -h 15 /sugar_tb/u_sugar_top/o_uart0_tx
+addSignal -h 15 -holdScope uart0_apb_psel
+addSignal -h 15 -holdScope fmc_apb_penable
+addSignal -h 15 -holdScope fmc_apb_pwrite
+addSignal -h 15 -holdScope fmc_apb_paddr[31:0]
+addSignal -h 15 -holdScope fmc_apb_pwdata[31:0]
+addSignal -h 15 -holdScope fmc_apb_prdata[31:0]
+addSignal -h 15 -holdScope fmc_apb_pready
+addSignal -h 15 /sugar_tb/u_sugar_top/axi_intercon/i_lsu_awaddr[31:0]
+addSignal -h 15 /sugar_tb/u_sugar_top/ram_rdata[63:0]
+addGroup "G2"
+addSignal -h 15 /sugar_tb/u_sugar_top/axi_intercon/i_ifu_araddr[31:0]
+addSignal -h 15 -holdScope i_ifu_arid[2:0]
+addSignal -h 15 -holdScope i_ifu_arlen[7:0]
+addSignal -h 15 -holdScope i_ifu_arsize[2:0]
+addSignal -h 15 -holdScope i_ifu_arburst[1:0]
+addSignal -h 15 -holdScope i_ifu_arlock
+addSignal -h 15 -holdScope i_ifu_arcache[3:0]
+addSignal -h 15 -holdScope i_ifu_arprot[2:0]
+addSignal -h 15 -holdScope i_ifu_arregion[3:0]
+addSignal -h 15 -holdScope i_ifu_arqos[3:0]
+addSignal -h 15 -holdScope i_ifu_arvalid
+addSignal -h 15 -holdScope o_ifu_arready
+addSignal -h 15 -holdScope o_ifu_rid[2:0]
+addSignal -h 15 -holdScope o_ifu_rdata[63:0]
+addSignal -h 15 -holdScope o_ifu_rresp[1:0]
+addSignal -h 15 -holdScope o_ifu_rlast
+addSignal -h 15 -holdScope o_ifu_rvalid
+addSignal -h 15 -holdScope i_ifu_rready
+addGroup "G3"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+

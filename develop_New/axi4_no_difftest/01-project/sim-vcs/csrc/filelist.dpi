@@ -1,0 +1,4 @@
+DPI_STUB_OBJS += ./../sugar_1.0.daidir/vc_hdrs.o
+./../sugar_1.0.daidir/vc_hdrs.o: ./../sugar_1.0.daidir/vc_hdrs.c
+	@$(CC) -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include  -pipe -fPIC    -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include  -fPIC -c -o ./../sugar_1.0.daidir/vc_hdrs.o ./../sugar_1.0.daidir/vc_hdrs.c
+	@strip -g ./../sugar_1.0.daidir/vc_hdrs.o

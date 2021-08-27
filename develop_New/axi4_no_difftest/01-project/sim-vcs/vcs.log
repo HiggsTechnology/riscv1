@@ -1,0 +1,22 @@
+Command: /project/riscv/wenqiu.zhang/sugar/sim-vcs/./sugar_1.0 -l vcs.log +ram_init_file=uart_ok.vh +define+DUMP_FSDB
+Chronologic VCS simulator copyright 1991-2018
+Contains Synopsys proprietary information.
+Compiler version O-2018.09-SP1_Full64; Runtime version O-2018.09-SP1_Full64;  Aug 26 14:41 2021
+Loading RAM contents from uart_ok.vh
+*Verdi* Loading libsscore_vcs201809.so
+FSDB Dumper for VCS, Release Verdi_O-2018.09-SP1, Linux x86_64/64bit, 11/22/2018
+(C) 1996 - 2018 by Synopsys, Inc.
+*Verdi* FSDB WARNING: The FSDB file already exists. Overwriting the FSDB file may crash the programs that are using this file.
+*Verdi* : Create FSDB file 'trace.fsdb'
+*Verdi* : Begin traversing the scope (sugar_tb), layer (0).
+*Verdi* : Enable +all, +struct and +parameter dumping.
+*Verdi* : End of traversing.
+*Verdi* FSDB: For performance reasons, the Memory Size Limit has been increased to 128M.
+*Verdi* FSDB: For performance reasons, the Memory Size Limit has been increased to 256M.
+Interrupt at time 114251620
+
+finish
+            V C S   S i m u l a t i o n   R e p o r t 
+Time: 114251620 ns
+CPU Time:    782.160 seconds;       Data structure size:   1.5Mb
+Thu Aug 26 14:50:41 2021

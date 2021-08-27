@@ -1,0 +1,218 @@
+{
+    "sugar_tb": [
+        "sugar_tb",
+        "yHTIb",
+        "module",
+        35
+    ],
+    "std": [
+        "std",
+        "reYIK",
+        "module",
+        1
+    ],
+    "uart_wb": [
+        "uart_wb",
+        "vsJ83",
+        "module",
+        28
+    ],
+    "lzc_0000": [
+        "lzc_0000",
+        "rB4Qp",
+        "module",
+        10
+    ],
+    "cb_filter_pkg": [
+        "cb_filter_pkg",
+        "mfrWM",
+        "module",
+        2
+    ],
+    "axi_pkg": [
+        "axi_pkg",
+        "p9GxR",
+        "module",
+        19
+    ],
+    "fifo_v3_0000_0003": [
+        "fifo_v3_0000_0003",
+        "xLCrL",
+        "module",
+        6
+    ],
+    "cf_math_pkg": [
+        "cf_math_pkg",
+        "N2nk1",
+        "module",
+        3
+    ],
+    "ecc_pkg": [
+        "ecc_pkg",
+        "Vqi5E",
+        "module",
+        4
+    ],
+    "spill_register_0001": [
+        "spill_register_0001",
+        "RAZtG",
+        "module",
+        13
+    ],
+    "fifo_v3_0000": [
+        "fifo_v3_0000",
+        "GZJwq",
+        "module",
+        5
+    ],
+    "axi_intercon": [
+        "axi_intercon",
+        "rr8Z6",
+        "module",
+        26
+    ],
+    "addr_decode": [
+        "addr_decode",
+        "p7I2z",
+        "module",
+        9
+    ],
+    "rr_arb_tree_0003": [
+        "rr_arb_tree_0003",
+        "JWH1j",
+        "module",
+        8
+    ],
+    "uart_top": [
+        "uart_top",
+        "INsae",
+        "module",
+        27
+    ],
+    "lzc_0001": [
+        "lzc_0001",
+        "RJeFR",
+        "module",
+        11
+    ],
+    "rr_arb_tree_0001": [
+        "rr_arb_tree_0001",
+        "J8xZ0",
+        "module",
+        7
+    ],
+    "spill_register_0000": [
+        "spill_register_0000",
+        "iBTE5",
+        "module",
+        12
+    ],
+    "spill_register_0003": [
+        "spill_register_0003",
+        "vKh7I",
+        "module",
+        14
+    ],
+    "axi_id_prepend_0000": [
+        "axi_id_prepend_0000",
+        "UcTtD",
+        "module",
+        23
+    ],
+    "spill_register_0005": [
+        "spill_register_0005",
+        "nHRE6",
+        "module",
+        15
+    ],
+    "spill_register_0007": [
+        "spill_register_0007",
+        "vfFMY",
+        "module",
+        16
+    ],
+    "axi_single_slice": [
+        "axi_single_slice",
+        "Jnmpm",
+        "module",
+        17
+    ],
+    "axi_single_slice_0000": [
+        "axi_single_slice_0000",
+        "xgzYu",
+        "module",
+        18
+    ],
+    "AXI_BUS": [
+        "AXI_BUS",
+        "Y0jvi",
+        "module",
+        20
+    ],
+    "axi_demux_0000": [
+        "axi_demux_0000",
+        "hgbN6",
+        "module",
+        21
+    ],
+    "axi_demux_id_counters_0000": [
+        "axi_demux_id_counters_0000",
+        "mQfVw",
+        "module",
+        22
+    ],
+    "axi_mux_0000": [
+        "axi_mux_0000",
+        "LC45I",
+        "module",
+        24
+    ],
+    "axi_err_slv_0000": [
+        "axi_err_slv_0000",
+        "y3f5g",
+        "module",
+        25
+    ],
+    "axi_mem_wrapper": [
+        "axi_mem_wrapper",
+        "wvV3H",
+        "module",
+        29
+    ],
+    "apb_multicon": [
+        "apb_multicon",
+        "ZrtVZ",
+        "module",
+        30
+    ],
+    "WBU": [
+        "WBU",
+        "TaNxs",
+        "module",
+        31
+    ],
+    "Regfile": [
+        "Regfile",
+        "EQLY5",
+        "module",
+        32
+    ],
+    "Top": [
+        "Top",
+        "nRdYT",
+        "module",
+        33
+    ],
+    "sugar_top": [
+        "sugar_top",
+        "Yxuwt",
+        "module",
+        34
+    ],
+    "...MASTER...": [
+        "SIM",
+        "amcQw",
+        "module",
+        36
+    ]
+}

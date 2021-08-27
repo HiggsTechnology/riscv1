@@ -1,0 +1,2 @@
+Command Line: /usr/synopsys/verdi/Verdi_O-2018.09-SP1/platform/LINUXAMD64/bin/Novas -simflow -dbdir sugar_1.0.daidir -ssf trace.fsdb
+uname(Linux lenovo-sr570 3.10.0-957.1.3.el7.x86_64 #1 SMP Thu Nov 29 14:49:43 UTC 2018 x86_64)

@@ -1,0 +1,301 @@
+simSetSimulator "-vcssv" -exec "sugar_1.0" -args \
+           "+ram_init_file=uart_ok.vh +define+DUMP_FSDB"
+debImport "-simflow" "-dbdir" "sugar_1.0.daidir"
+debLoadSimResult /project/riscv/wenqiu.zhang/sugar/sim-vcs/trace.fsdb
+wvCreateWindow
+srcHBSelect "sugar_tb.u_sugar_top" -win $_nTrace1
+srcSetScope -win $_nTrace1 "sugar_tb.u_sugar_top" -delim "."
+srcHBSelect "sugar_tb.u_sugar_top" -win $_nTrace1
+srcHBSelect "sugar_tb.u_sugar_top.axi_intercon" -win $_nTrace1
+srcSetScope -win $_nTrace1 "sugar_tb.u_sugar_top.axi_intercon" -delim "."
+srcHBSelect "sugar_tb.u_sugar_top.axi_intercon" -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -signal "i_ifu_arid" -line 7 -pos 1 -win $_nTrace1
+srcSelect -signal "i_ifu_araddr" -line 8 -pos 1 -win $_nTrace1
+srcAddSelectedToWave -clipboard -win $_nTrace1
+wvDrop -win $_nWave2
+wvZoom -win $_nWave2 661313.820269 839725.822141
+wvZoom -win $_nWave2 700842.227870 708587.659089
+wvZoom -win $_nWave2 702685.826019 702911.927679
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 6 1 1 1} -backward
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 6 1 1 1}
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 6 1 1 1} -backward
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 6 1 1 1}
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 5 1 7 1} -backward
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 30 6 8 1 1}
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 5 1 8 1} -backward
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 30 6 8 1 1}
+srcDeselectAll -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -win $_nTrace1 -range {30 31 5 1 7 1} -backward
+wvSetCursor -win $_nWave2 336.444685 -snap {("G2" 0)}
+srcHBSelect "sugar_tb.u_sugar_top.axi_intercon" -win $_nTrace1
+srcHBSelect "sugar_tb.u_sugar_top.i_top" -win $_nTrace1
+srcSetScope -win $_nTrace1 "sugar_tb.u_sugar_top.i_top" -delim "."
+srcHBSelect "sugar_tb.u_sugar_top.i_top" -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_addr" -line 1905 -pos 1 -win $_nTrace1
+srcDeselectAll -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_ready" -line 1903 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_valid" -line 1904 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_addr" -line 1905 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_prot" -line 1906 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_id" -line 1907 -pos 1 -win $_nTrace1
+srcSelect -toggle -signal "io_lsuout_aw_bits_id" -line 1907 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_id" -line 1907 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_user" -line 1908 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_len" -line 1909 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_size" -line 1910 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_burst" -line 1911 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_cache" -line 1913 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_lock" -line 1912 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_qos" -line 1914 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_aw_bits_region" -line 1915 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_w_ready" -line 1916 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_w_valid" -line 1917 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_w_bits_data" -line 1918 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_w_bits_strb" -line 1919 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_w_bits_last" -line 1920 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_b_ready" -line 1921 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_b_valid" -line 1922 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_b_bits_resp" -line 1923 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_b_bits_id" -line 1924 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_b_bits_user" -line 1925 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_ready" -line 1926 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_valid" -line 1927 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_addr" -line 1928 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_prot" -line 1929 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_id" -line 1930 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_user" -line 1931 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_len" -line 1932 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_size" -line 1933 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_burst" -line 1934 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_lock" -line 1935 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_cache" -line 1936 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_qos" -line 1937 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_ar_bits_region" -line 1938 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_ready" -line 1939 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_valid" -line 1940 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_bits_resp" -line 1941 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_bits_data" -line 1942 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_bits_last" -line 1943 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_bits_id" -line 1944 -pos 1 -win $_nTrace1
+srcSelect -signal "io_lsuout_r_bits_user" -line 1945 -pos 1 -win $_nTrace1
+wvSetPosition -win $_nWave2 {("G2" 0)}
+wvAddSignal -win $_nWave2 "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_ready" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_valid" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_addr\[31:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_prot\[2:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_id\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_user" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_len\[7:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_size\[2:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_burst\[1:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_cache\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_lock" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_qos\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_aw_bits_region\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_w_ready" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_w_valid" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_w_bits_data\[63:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_w_bits_strb\[7:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_w_bits_last" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_b_ready" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_b_valid" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_b_bits_resp\[1:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_b_bits_id\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_b_bits_user" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_ready" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_valid" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_addr\[31:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_prot\[2:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_id\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_user" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_len\[7:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_size\[2:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_burst\[1:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_lock" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_cache\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_qos\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_ar_bits_region\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_ready" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_valid" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_bits_resp\[1:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_bits_data\[63:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_bits_last" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_bits_id\[3:0\]" \
+           "/sugar_tb/u_sugar_top/i_top/io_lsuout_r_bits_user"
+wvSetPosition -win $_nWave2 {("G2" 0)}
+wvSetPosition -win $_nWave2 {("G2" 43)}
+wvSetPosition -win $_nWave2 {("G2" 43)}
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomIn -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvScrollDown -win $_nWave2 5
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollDown -win $_nWave2 4
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvSelectSignal -win $_nWave2 {( "G2" 26 )} 
+wvZoom -win $_nWave2 6931903.616766 7139107.257485
+wvZoom -win $_nWave2 7004952.205672 7011931.370217
+wvZoom -win $_nWave2 7007397.002833 7007679.094813
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvScrollUp -win $_nWave2 1
+wvSelectSignal -win $_nWave2 {( "G2" 14 )} 
+wvScrollUp -win $_nWave2 3
+wvScrollUp -win $_nWave2 11
+wvSelectSignal -win $_nWave2 {( "G2" 3 )} 
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvSelectSignal -win $_nWave2 {( "G2" 16 )} 
+wvZoom -win $_nWave2 13987500.946707 14653572.420359
+wvZoom -win $_nWave2 14044834.943309 14061785.864046
+wvZoom -win $_nWave2 14052752.139812 14053120.086444
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvZoomOut -win $_nWave2
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 0
+wvSelectSignal -win $_nWave2 {( "G2" 40 )} 
+wvScrollUp -win $_nWave2 21
+wvScrollUp -win $_nWave2 6

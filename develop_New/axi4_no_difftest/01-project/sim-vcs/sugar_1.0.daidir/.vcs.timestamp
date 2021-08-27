@@ -1,0 +1,296 @@
+24       
+0 common_cells/registers.svh
+0 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/systemverilog/common_cells/registers.svh
+0 ../src/nbdla_small64f/vmod/include/common_cells/registers.svh
+0 ../src/uart16550_1.5.5-r1/rtl/verilog/common_cells/registers.svh
+0 ../src/sugar-intercon_1.0/common_cells/registers.svh
+0 axi/typedef.svh
+0 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/systemverilog/axi/typedef.svh
+0 ../src/nbdla_small64f/vmod/include/axi/typedef.svh
+0 ../src/uart16550_1.5.5-r1/rtl/verilog/axi/typedef.svh
+0 ../src/sugar-intercon_1.0/axi/typedef.svh
+0 ../src/axi_common_cells/include/axi/typedef.svh
+0 axi/assign.svh
+0 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/systemverilog/axi/assign.svh
+0 ../src/nbdla_small64f/vmod/include/axi/assign.svh
+0 ../src/uart16550_1.5.5-r1/rtl/verilog/axi/assign.svh
+0 ../src/sugar-intercon_1.0/axi/assign.svh
+0 ../src/axi_common_cells/include/axi/assign.svh
+0 uart_defines.v
+0 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/systemverilog/uart_defines.v
+0 ../src/nbdla_small64f/vmod/include/uart_defines.v
+0 axi_intercon.vh
+0 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/systemverilog/axi_intercon.vh
+0 ../src/nbdla_small64f/vmod/include/axi_intercon.vh
+0 ../src/uart16550_1.5.5-r1/rtl/verilog/axi_intercon.vh
+42
++define+DUMP_FSDB
++define+VCS_VPI
++itf+/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/vcsdp_lite.tab
++vcsd1
++vpi
++vpi
+-Mamsrun=
+-Masflags=
+-Mcc=gcc
+-Mcfl= -pipe -fPIC -O -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include
+-Mcplusplus=g++
+-Mcrt0=
+-Mcrtn=
+-Mcsrc=
+-Mexternalobj=
+-Mldflags= -rdynamic
+-Mobjects= /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvirsim.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/liberrorinf.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libsnpsmalloc.so /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvfs.so /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a
+-Mout=sugar_1.0
+-Msaverestoreobj=/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/vcs_save_restore_new.o
+-Msyslibs=/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a -ldl -lm
+-Mvcsaceobjs=
+-Mxcflags= -pipe -fPIC -I/usr/synopsys/vcs-mx/O-2018.09-SP1/include
+-P
+-P
+-Xufe=2steps
+-assert
+-debug_access+all
+-debug_access+pp
+-f sugar_1.0.scr
+-fsdb
+-full64
+-gen_obj
+-kdb
+-o sugar_1.0
+-picarchive
+-timescale=1ns/100ps
+-top
+/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/bin/vcs1
+/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/novas.tab
+/usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/verdi.tab
+sugar_tb
+svaext
+66
+sysc_uni_pwd=/project/riscv/wenqiu.zhang/sugar/sim-vcs
+XMODIFIERS=@im=none
+XDG_SESSION_ID=13122
+XDG_RUNTIME_DIR=/run/user/1011
+XDG_MENU_PREFIX=kde4-
+XDG_DATA_DIRS=/usr/share/kde-settings/kde-profile/default/share:/usr/local/share:/usr/share
+XDG_CURRENT_DESKTOP=KDE
+XCURSOR_THEME=Adwaita
+VNCDESKTOP=lenovo-sr570:10 (jun.yang)
+VMR_MODE_FLAG=64
+VERDI_HOME=/usr/synopsys/verdi/Verdi_O-2018.09-SP1
+VENDOR=unknown
+VCS_MX_HOME_INTERNAL=1
+VCS_MODE_FLAG=64
+VCS_HOME=/usr/synopsys/vcs-mx/O-2018.09-SP1
+VCS_DEPTH=0
+VCS_ARG_ADDED_FOR_TMP=1
+VCS_ARCH=linux64
+UNAME=/bin/uname
+TOOL_HOME=/usr/synopsys/vcs-mx/O-2018.09-SP1/linux64
+SSH_TTY=/dev/pts/43
+SSH_CONNECTION=172.16.10.25 53400 172.16.1.20 22
+SSH_CLIENT=172.16.10.25 53400 22
+SSH_AUTH_SOCK=/tmp/ssh-bMS9IP6xrRGN/agent.146639
+SSH_ASKPASS=/usr/bin/ksshaskpass
+SSH_AGENT_PID=146794
+SNPS_VERDI_INTERNAL_LP_XML_NEW_FLOW=1
+SHELL_SESSION_ID=74d2846e3c7c40009527dcf046dbe223
+SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/146912,unix/unix:/tmp/.ICE-unix/146912
+SCRNAME=vcs
+SCRIPT_NAME=vcs
+REMOTEHOST=172.16.10.25
+QT_PLUGIN_PATH=/usr/lib64/kde4/plugins:/usr/lib/kde4/plugins:/home/jun.yang/.kde/lib64/kde4/plugins/:/usr/lib64/kde4/plugins/
+QT_IM_MODULE=xim
+QT_GRAPHICSSYSTEM_CHECKED=1
+QTLIB=/usr/lib64/qt-3.3/lib
+QTINC=/usr/lib64/qt-3.3/include
+QTDIR=/usr/lib64/qt-3.3
+PROFILEHOME=
+PERL_HOMEDIR=0
+OVA_UUM=0
+OSTYPE=linux
+NOVAS_HOME=/usr/synopsys/verdi/Verdi_O-2018.09-SP1
+MFLAGS=
+MAKELEVEL=1
+MAKEFLAGS=
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+LC_ALL=C
+KONSOLE_PROFILE_NAME=Shell
+KONSOLE_DBUS_WINDOW=/Windows/2
+KONSOLE_DBUS_SESSION=/Sessions/7
+KONSOLE_DBUS_SERVICE=:1.476080
+KDE_SESSION_VERSION=4
+KDE_SESSION_UID=1011
+KDE_MULTIHEAD=false
+KDE_FULL_SESSION=true
+KDEDIRS=/usr
+IMSETTINGS_MODULE=none
+IMSETTINGS_INTEGRATE_DESKTOP=yes
+HOSTTYPE=x86_64-linux
+GTK_IM_MODULE=gtk-im-context-simple
+GTK2_RC_FILES=/home/jun.yang/.gtkrc-2.0-kde4
+GS_LIB=
+GROUP=jun.yang
+DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-26BporDdHT,guid=0930824a5cf45b827d5062385e5de47d
+COLORFGBG=15;0
+0
+151
+1629942650 ../src/sugar-intercon_1.0/axi_intercon.vh
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_defines.v
+1543560931 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/packages/lpa/AN.DB
+1543560914 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/packages/upf/AN.DB
+1543552063 /usr/synopsys/vcs-mx/O-2018.09-SP1/etc/sva/rec_ltl_classes_package.svp
+1629883616 ../src/sugar_1.0/tb/sugar_tb.sv
+1629942814 ../src/sugar_1.0/rtl/sugar_top.sv
+1629879224 ../src/sugar_1.0/rtl/Top.v
+1629879224 ../src/sugar_1.0/rtl/apb_multicon.v
+1629879224 ../src/sugar_1.0/rtl/axi_uart_wrapper.v
+1629879224 ../src/sugar_1.0/rtl/axi_mem_wrapper.v
+1629879224 ../src/sugar_1.0/rtl/dpram64.v
+1629879218 ../src/axi2apb_bridge_1.0/src/axi2apb_wrapper.sv
+1629879218 ../src/axi2apb_bridge_1.0/src/axi2apb_bridge.sv
+1629879217 ../src/apb_uart_sv-pulpinov1/apb_uart_sv.sv
+1629879218 ../src/apb_uart_sv-pulpinov1/uart_rx.sv
+1629879218 ../src/apb_uart_sv-pulpinov1/uart_tx.sv
+1629879217 ../src/apb_uart_sv-pulpinov1/io_generic_fifo.sv
+1629879217 ../src/apb_uart_sv-pulpinov1/uart_interrupt.sv
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_wb.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_transmitter.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_top.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_tfifo.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_sync_flops.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_rfifo.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_regs.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/uart_receiver.v
+1629879225 ../src/uart16550_1.5.5-r1/rtl/verilog/raminfr.v
+1629879224 ../src/pulp-platform.org__axi_mem_if_0.2.0/src/axi2mem.sv
+1629879224 ../src/pulp-platform.org__axi2apb_0.1.1-r1/src/axi2apb_wrap.sv
+1629879224 ../src/pulp-platform.org__axi2apb_0.1.1-r1/src/axi2apb_64_32.sv
+1629879224 ../src/pulp-platform.org__axi2apb_0.1.1-r1/src/axi2apb.sv
+1629942650 ../src/sugar-intercon_1.0/axi_intercon.v
+1629879223 ../src/axi_node/src/axi_xbar.sv
+1629879223 ../src/axi_node/src/axi_lite_xbar.sv
+1629879223 ../src/axi_node/src/axi_to_axi_lite.sv
+1629879223 ../src/axi_node/src/axi_multicut.sv
+1629879222 ../src/axi_node/src/axi_dw_converter.sv
+1629879222 ../src/axi_node/src/axi_err_slv.sv
+1629879222 ../src/axi_node/src/axi_cdc.sv
+1629879223 ../src/axi_node/src/axi_serializer.sv
+1629879223 ../src/axi_node/src/axi_mux.sv
+1629879223 ../src/axi_node/src/axi_modify_address.sv
+1629879223 ../src/axi_node/src/axi_lite_to_axi.sv
+1629879223 ../src/axi_node/src/axi_lite_to_apb.sv
+1629879223 ../src/axi_node/src/axi_lite_regs.sv
+1629879223 ../src/axi_node/src/axi_lite_mux.sv
+1629879223 ../src/axi_node/src/axi_lite_mailbox.sv
+1629879223 ../src/axi_node/src/axi_lite_join.sv
+1629879223 ../src/axi_node/src/axi_lite_demux.sv
+1629879223 ../src/axi_node/src/axi_join.sv
+1629879222 ../src/axi_node/src/axi_isolate.sv
+1629879222 ../src/axi_node/src/axi_id_prepend.sv
+1629879222 ../src/axi_node/src/axi_dw_upsizer.sv
+1629879222 ../src/axi_node/src/axi_dw_downsizer.sv
+1629879222 ../src/axi_node/src/axi_demux.sv
+1629879222 ../src/axi_node/src/axi_delayer.sv
+1629879222 ../src/axi_node/src/axi_cut.sv
+1629879222 ../src/axi_node/src/axi_cdc_src.sv
+1629879222 ../src/axi_node/src/axi_cdc_dst.sv
+1629879222 ../src/axi_node/src/axi_burst_splitter.sv
+1629879222 ../src/axi_node/src/axi_atop_filter.sv
+1629879222 ../src/axi_node/src/axi_intf.sv
+1629879223 ../src/axi_node/src/axi_pkg.sv
+1629879222 ../src/axi_node/include/axi/typedef.svh
+1629879222 ../src/axi_node/include/axi/assign.svh
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_slice_wrap.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_w_buffer.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_slice.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_r_buffer.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_b_buffer.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_aw_buffer.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_ar_buffer.sv
+1629879224 ../src/pulp-platform.org__axi_slice_1.1.3-r1/src/axi_single_slice.sv
+1629879219 ../src/axi_common_cells/src/deprecated/fifo_v1.sv
+1629879219 ../src/axi_common_cells/src/deprecated/rrarbiter.sv
+1629879219 ../src/axi_common_cells/src/deprecated/prioarbiter.sv
+1629879219 ../src/axi_common_cells/src/deprecated/fifo_v2.sv
+1629879219 ../src/axi_common_cells/src/deprecated/sram.sv
+1629879219 ../src/axi_common_cells/src/deprecated/pulp_sync_wedge.sv
+1629879219 ../src/axi_common_cells/src/deprecated/pulp_sync.sv
+1629879219 ../src/axi_common_cells/src/deprecated/generic_fifo_adv.sv
+1629879219 ../src/axi_common_cells/src/deprecated/generic_fifo.sv
+1629879219 ../src/axi_common_cells/src/deprecated/generic_LFSR_8bit.sv
+1629879219 ../src/axi_common_cells/src/deprecated/find_first_one.sv
+1629879219 ../src/axi_common_cells/src/deprecated/clock_divider_counter.sv
+1629879219 ../src/axi_common_cells/src/deprecated/clock_divider.sv
+1629879221 ../src/axi_common_cells/src/stream_omega_net.sv
+1629879221 ../src/axi_common_cells/src/stream_arbiter.sv
+1629879221 ../src/axi_common_cells/src/stream_xbar.sv
+1629879221 ../src/axi_common_cells/src/stream_register.sv
+1629879221 ../src/axi_common_cells/src/stream_arbiter_flushable.sv
+1629879221 ../src/axi_common_cells/src/stream_to_mem.sv
+1629879220 ../src/axi_common_cells/src/id_queue.sv
+1629879220 ../src/axi_common_cells/src/fall_through_register.sv
+1629879218 ../src/axi_common_cells/src/cdc_fifo_gray.sv
+1629879221 ../src/axi_common_cells/src/stream_fork_dynamic.sv
+1629879221 ../src/axi_common_cells/src/stream_fifo.sv
+1629879221 ../src/axi_common_cells/src/stream_delay.sv
+1629879221 ../src/axi_common_cells/src/spill_register.sv
+1629879220 ../src/axi_common_cells/src/rstgen.sv
+1629879220 ../src/axi_common_cells/src/max_counter.sv
+1629879220 ../src/axi_common_cells/src/lzc.sv
+1629879219 ../src/axi_common_cells/src/edge_detect.sv
+1629879219 ../src/axi_common_cells/src/ecc_encode.sv
+1629879219 ../src/axi_common_cells/src/ecc_decode.sv
+1629879219 ../src/axi_common_cells/src/counter.sv
+1629879218 ../src/axi_common_cells/src/cdc_fifo_2phase.sv
+1629879218 ../src/axi_common_cells/src/cb_filter.sv
+1629879218 ../src/axi_common_cells/src/addr_decode.sv
+1629879222 ../src/axi_common_cells/src/unread.sv
+1629879221 ../src/axi_common_cells/src/sync_wedge.sv
+1629879221 ../src/axi_common_cells/src/sync.sv
+1629879221 ../src/axi_common_cells/src/sub_per_hash.sv
+1629879221 ../src/axi_common_cells/src/stream_mux.sv
+1629879221 ../src/axi_common_cells/src/stream_join.sv
+1629879221 ../src/axi_common_cells/src/stream_intf.sv
+1629879221 ../src/axi_common_cells/src/stream_fork.sv
+1629879221 ../src/axi_common_cells/src/stream_filter.sv
+1629879221 ../src/axi_common_cells/src/stream_demux.sv
+1629879221 ../src/axi_common_cells/src/spill_register_flushable.sv
+1629879221 ../src/axi_common_cells/src/shift_reg.sv
+1629879221 ../src/axi_common_cells/src/serial_deglitch.sv
+1629879220 ../src/axi_common_cells/src/rstgen_bypass.sv
+1629879220 ../src/axi_common_cells/src/rr_arb_tree.sv
+1629879220 ../src/axi_common_cells/src/popcount.sv
+1629879220 ../src/axi_common_cells/src/plru_tree.sv
+1629879220 ../src/axi_common_cells/src/onehot_to_bin.sv
+1629879220 ../src/axi_common_cells/src/mv_filter.sv
+1629879220 ../src/axi_common_cells/src/lfsr_8bit.sv
+1629879220 ../src/axi_common_cells/src/lfsr_16bit.sv
+1629879220 ../src/axi_common_cells/src/lfsr.sv
+1629879220 ../src/axi_common_cells/src/isochronous_spill_register.sv
+1629879220 ../src/axi_common_cells/src/gray_to_binary.sv
+1629879220 ../src/axi_common_cells/src/fifo_v3.sv
+1629879220 ../src/axi_common_cells/src/exp_backoff.sv
+1629879220 ../src/axi_common_cells/src/edge_propagator_tx.sv
+1629879219 ../src/axi_common_cells/src/ecc_pkg.sv
+1629879219 ../src/axi_common_cells/src/delta_counter.sv
+1629879219 ../src/axi_common_cells/src/clk_div.sv
+1629879218 ../src/axi_common_cells/src/cf_math_pkg.sv
+1629879218 ../src/axi_common_cells/src/cdc_2phase.sv
+1629879218 ../src/axi_common_cells/src/cb_filter_pkg.sv
+1629879218 ../src/axi_common_cells/src/binary_to_gray.sv
+1629879218 ../src/axi_common_cells/include/common_cells/registers.svh
+1629879218 ../src/axi_common_cells/include/common_cells/assertions.svh
+1629879224 ../src/pulp-platform.org__apb_0.1.0/src/apb_intf.sv
+1629880017 sugar_1.0.scr
+1542892456 /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/verdi.tab
+1543551547 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/vcsdp_lite.tab
+1542892456 /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/novas.tab
+5
+1543552622 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvirsim.so
+1543551927 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/liberrorinf.so
+1543551833 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libsnpsmalloc.so
+1543551917 /usr/synopsys/vcs-mx/O-2018.09-SP1/linux64/lib/libvfs.so
+1542890361 /usr/synopsys/verdi/Verdi_O-2018.09-SP1/share/PLI/VCS/LINUX64/pli.a
+1629942838 sugar_1.0.daidir
+-1 partitionlib
