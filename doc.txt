@@ -1,0 +1,289 @@
+项目分析：
+
+测试模块：SimTop  ### 测试模块在该项目中会被编译为顶级模块
+SimTop包含的输入：
+[1] clock
+[2] reset
+[3] logCtrl_log_begin
+[4] logCtrl_log_end
+[5] logCtrl_log_level
+[6] perfInfo_clean
+[7] perfInfo_dump
+[8] uart_in_ch
+包含的输出：
+[1] uart_out_valid
+[2] uart_out_ch
+[3] uart_in_valid
+该模块的功能简介：
+将Top模块的输入输出与DifftestInstrCommit以及DifftestTrapEvent两个模块相连接，用于测试。
+其中，DifftestInstrCommit以及DifftestTrapEvent两个模块由/ThirdParty/difftest/src的difftest包定义。
+
+执行模块：Top  ### 实际的顶级模块，与模拟模块相对接
+Top包含的输入：
+[1] clock
+[2] reset
+包含的输出：
+[1] pc
+[2] instr
+[3] valid
+[4] diffreg_addr
+[5] diffreg_data
+[6] diffreg_ena
+该模块的功能简介：
+连接自身以及6个子模块的输入输出，包括：
+[a] IFU
+[b] IDU
+[c] IDUtoEXU
+[d] EXU
+[e] WBU
+[f] Regfile
+
+
+寄存器模块：Regfile 
+Regfile包含的输入：
+[1] clock
+[2] reset
+[3] src1_addr
+[4] src2_addr
+[5] rd_addr
+[6] rd_data
+[7] rd_ena
+包含的输出：
+[1] src1_data
+[2] src2_data
+该模块的功能简介：
+该模块处理寄存器的读写。
+详细介绍：
+(a) src1_addr与src2_addr两个输入会作为寄存器的索引决定src1_data与src2_data的输出。
+(b) rd_ena设为true时，模块会将rd_data写入rd_addr对应的寄存器中。
+(c) 模块中还存在一个mod变量，似乎没什么用。
+
+
+取指模块：IFU 
+IFU包含的输入：
+[1] clock
+[2] reset
+[3] in_new_pc
+[4] in_valid
+包含的输出：
+[1] out_pc
+[2] out_instr
+该模块的功能简介：
+该模块从内存中取出指令。
+详细介绍：
+(a) 先确定pc的值。 in_valid? yes -> pc = in_new_pc : no -> pc = pc + 4 (这里的4代表4 bytes = 32 bits，即每条指令的长度)
+(b) 将ram.io.wen设成false从而读取在idx处的内存，指令默认从idx=0处储存，由于内存宽度为64位，故每个idx对应两条指令，需要pc(2)进行辅助判断
+(c) 取出内存后，通过pc(2)判断该取出哪条指令，然后传给out_instr
+(d) 可能的问题：内存读取与写入可能存在竞争，其它位置ram.io.wen可能需要设成true写入内存。
+
+
+译码模块：IDU 
+IDU包含的输入：
+[1]  in_pc
+[2]  in_instr
+包含的输出：
+[1]  out_cf_pc
+[2]  out_ctrl_src1Type
+[3]  out_ctrl_src2Type
+[4]  out_ctrl_funcType
+[5]  out_ctrl_funcOpType
+[6]  out_ctrl_rfSrc1
+[7]  out_ctrl_rfSrc2
+[8]  out_ctrl_rfrd
+[9]  out_data_imm
+[10] out_data_uimm_ext //建议命名为zimm，用于存储CSR指令所需数据
+该模块的功能简介：
+对指令进行解码操作，输出相关信息供后续使用。
+详细介绍：
+(a) 指令通过BitPat匹配对应的三种类型：逻辑运算单元ALU、分支处理单元BRU、内存读写单元LSU，与CSR的匹配似乎尚未完成。
+    这些类型将传入到out_ctrl_funcType中，对应的子类型则存储于out_ctrl_funcOpType中。
+(b) 指令中的rs1，rs2以及rd字段的数据被提取出来并命名。
+(c) 译码模块会根据instrType指定out_ctrl_src1Type以及out_ctrl_src2Type，共包括三种组合：reg+imm，reg+reg以及pc+imm。
+(d) 当src1Type(src2Type)为reg类型时，out_ctrl_rfSrc1(out_ctrl_rfSrc2)会赋予对应的寄存器地址，否则置0。
+(e) 对于I/R/U/J-Type四种指令，out_ctrl_rfrd赋值rdAddr，否则置0。
+(f) 译码模块会根据instrType提取指令中立即数的信息，包括I/S/B/U/J-Type五种情况。（均作了符号位扩展）
+(g) 译码模块会根据funcType与funcOpType判断该指令是否为CSR指令: out_data_uimm_ext = yes -> ZeroExt(instr(19, 15), 64) : no -> 0
+
+
+译码后处理模块：IDUtoEXU 
+IDUtoEXU包含的输入：
+[1]  in_cf_pc
+[2]  in_ctrl_src1Type
+[3]  in_ctrl_src2Type
+[4]  in_ctrl_funcType
+[5]  in_ctrl_funcOpType
+[6]  in_ctrl_rfrd
+[7]  in_data_imm
+[8]  in_data_uimm_ext
+[9]  src1
+[10] src2
+包含的输出：
+[1] out_cf_pc
+[2] out_ctrl_funcType
+[3] out_ctrl_funcOpType
+[4] out_ctrl_rfrd
+[5] out_data_src1
+[6] out_data_src2
+[7] out_data_imm
+该模块的功能简介：
+该模块根据in_ctrl_src1Type(in_ctrl_src2Type)将可能处于in_data_imm, in_data_uimm_ext, src1(src2)的数据集中到out_data_src1(out_data_src2)作为输出。
+备注：
+src1(src2)的输入是由Regfile提供的，已经是寄存器中的数据而非地址了。
+
+
+执行模块：EXU 
+EXU包含的输入：
+[1] clock
+[2] reset
+[3] in_cf_pc
+[4] in_ctrl_funcType
+[5] in_ctrl_funcOpType
+[6] in_ctrl_rfrd
+[7] in_data_src1
+[8] in_data_src2
+[9] in_data_imm
+包含的输出：
+[1] reg_write_back_addr
+[2] reg_write_back_data
+[3] reg_write_back_ena
+[4] branch_new_pc
+[5] branch_valid
+该模块的功能简介：
+将模块的输入于ALU, BRU, LSU与CSR相连，输出则根据in_ctrl_funcType选择与何者子模块相连。
+备注：
+(a) EXU模块这里会根据reg_write_back_ena和reg_write_back_data统一处理对rd寄存器的写入。
+    也就是说，EXU会借由WBU写回模块与Regfile寄存器模块进行交互。
+(b) EXU目前未实现RV32I中的[Synch]类指令：包括fence和fence.i两条指令。
+
+
+逻辑运算单元：ALU
+ALU包含的输入：
+[1] in_ctrl_funcOpType
+[2] in_data_src1
+[3] in_data_src2
+包含的输出：
+[1] out_aluRes
+该模块的功能简介：
+该模块根据in_ctrl_funcOpType计算in_data_src1以及in_data_src2并输出到out_aluRes。
+详细介绍：
+模块实现了以下RV32I+RV64I指令：
+[Shifts]
+sll(i)(w) Shift Left Log. (Imm.)
+srl(i)(w) Shift Right Log. (Imm.)
+sra(i)(w) Shift Right Arith. (Imm.)
+[Arithmetic]
+add(i)(w) ADD (Immediate)
+sub(w)    SUBtract
+lui       Load Upper Imm
+auipc     Add Upper Imm to PC ### 其ALUOpType为add
+[Logical]
+xor(i)    XOR (Immediate)
+or(i)     OR (Immediate)
+and(i)    AND (Immediate)
+[Compare]
+slt(i)    Set < (Immediate)
+slt(i)u   Set < (Imm) Unsigned
+备注：
+(a) 对于[Shifts]中的指令，移动的位数会截取in_data_src2中的低5位（RV64I则为低6位）。
+(b) 对于RV64I指令，输出结果会进行符号位扩展。
+
+
+分支处理单元：BRU
+BRU包含的输入：
+[1] in_cf_pc
+[2] in_ctrl_funcType
+[3] in_ctrl_funcOpType
+[4] in_data_src1
+[5] in_data_src2
+[6] in_data_imm
+包含的输出：
+[1] out_new_pc
+[2] out_valid
+该模块的功能简介：
+对于[Branches]指令，模块会比较in_data_src1和in_data_src2后决定pc是否跳转，对于[Jump & Link]模块会执行对应的跳转操作。
+详细介绍：
+模块实现了以下RV32I指令：
+[Branches]
+beq       Branch =
+bne       Branch !=
+blt       Branch <
+bge       Branch >=
+bltu      Branch < Unsigned
+bgeu      Branch >= Unsigned
+[Jump & Link]
+jal       J&L
+jalr      Jump & Link Register
+备注：
+(a) [Jump & Link]指令中对rd寄存器的写入放在在EXU模块处理。
+(d) jalr指令需要把x[rs1]+offset的最低位设成0，模块尚未做对应处理。
+
+
+内存读写单元：LSU
+LSU包含的输入：
+[1] clock
+[2] reset
+[3] in_ctrl_funcType
+[4] in_ctrl_funcOpType
+[5] in_data_src1
+[6] in_data_src2
+[7] in_data_imm
+包含的输出：
+[1] out_rdata
+该模块的功能简介：
+模块对内存进行了相应的读写操作。
+详细介绍：
+模块实现了以下RV32I+RV64I指令：
+[Loads]
+lb        Load Byte
+lh        Load Halfword
+lbu       Load Byte Unsigned
+lhu       Load Half Unsigned
+lw        Load Word
+lwu       Load Word Unsigned
+ld        Load Double
+[Stores]
+sb        Store Byte
+sh        Store Halfword
+sw        Store Word
+sd        Store Double
+备注：
+(a) 模块中lr与sc指令作用不明。
+(b) 针对日后不同的内存的接口该模块需要进行改写。
+
+
+控制状态寄存器模块：CSR
+CSR包含的输入：
+[1] clock
+[2] reset
+[3] ena
+[4] in_cf_pc
+[5] in_ctrl_funcType
+[6] in_data_src2
+[7] in_data_imm
+包含的输出：
+[1] out_rdata
+[2] out_jmp_new_pc
+[3] out_jmp_valid
+该模块的功能简介：
+该模块负责cpu的异常处理。
+详细介绍：
+模块实现了以下RV32I指令：
+[Control Status Register]
+csrrw     Read/Write
+csrrs     Read & Set Bit
+csrrc     Read & Clear Bit
+csrrwi    Read/Write Imm
+csrrsi    Read & Set Bit Imm
+csrrci    Read & Clear Bit Imm
+[Environment]
+ecall     CALL
+ebreak    BREAK
+
+
+
+附录A：scala中插入的黑盒模块定义：
+RAMHelper: 内存模块
+请参考/ThirdParty/difftest下文档的相关说明。
+
+
+
