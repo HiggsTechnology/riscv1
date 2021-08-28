@@ -24,7 +24,9 @@ object SrcType {
   // src1
   def reg = 0.U
   def pc  = 1.U
-  def uimm= 2.U
+  // 暂时给uimm提供额外的通路，不再参与编码
+  // todo: 将多路选择器与指令类型解耦，因为CSRR[SCW]I指令属于InstI，但未使用寄存器里的数据
+
   // src2
   def imm = 1.U
   def apply() = UInt(log2Up(typeSize).W)

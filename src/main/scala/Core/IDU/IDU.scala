@@ -30,6 +30,7 @@ class IDU extends Module with Config{
   io.out.ctrl.rfWen      := isrfWen(instrType)
   
   val SrcTypeTable = List(
+    // CSR指令的CSR寄存器地址在imm中，uimm单独设置
     InstrI -> (SrcType.reg, SrcType.imm),
     InstrR -> (SrcType.reg, SrcType.reg),
     InstrS -> (SrcType.reg, SrcType.reg),

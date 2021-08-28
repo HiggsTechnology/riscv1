@@ -25,7 +25,7 @@ class IDUtoEXU extends Module with Config {
     io.out.data.src1 := LookupTree(io.in.ctrl.src1Type, List(
         SrcType.reg  -> src1Data,
         SrcType.pc   -> io.in.cf.pc,
-        SrcType.uimm -> io.in.data.uimm_ext,
+        // 暂时给uimm提供额外的通路，不再参与编码
     ))
     io.out.data.src2 := LookupTree(io.in.ctrl.src2Type, List(
         SrcType.reg  -> src2Data,
@@ -33,7 +33,7 @@ class IDUtoEXU extends Module with Config {
     ))
     // printf("Print during simulation: io.out.data.src1 is %x\n", io.out.data.src1)
     // printf("Print during simulation: io.out.data.src2 is %x\n", io.out.data.src2)
-
+    // 独立的uimm通路
     io.out.data.uimm_ext := io.in.data.uimm_ext
     io.out.data.imm := io.in.data.imm
     io.in.cf    <>  io.out.cf
