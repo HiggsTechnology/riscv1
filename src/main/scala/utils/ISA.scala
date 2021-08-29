@@ -1,7 +1,7 @@
 package utils
 
 import Core.EXU.{ALUOpType, BRUOpType, CsrOpType, LSUOpType}
-import Core.IDU.{FuncType, InstrType}
+import Core.IDU.{FuncType, InstrType, SrcType1, SrcType2}
 import chisel3._
 import chisel3.util._
 
@@ -31,29 +31,29 @@ object RV32I_ALUInstr extends InstrType {
   def LUI     = BitPat("b????????????????????_?????_0110111")
 
   val table = Array(
-    ADDI           -> List(InstrI, FuncType.alu, ALUOpType.add),
-    SLLI           -> List(InstrI, FuncType.alu, ALUOpType.sll),
-    SLTI           -> List(InstrI, FuncType.alu, ALUOpType.slt),
-    SLTIU          -> List(InstrI, FuncType.alu, ALUOpType.sltu),
-    XORI           -> List(InstrI, FuncType.alu, ALUOpType.xor),
-    SRLI           -> List(InstrI, FuncType.alu, ALUOpType.srl),
-    ORI            -> List(InstrI, FuncType.alu, ALUOpType.or ),
-    ANDI           -> List(InstrI, FuncType.alu, ALUOpType.and),
-    SRAI           -> List(InstrI, FuncType.alu, ALUOpType.sra),
+    ADDI           -> List(InstrI, FuncType.alu, ALUOpType.add  , SrcType1.reg, SrcType2.imm),
+    SLLI           -> List(InstrI, FuncType.alu, ALUOpType.sll  , SrcType1.reg, SrcType2.imm),
+    SLTI           -> List(InstrI, FuncType.alu, ALUOpType.slt  , SrcType1.reg, SrcType2.imm),
+    SLTIU          -> List(InstrI, FuncType.alu, ALUOpType.sltu , SrcType1.reg, SrcType2.imm),
+    XORI           -> List(InstrI, FuncType.alu, ALUOpType.xor  , SrcType1.reg, SrcType2.imm),
+    SRLI           -> List(InstrI, FuncType.alu, ALUOpType.srl  , SrcType1.reg, SrcType2.imm),
+    ORI            -> List(InstrI, FuncType.alu, ALUOpType.or   , SrcType1.reg, SrcType2.imm),
+    ANDI           -> List(InstrI, FuncType.alu, ALUOpType.and  , SrcType1.reg, SrcType2.imm),
+    SRAI           -> List(InstrI, FuncType.alu, ALUOpType.sra  , SrcType1.reg, SrcType2.imm),
 
-    ADD            -> List(InstrR, FuncType.alu, ALUOpType.add),
-    SLL            -> List(InstrR, FuncType.alu, ALUOpType.sll),
-    SLT            -> List(InstrR, FuncType.alu, ALUOpType.slt),
-    SLTU           -> List(InstrR, FuncType.alu, ALUOpType.sltu),
-    XOR            -> List(InstrR, FuncType.alu, ALUOpType.xor),
-    SRL            -> List(InstrR, FuncType.alu, ALUOpType.srl),
-    OR             -> List(InstrR, FuncType.alu, ALUOpType.or ),
-    AND            -> List(InstrR, FuncType.alu, ALUOpType.and),
-    SUB            -> List(InstrR, FuncType.alu, ALUOpType.sub),
-    SRA            -> List(InstrR, FuncType.alu, ALUOpType.sra),
+    ADD            -> List(InstrR, FuncType.alu, ALUOpType.add  , SrcType1.reg, SrcType2.reg),
+    SLL            -> List(InstrR, FuncType.alu, ALUOpType.sll  , SrcType1.reg, SrcType2.reg),
+    SLT            -> List(InstrR, FuncType.alu, ALUOpType.slt  , SrcType1.reg, SrcType2.reg),
+    SLTU           -> List(InstrR, FuncType.alu, ALUOpType.sltu , SrcType1.reg, SrcType2.reg),
+    XOR            -> List(InstrR, FuncType.alu, ALUOpType.xor  , SrcType1.reg, SrcType2.reg),
+    SRL            -> List(InstrR, FuncType.alu, ALUOpType.srl  , SrcType1.reg, SrcType2.reg),
+    OR             -> List(InstrR, FuncType.alu, ALUOpType.or   , SrcType1.reg, SrcType2.reg),
+    AND            -> List(InstrR, FuncType.alu, ALUOpType.and  , SrcType1.reg, SrcType2.reg),
+    SUB            -> List(InstrR, FuncType.alu, ALUOpType.sub  , SrcType1.reg, SrcType2.reg),
+    SRA            -> List(InstrR, FuncType.alu, ALUOpType.sra  , SrcType1.reg, SrcType2.reg),
 
-    AUIPC          -> List(InstrU, FuncType.alu, ALUOpType.add),
-    LUI            -> List(InstrU, FuncType.alu, ALUOpType.lui)
+    AUIPC          -> List(InstrU, FuncType.alu, ALUOpType.add  , SrcType1.pc , SrcType2.imm),
+    LUI            -> List(InstrU, FuncType.alu, ALUOpType.lui  , SrcType1.pc , SrcType2.imm),
   )
 }
 
@@ -69,15 +69,14 @@ object RV32I_BRUInstr extends InstrType {
   def BGEU    = BitPat("b???????_?????_?????_111_?????_1100011")
 
   val table = Array(
-    JAL            -> List(InstrJ, FuncType.bru, BRUOpType.jal),
-    JALR           -> List(InstrI, FuncType.bru, BRUOpType.jalr),
-
-    BEQ            -> List(InstrB, FuncType.bru, BRUOpType.beq),
-    BNE            -> List(InstrB, FuncType.bru, BRUOpType.bne),
-    BLT            -> List(InstrB, FuncType.bru, BRUOpType.blt),
-    BGE            -> List(InstrB, FuncType.bru, BRUOpType.bge),
-    BLTU           -> List(InstrB, FuncType.bru, BRUOpType.bltu),
-    BGEU           -> List(InstrB, FuncType.bru, BRUOpType.bgeu)
+    JAL            -> List(InstrJ, FuncType.bru, BRUOpType.jal  , SrcType1.pc , SrcType2.imm),
+    JALR           -> List(InstrI, FuncType.bru, BRUOpType.jalr , SrcType1.reg, SrcType2.imm),
+    BEQ            -> List(InstrB, FuncType.bru, BRUOpType.beq  , SrcType1.reg, SrcType2.reg),
+    BNE            -> List(InstrB, FuncType.bru, BRUOpType.bne  , SrcType1.reg, SrcType2.reg),
+    BLT            -> List(InstrB, FuncType.bru, BRUOpType.blt  , SrcType1.reg, SrcType2.reg),
+    BGE            -> List(InstrB, FuncType.bru, BRUOpType.bge  , SrcType1.reg, SrcType2.reg),
+    BLTU           -> List(InstrB, FuncType.bru, BRUOpType.bltu , SrcType1.reg, SrcType2.reg),
+    BGEU           -> List(InstrB, FuncType.bru, BRUOpType.bgeu , SrcType1.reg, SrcType2.reg),
   )
 }
 
@@ -92,14 +91,14 @@ object RV32I_LSUInstr extends InstrType {
   def SW      = BitPat("b???????_?????_?????_010_?????_0100011")
 
   val table = Array(
-    LB             -> List(InstrI, FuncType.lsu, LSUOpType.lb ),
-    LH             -> List(InstrI, FuncType.lsu, LSUOpType.lh ),
-    LW             -> List(InstrI, FuncType.lsu, LSUOpType.lw ),
-    LBU            -> List(InstrI, FuncType.lsu, LSUOpType.lbu),
-    LHU            -> List(InstrI, FuncType.lsu, LSUOpType.lhu),
-    SB             -> List(InstrS, FuncType.lsu, LSUOpType.sb ),
-    SH             -> List(InstrS, FuncType.lsu, LSUOpType.sh ),
-    SW             -> List(InstrS, FuncType.lsu, LSUOpType.sw)
+    LB             -> List(InstrI, FuncType.lsu, LSUOpType.lb , SrcType1.reg, SrcType2.imm),
+    LH             -> List(InstrI, FuncType.lsu, LSUOpType.lh , SrcType1.reg, SrcType2.imm),
+    LW             -> List(InstrI, FuncType.lsu, LSUOpType.lw , SrcType1.reg, SrcType2.imm),
+    LBU            -> List(InstrI, FuncType.lsu, LSUOpType.lbu, SrcType1.reg, SrcType2.imm),
+    LHU            -> List(InstrI, FuncType.lsu, LSUOpType.lhu, SrcType1.reg, SrcType2.imm),
+    SB             -> List(InstrS, FuncType.lsu, LSUOpType.sb , SrcType1.reg, SrcType2.reg),
+    SH             -> List(InstrS, FuncType.lsu, LSUOpType.sh , SrcType1.reg, SrcType2.reg),
+    SW             -> List(InstrS, FuncType.lsu, LSUOpType.sw , SrcType1.reg, SrcType2.reg),
   )
 }
 
@@ -119,19 +118,19 @@ object RV64IInstr extends InstrType {
   def SD      = BitPat("b???????_?????_?????_011_?????_0100011")
 
   val table = Array(
-    ADDIW          -> List(InstrI, FuncType.alu, ALUOpType.addw),
-    SLLIW          -> List(InstrI, FuncType.alu, ALUOpType.sllw),
-    SRLIW          -> List(InstrI, FuncType.alu, ALUOpType.srlw),
-    SRAIW          -> List(InstrI, FuncType.alu, ALUOpType.sraw),
-    SLLW           -> List(InstrR, FuncType.alu, ALUOpType.sllw),
-    SRLW           -> List(InstrR, FuncType.alu, ALUOpType.srlw),
-    SRAW           -> List(InstrR, FuncType.alu, ALUOpType.sraw),
-    ADDW           -> List(InstrR, FuncType.alu, ALUOpType.addw),
-    SUBW           -> List(InstrR, FuncType.alu, ALUOpType.subw),
+    ADDIW          -> List(InstrI, FuncType.alu, ALUOpType.addw , SrcType1.reg, SrcType2.imm),
+    SLLIW          -> List(InstrI, FuncType.alu, ALUOpType.sllw , SrcType1.reg, SrcType2.imm),
+    SRLIW          -> List(InstrI, FuncType.alu, ALUOpType.srlw , SrcType1.reg, SrcType2.imm),
+    SRAIW          -> List(InstrI, FuncType.alu, ALUOpType.sraw , SrcType1.reg, SrcType2.imm),
+    SLLW           -> List(InstrR, FuncType.alu, ALUOpType.sllw , SrcType1.reg, SrcType2.reg),
+    SRLW           -> List(InstrR, FuncType.alu, ALUOpType.srlw , SrcType1.reg, SrcType2.reg),
+    SRAW           -> List(InstrR, FuncType.alu, ALUOpType.sraw , SrcType1.reg, SrcType2.reg),
+    ADDW           -> List(InstrR, FuncType.alu, ALUOpType.addw , SrcType1.reg, SrcType2.reg),
+    SUBW           -> List(InstrR, FuncType.alu, ALUOpType.subw , SrcType1.reg, SrcType2.reg),
 
-    LWU            -> List(InstrI, FuncType.lsu, LSUOpType.lwu),
-    LD             -> List(InstrI, FuncType.lsu, LSUOpType.ld ),
-    SD             -> List(InstrS, FuncType.lsu, LSUOpType.sd)
+    LWU            -> List(InstrI, FuncType.lsu, LSUOpType.lwu  , SrcType1.reg, SrcType2.imm),
+    LD             -> List(InstrI, FuncType.lsu, LSUOpType.ld   , SrcType1.reg, SrcType2.imm),
+    SD             -> List(InstrS, FuncType.lsu, LSUOpType.sd   , SrcType1.reg, SrcType2.reg),
   )
 }
 
@@ -152,15 +151,15 @@ object RV64I_CSRInstr extends InstrType {
   val CSRRCI  : BitPat  = BitPat("b????????????_?????__111__?????_1110011")
 
   val table : Array[(BitPat, List[UInt])] = Array (
-    ECALL         ->  List( InstrI, FuncType.csr, CsrOpType.ECALL),
-    EBREAK        ->  List( InstrI, FuncType.csr, CsrOpType.EBREAK),
-    CSRRW         ->  List( InstrI, FuncType.csr, CsrOpType.RW),
-    CSRRS         ->  List( InstrI, FuncType.csr, CsrOpType.RS),
-    CSRRC         ->  List( InstrI, FuncType.csr, CsrOpType.RC),
-    CSRRWI        ->  List( InstrI, FuncType.csr, CsrOpType.RWI),
-    CSRRSI        ->  List( InstrI, FuncType.csr, CsrOpType.RSI),
-    CSRRCI        ->  List( InstrI, FuncType.csr, CsrOpType.RCI),
-    MRET          ->  List( InstrI, FuncType.csr, CsrOpType.MRET),
+    ECALL         ->  List( InstrI, FuncType.csr, CsrOpType.ECALL , SrcType1.reg  , SrcType2.imm ),
+    EBREAK        ->  List( InstrI, FuncType.csr, CsrOpType.EBREAK, SrcType1.reg  , SrcType2.imm ),
+    CSRRW         ->  List( InstrI, FuncType.csr, CsrOpType.RW    , SrcType1.reg  , SrcType2.imm ),
+    CSRRS         ->  List( InstrI, FuncType.csr, CsrOpType.RS    , SrcType1.reg  , SrcType2.imm ),
+    CSRRC         ->  List( InstrI, FuncType.csr, CsrOpType.RC    , SrcType1.reg  , SrcType2.imm ),
+    CSRRWI        ->  List( InstrI, FuncType.csr, CsrOpType.RWI   , SrcType1.uimm , SrcType2.imm ),
+    CSRRSI        ->  List( InstrI, FuncType.csr, CsrOpType.RSI   , SrcType1.uimm , SrcType2.imm ),
+    CSRRCI        ->  List( InstrI, FuncType.csr, CsrOpType.RCI   , SrcType1.uimm , SrcType2.imm ),
+    MRET          ->  List( InstrI, FuncType.csr, CsrOpType.MRET  , SrcType1.reg  , SrcType2.imm ),
   )
 }
 
@@ -168,5 +167,5 @@ object RVIInstr extends InstrType {
   val table : Array[(BitPat, List[UInt])] =
     RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++
     RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table
-  val defaultTable = List(InstrN, FuncType.alu, ALUOpType.add)
+  val defaultTable = List(InstrN, FuncType.alu, ALUOpType.add, SrcType1.pc, SrcType2.imm)
 }

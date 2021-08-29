@@ -1,7 +1,7 @@
 package utils
 
 import Core.Config.Config
-import Core.IDU.{FuncOpType, FuncType, SrcType}
+import Core.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.MemReg.RegWriteIO
 import chisel3._
 import chisel3.util._
@@ -12,10 +12,10 @@ class Pc_Instr extends Bundle with Config {
 }
 
 class CtrlSignalIO extends Bundle with Config {
-  val src1Type     = Output(SrcType())    
-  val src2Type     = Output(SrcType())
-  val funcType     = Output(FuncType())
-  val funcOpType   = Output(FuncOpType())
+  val src1Type     = Output(SrcType1.uwidth)
+  val src2Type     = Output(SrcType2.uwidth)
+  val funcType     = Output(FuncType.uwidth)
+  val funcOpType   = Output(FuncOpType.uwidth)
   val rfSrc1       = Output(UInt(5.W))    //src regfile address
   val rfSrc2       = Output(UInt(5.W))
   val rfrd         = Output(UInt(5.W))    //rd regfile address

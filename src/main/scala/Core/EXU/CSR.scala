@@ -46,9 +46,8 @@ class CSR extends Module with CsrRegDefine {
   }
   val io : CSRIO = IO(new CSRIO)
   private val op = io.in.ctrl.funcOpType
-  // todo: 把这个多路选择器迁移到译码阶段完成
-  // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展
-  private val src = Mux(CsrOpType.isCsri(op), io.in.data.uimm_ext, io.in.data.src1)
+  // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
+  private val src = io.in.data.src1
   // 读写CSR的地址
   private val addr = io.in.data.imm(CSR_ADDR_LEN - 1, 0)
   private val pc = io.in.cf.pc
