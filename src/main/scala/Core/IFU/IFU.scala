@@ -8,8 +8,8 @@ import utils.{BRU_OUTIO, IFU2RW, Pc_Instr}
 
 class IFUIO extends Bundle {
   val in  = Flipped(new BRU_OUTIO)  //branch
-  val out =  Valid(Flipped(new Pc_Instr))
-  val ifu2rw = Decoupled(new IFU2RW)
+  val out =  Valid(new Pc_Instr)
+  val ifu2rw = new IFU2RW
 }
 
 class IFU extends Module with Config {
@@ -18,10 +18,11 @@ class IFU extends Module with Config {
 
   // valid暂时恒为true，不停地取指令
   // todo: 将valid与流水线的stall关联
-  io.ifu2rw.valid := true.B
+  io.ifu2rw.valid   := true.B
+  io.ifu2rw.pc      := pc
 
   pc                := Mux(io.in.valid, io.in.new_pc, pc + 4.U)
-  val rdata         = io.ifu2rw.bits.rdata
+  val rdata         = io.ifu2rw.rdata
   val inst          = Mux(pc(2), rdata(63,32), rdata(31,0))
   io.out.bits.pc    := pc
   io.out.bits.instr := inst

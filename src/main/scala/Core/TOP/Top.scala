@@ -10,11 +10,13 @@ import Core.WBU.WBU
 import Core.MemReg.{RegWriteIO, Regfile}
 import chisel3._
 import utils.Pc_Instr
+import Core.AXI4.{AXI4IO, IFURW}
 
 class TOPIO extends Bundle {
-    val out   = Flipped(new Pc_Instr)
+    val out   = new Pc_Instr
     val valid = Output(Bool())
     val diffreg = Flipped(new RegWriteIO)
+    val axi4 = new AXI4IO
     //axi4 bundle out
 }
 
@@ -26,17 +28,20 @@ class Top extends Module {
     val exu = Module(new EXU)
     val wbu = Module(new WBU)
     val reg = Module(new Regfile)
+    val ifuaxi = Module(new IFURW)
 
+    io.axi4             <>  ifuaxi.io.ifu2crossbar
+    ifuaxi.io.ifuin         <>  ifu.io.ifu2rw
     ifu.io.out              <>  idu.io.in
     idu.io.out              <>  dis.io.in
     dis.io.out              <>  exu.io.in
     exu.io.reg_write_back   <>  wbu.io.in
     exu.io.branch           <>  ifu.io.in
     wbu.io.out              <>  reg.io.rd
-    reg.io.src1.addr := idu.io.out.ctrl.rfSrc1
-    reg.io.src2.addr := idu.io.out.ctrl.rfSrc2
-    dis.io.src1      := reg.io.src1.data
-    dis.io.src2      := reg.io.src2.data
+    reg.io.src1.addr        := idu.io.out.bits.ctrl.rfSrc1
+    reg.io.src2.addr        := idu.io.out.bits.ctrl.rfSrc2
+    dis.io.src1             := reg.io.src1.data
+    dis.io.src2             := reg.io.src2.data
 
     io.diffreg              <>  wbu.io.out
 

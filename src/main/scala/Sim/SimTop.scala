@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import difftest._
 import Chisel.unless
+import Core.AXI4.AXI4IO
 import Core.TOP.Top
 
 
@@ -11,6 +12,7 @@ class SimTopIO extends Bundle {
   val logCtrl = new LogCtrlIO
   val perfInfo = new PerfInfoIO
   val uart = new UARTIO
+  val memAXI_0 = new AXI4IO
 }
 
 class SimTop extends Module {
@@ -19,6 +21,10 @@ class SimTop extends Module {
   io.uart.out.valid := false.B
   io.uart.out.ch  := 0.U
   val rvcore = Module(new Top)
+  io.memAXI_0 <> rvcore.io.axi4
+  rvcore.io.axi4.b  := DontCare
+  rvcore.io.axi4.aw  := DontCare
+  rvcore.io.axi4.w  := DontCare
 
 
   val instrCommit = Module(new DifftestInstrCommit)

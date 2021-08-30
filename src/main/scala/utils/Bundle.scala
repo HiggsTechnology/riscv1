@@ -7,8 +7,8 @@ import chisel3._
 import chisel3.util._
 
 class Pc_Instr extends Bundle with Config {
-  val pc    = Input(UInt(XLEN.W))
-  val instr = Input(UInt(INST_WIDTH))
+  val pc    = Output(UInt(XLEN.W))
+  val instr = Output(UInt(INST_WIDTH))
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -30,7 +30,7 @@ class DataSrcIO extends Bundle with Config {
 }
 
 class CfCtrl extends Bundle with Config {
-  val cf   = Flipped(new Pc_Instr)
+  val cf   = new Pc_Instr
   val ctrl = new CtrlSignalIO
   val data = new DataSrcIO
 }
@@ -64,7 +64,8 @@ class LSU2RW extends  Bundle with Config{
 }
 
 class IFU2RW extends  Bundle with Config{
+  val valid     = Output(Bool())
+  val ready     = Input(Bool())
   val pc        = Output(UInt(XLEN.W))
-  val fetched   = Output(Bool()) //judge PC fetched or not
   val rdata     = Input(UInt(XLEN.W))
 }

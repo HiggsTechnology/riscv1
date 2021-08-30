@@ -9,7 +9,7 @@ object requireType {
 }
 
 class IFURWIO extends Bundle with Config {
-  val ifuin : DecoupledIO[IFU2RW] = Flipped(Decoupled(new IFU2RW)) //ifu data in
+  val ifuin = Flipped(new IFU2RW) //ifu data in
   val ifu2crossbar = new AXI4IO //RW 2 crossbar AXI4
 }
 class IFURW extends Module with Config{
@@ -63,9 +63,6 @@ class IFURW extends Module with Config{
     }
   }
 
-
-
-  val axi4_ar_bits_id = WireInit(UInt())
   //----------------------------状态机赋值-----------------------------
   switch(rState) {
     is(RState.idle) {//
@@ -86,7 +83,7 @@ class IFURW extends Module with Config{
     }//fuck zero
     is(RState.ar_end) {
       import AXI4Parameters.{AXI_PROT, AXI_SIZE}
-      ar_addr   := io.ifuin.bits.pc
+      ar_addr   := io.ifuin.pc
       ar_len    := 0.U
       ar_prot   := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
       ar_size   := AXI_SIZE.bytes8
@@ -115,7 +112,10 @@ class IFURW extends Module with Config{
   axi4.ar.bits.region := ar_region
   axi4.ar.bits.addr   := ar_addr
   axi4.r.ready        := r_ready
+  axi4.aw             := DontCare
+  axi4.w              := DontCare
+  axi4.b              := DontCare
   // ----------------------ifu连接------------------------
   io.ifuin.ready      := ifu_ready
-  io.ifuin.bits.rdata := ifu_rdata
+  io.ifuin.rdata      := ifu_rdata
 }
