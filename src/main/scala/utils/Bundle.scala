@@ -53,3 +53,18 @@ class EXU_OUTIO extends Bundle with Config {
   val bru_valid    = Output(Bool())
   val reg_write_io = new RegWriteIO
 }
+
+class LSU2RW extends  Bundle with Config{
+  /** r:0, w:1 */
+  val is_write  = Output(Bool())
+  val addr      = Output(UInt(XLEN.W))
+  val rdata     = Input(UInt(XLEN.W))
+  val wdata     = Output(UInt(XLEN.W))
+  val wstrb     = Output(UInt(8.W))
+}
+
+class IFU2RW extends  Bundle with Config{
+  val pc        = Output(UInt(XLEN.W))
+  val fetched   = Output(Bool()) //judge PC fetched or not
+  val rdata     = Input(UInt(XLEN.W))
+}

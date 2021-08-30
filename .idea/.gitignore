@@ -1,3 +1,5 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+/scala_compiler.xml
+/libraries

@@ -39,8 +39,8 @@ class Top extends Module {
 
     io.diffreg              <>  wbu.io.out
 
-    io.out.pc    := ifu.io.out.pc
-    io.out.instr := ifu.io.out.instr
+    io.out.pc    := ifu.io.out.bits.pc
+    io.out.instr := ifu.io.out.bits.instr
     io.valid     := withClock(clock){
     ~reset.asBool()
     }

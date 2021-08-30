@@ -200,6 +200,7 @@ Session.vim
 ## Plugin-specific files:
 
 # IntelliJ
+*.xml
 /out/
 
 # mpeltonen/sbt-idea plugin
