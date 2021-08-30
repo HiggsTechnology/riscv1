@@ -20,9 +20,9 @@ class LSURW extends Module with Config {
     val idle :: ar_valid :: ar_trans :: r_trans :: r_done :: Nil = Enum(5)
   }
   object WState {
-    val idle :: valid :: trans :: wait_resp :: done :: Nil = Enum(7)
+    val idle :: valid :: trans :: wait_resp :: done :: Nil = Enum(5)//
   }
-  wait()
+
   val rState : UInt = RegInit(RState.idle)
   val wState : UInt = RegInit(WState.idle)
 
@@ -35,12 +35,13 @@ class LSURW extends Module with Config {
   val aw_ready : Bool = axi4.aw.ready
   val w_ready : Bool = axi4.w.ready
   val b_valid : Bool = axi4.b.valid
+  val r_valid : Bool = axi4.r.valid
   val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
   val r_hs : Bool = axi4.r.valid  & axi4.r.ready
   val aw_hs : Bool = axi4.aw.valid & axi4.aw.ready
   val w_hs : Bool = axi4.w.valid  & axi4.w.ready
   val b_hs : Bool = axi4.b.valid  & axi4.b.ready
-  val r_valid : Bool = axi4.r.valid
+
 
   val r_done : Bool = axi4.r.bits.last
   val w_done : Bool = axi4.w.bits.last
@@ -68,8 +69,8 @@ class LSURW extends Module with Config {
       switch(wState) {
         is(WState.idle)       {when(lsu_w_valid)        {wState := WState.valid}}
         is(WState.valid)      {when(aw_ready & w_ready) {wState := WState.trans}}
-        is(WState.trans)      {when(b_valid)            {wState := WState.wait_resp}}
-        is(WState.wait_resp)  {when(w_done)             {wState := WState.done}}
+        is(WState.trans)      {when(w_done)            {wState := WState.wait_resp}}
+        is(WState.wait_resp)  {when(b_valid)             {wState := WState.done}}
         is(WState.done)       {wState := WState.idle}
       }
     }

@@ -15,6 +15,7 @@ class TOPIO extends Bundle {
     val out   = Flipped(new Pc_Instr)
     val valid = Output(Bool())
     val diffreg = Flipped(new RegWriteIO)
+    //axi4 bundle out
 }
 
 class Top extends Module {
