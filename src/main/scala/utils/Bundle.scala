@@ -56,11 +56,14 @@ class EXU_OUTIO extends Bundle with Config {
 
 class LSU2RW extends  Bundle with Config{
   /** r:0, w:1 */
+  val valid     = Output(Bool())
+  val rready    = Input(Bool())
+  val wready    = Input(Bool())
   val is_write  = Output(Bool())
   val addr      = Output(UInt(XLEN.W))
   val rdata     = Input(UInt(XLEN.W))
   val wdata     = Output(UInt(XLEN.W))
-  val wstrb     = Output(UInt(8.W))
+  val strb      = Output(UInt(8.W))
 }
 
 class IFU2RW extends  Bundle with Config{

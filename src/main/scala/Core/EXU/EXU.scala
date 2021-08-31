@@ -21,6 +21,7 @@ class EXU extends Module with Config {
     val lsu : LSU = Module(new LSU)
     val bru : BRU = Module(new BRU)
     val csr : CSR = Module(new CSR)
+    lsu.io.lsu2rw <> DontCare
     private val alu_ena = func === FuncType.alu
     private val lsu_ena = func === FuncType.lsu
     private val bru_ena = func === FuncType.bru

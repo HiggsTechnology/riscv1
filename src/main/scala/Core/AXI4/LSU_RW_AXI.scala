@@ -8,7 +8,7 @@ import chisel3.util._
 
 
 class LSURWIO extends Bundle with Config {
-  val lsuin : DecoupledIO[LSU2RW] = Flipped(Decoupled(new LSU2RW))
+  val lsuin = Flipped(new LSU2RW)
   val lsu2crossbar = new AXI4IO
 }
 
@@ -27,8 +27,8 @@ class LSURW extends Module with Config {
   val wState : UInt = RegInit(WState.idle)
 
   val lsu_valid : Bool = io.lsuin.valid
-  val lsu_r_valid : Bool = lsu_valid & !io.lsuin.bits.is_write
-  val lsu_w_valid : Bool = lsu_valid & io.lsuin.bits.is_write
+  val lsu_r_valid : Bool = lsu_valid & !io.lsuin.is_write
+  val lsu_w_valid : Bool = lsu_valid & io.lsuin.is_write
 
   //----------------------------状态机转移信号----------------------------
   val ar_ready : Bool = axi4.ar.ready
@@ -173,7 +173,7 @@ class LSURW extends Module with Config {
       }
       is(RState.ar_trans) {
         // todo: support burst mode
-        ar_addr   := io.lsuin.bits.addr
+        ar_addr   := io.lsuin.addr
         ar_prot   := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
         ar_id     := 0.U
         ar_user   := 0.U
@@ -195,6 +195,9 @@ class LSURW extends Module with Config {
       }
     }
   }
+
+  io.lsuin.rdata := lsu_rdata
+  io.lsuin.rready := lsu_r_ready
 
   when (!reset.asBool()) {
     switch(wState) {
@@ -223,7 +226,7 @@ class LSURW extends Module with Config {
         w_valid     := true.B
       }
       is(WState.trans) {
-        aw_addr     := io.lsuin.bits.addr
+        aw_addr     := io.lsuin.addr
         aw_prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
         aw_id       := 0.U
         aw_user     := 0.U
@@ -234,8 +237,8 @@ class LSURW extends Module with Config {
         aw_cache    := 0.U
         aw_qos      := 0.U
         aw_region   := 0.U
-        w_data      := io.lsuin.bits.wdata
-        w_strb      := io.lsuin.bits.wstrb
+        w_data      := io.lsuin.wdata
+        w_strb      := io.lsuin.strb
         w_last      := true.B   // todo: support burst
         w_user      := 0.U
       }
@@ -248,5 +251,5 @@ class LSURW extends Module with Config {
       }
     }
   }
-
+  io.lsuin.wready := lsu_w_ready
 }

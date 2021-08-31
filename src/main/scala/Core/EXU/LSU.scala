@@ -4,7 +4,7 @@ import Core.Config.Config
 import Core.IDU.FuncType
 import Core.MemReg.RAMHelper
 import chisel3._
-import utils.{CfCtrl, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
+import utils.{CfCtrl, LSU2RW, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U
@@ -34,6 +34,7 @@ class LSUIO extends Bundle with Config {
   val valid = Input(Bool())
   val in    = Flipped(new CfCtrl)
   val out   = new LSU_OUTIO
+  val lsu2rw = new LSU2RW
 }
 
 class LSU extends Module with Config {
@@ -61,16 +62,28 @@ class LSU extends Module with Config {
   val addr = Mux(io.valid, io.in.data.src1 + io.in.data.imm, 0.U)
   val storedata = io.in.data.src2
   val isStore = LSUOpType.isStore(io.in.ctrl.funcOpType)
-  val ram = Module(new RAMHelper)
-  ram.io.clk := clock
-  ram.io.en := io.valid
-  
-  //Load
-  val idx = (addr - PC_START.U) >> 3
-  ram.io.rIdx := idx
-  val rdata = ram.io.rdata
 
-  val rdataSel = rdata >> (addr(2, 0) * 8.U)
+  val rdataSel = RegInit(0.U)
+  io.lsu2rw.valid := io.valid
+  io.lsu2rw.is_write := isStore
+
+  val data_out = RegInit(0.U)
+  val strb_out = RegInit(0.U)
+  val r_hs = io.valid && io.lsu2rw.rready
+  val w_hs = io.valid && io.lsu2rw.wready
+  val size = io.in.ctrl.funcOpType(1,0)
+  when(r_hs){
+    rdataSel  := io.lsu2rw.rdata //read data in
+  }
+  when(w_hs){
+    strb_out  := genWmask(addr, size)
+    data_out  := genWdata(storedata, size)
+  }
+  io.lsu2rw.addr := Mux( r_hs||w_hs , addr , 0.U )
+  io.lsu2rw.strb := strb_out
+  io.lsu2rw.wdata := data_out
+
+
   io.out.rdata := LookupTree(io.in.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
@@ -81,24 +94,5 @@ class LSU extends Module with Config {
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
 
-  //Store
-  ram.io.wIdx := idx
-  ram.io.wen  := (io.in.ctrl.funcType === FuncType.lsu) & isStore
-
-  val size = io.in.ctrl.funcOpType(1,0)
-  val wdata_align = genWdata(storedata, size) << (addr(2, 0) * 8.U)
-  val mask_align = genWmask(addr, size) << (addr(2, 0) * 8.U)
-  ram.io.wdata := wdata_align
-  ram.io.wmask := mask_align 
-  
-  // //Align
-  // val addrAligned = LookupTree(io.in.funcOpType(1,0), List(
-  //   "b00".U   -> true.B,            //b
-  //   "b01".U   -> (addr(0) === 0.U),   //h
-  //   "b10".U   -> (addr(1,0) === 0.U), //w
-  //   "b11".U   -> (addr(2,0) === 0.U)  //d
-  // ))
-  // io.out.loadAddrMisaligned := valid && !isStore && !addrAligned
-  // io.out.storeAddrMisaligned := valid && isStore && !addrAligned
 
 }
