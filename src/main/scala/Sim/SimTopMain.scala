@@ -1,9 +1,8 @@
-package Core.TOP
+package Sim
 
-import Sim.SimTop
-import chisel3.stage._
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
-object TopMain extends App {
+object SimTopMain extends App {
   (new ChiselStage).execute(
     args,
     Seq(

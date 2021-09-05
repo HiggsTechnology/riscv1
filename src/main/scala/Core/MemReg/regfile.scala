@@ -24,15 +24,15 @@ class RegReadIO extends Bundle with Config {
 }
 
 class RegWriteIO extends Bundle with Config {
-  val addr = Input(UInt(5.W))
-  val data = Input(UInt(XLEN.W))
-  val ena  = Input(Bool())
+  val addr = Output(UInt(5.W))
+  val data = Output(UInt(XLEN.W))
+  val ena  = Output(Bool())
 }
 
 class RegfileIO extends Bundle {
   val src1  = new RegReadIO
   val src2  = new RegReadIO
-  val rd   = new RegWriteIO
+  val rd    = Flipped(new RegWriteIO)
 }
 
 class Regfile extends Module {

@@ -3,7 +3,6 @@ package Sim
 import chisel3._
 import chisel3.util._
 import difftest._
-import Chisel.unless
 import Core.AXI4.AXI4IO
 import Core.TOP.Top
 
@@ -15,17 +14,15 @@ class SimTopIO extends Bundle {
   val memAXI_0 = new AXI4IO
 }
 
-class SimTop extends Module {
+class SimTop extends MultiIOModule {
   val io : SimTopIO = IO(new SimTopIO())
+
   io.uart.in.valid  := false.B
   io.uart.out.valid := false.B
   io.uart.out.ch  := 0.U
   val rvcore = Module(new Top)
+  val axi4 = rvcore.io.axi4
   io.memAXI_0 <> rvcore.io.axi4
-  rvcore.io.axi4.b  := DontCare
-  rvcore.io.axi4.aw  := DontCare
-  rvcore.io.axi4.w  := DontCare
-
 
   val instrCommit = Module(new DifftestInstrCommit)
   instrCommit.io.clock := clock
@@ -52,6 +49,8 @@ class SimTop extends Module {
   trap.io.pc       := RegNext(RegNext(rvcore.io.out.pc))
   trap.io.cycleCnt := 0.U
   trap.io.instrCnt := 0.U
+
+
 }
 
 

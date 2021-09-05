@@ -70,5 +70,5 @@ class IFU2RW extends  Bundle with Config{
   val valid     = Output(Bool())
   val ready     = Input(Bool())
   val pc        = Output(UInt(XLEN.W))
-  val rdata     = Input(UInt(XLEN.W))
+  val rdata     = Input(UInt((XLEN * 4).W))
 }
