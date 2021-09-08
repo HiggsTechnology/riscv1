@@ -4,9 +4,6 @@
 [submodule "ThirdParty/NEMU"]
 	path = ThirdParty/NEMU
 	url = https://github.com/huxuan0307/NEMU.git
-[submodule "ThirdParty/difftest"]
-	path = ThirdParty/difftest
-	url = https://github.com/huxuan0307/difftest.git
 [submodule "ThirdParty/am-kernels"]
 	path = ThirdParty/am-kernels
 	url = https://github.com/huxuan0307/am-kernels.git
@@ -16,3 +13,6 @@
 [submodule "ThirdParty/riscv-test"]
 	path = ThirdParty/riscv-test
 	url = https://github.com/huxuan0307/riscv-tests.git
+[submodule "ThirdParty/difftest"]
+	path = ThirdParty/difftest
+	url = https://github.com/oscpu/difftest.git
