@@ -57,6 +57,14 @@ trait Config {
   def MISA : BigInt = {
     BigInt(MXL) << (MXLEN - 2) | BigInt(ISAEXT.toInt)
   }
+
+  def nALU : Int = 2
+
+  def nBRU : Int = 1
+
+  def nCSR : Int = 1
+
+  def nLSU : Int = 1
 }
 
 /** 可以import *.Config._ 在文件的全局导入 */

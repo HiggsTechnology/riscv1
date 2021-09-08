@@ -72,3 +72,23 @@ class IFU2RW extends  Bundle with Config{
   val pc        = Output(UInt(XLEN.W))
   val rdata     = Input(UInt(XLEN.W))
 }
+
+// Micro OP
+class MicroOp extends Bundle with Config {
+  val decode = new CfCtrl
+  val srcState = Vec(2, SrcState())
+  val psrc = Vec(2, UInt(PhyRegIdxWidth.W))
+  val pdest = UInt(PhyRegIdxWidth.W)
+  val old_pdest = UInt(PhyRegIdxWidth.W)//一路返回到freelist
+}
+
+class CommitIO extends Bundle with Config {
+  val reg_write_back = Flipped(new RegWriteIO)
+  val branch         = new BRU_OUTIO
+  val pdest = Output(UInt(PhyRegIdxWidth.W))
+}
+
+class RSExuIO extends Bundle with Config {
+  val reg_write_back = Flipped(new RegWriteIO)
+  val pdest = Output(UInt(PhyRegIdxWidth.W))
+}
