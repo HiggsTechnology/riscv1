@@ -6,7 +6,7 @@ import Core.IDU.FuncOpType
 import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
-import chisel3.util.{Cat, Enum, Fill, MuxLookup, is, log2Ceil, switch}
+import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, is, log2Ceil, switch}
 import difftest.DifftestCSRState
 import utils.{BRU_OUTIO, CfCtrl}
 
@@ -40,18 +40,17 @@ class CSR extends Module with CsrRegDefine {
       val rdata : UInt          = Output(UInt(DATA_WIDTH))
       val jmp   : BRU_OUTIO     = new BRU_OUTIO
     }
-    val ena : Bool = Input(Bool())
-    val in : CfCtrl = Flipped(new CfCtrl)
-    val out : CSROutPort = new CSROutPort
+    val in : Valid[CfCtrl] = Flipped(Valid(new CfCtrl))
+    val out : Valid[CSROutPort] = Valid(new CSROutPort)
   }
   val io : CSRIO = IO(new CSRIO)
-  private val op = io.in.ctrl.funcOpType
+  private val op = io.in.bits.ctrl.funcOpType
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
-  private val src = io.in.data.src1
+  private val src = io.in.bits.data.src1
   // 读写CSR的地址
-  private val addr = io.in.data.imm(CSR_ADDR_LEN - 1, 0)
-  private val pc = io.in.cf.pc
-  private val ena = io.ena
+  private val addr = io.in.bits.data.imm(CSR_ADDR_LEN - 1, 0)
+  private val pc = io.in.bits.cf.pc
+  private val ena = io.in.valid
   // 为了用Enum，被迫下划线命名枚举。。。bullshxt
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
@@ -140,9 +139,11 @@ class CSR extends Module with CsrRegDefine {
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
-  io.out.jmp.new_pc := new_pc
-  io.out.jmp.valid := trap_valid
-  io.out.rdata := rdata
+  // 非流水线状态，立即完成
+  io.out.valid := io.in.valid
+  io.out.bits.jmp.new_pc := new_pc
+  io.out.bits.jmp.ena := trap_valid
+  io.out.bits.rdata := rdata
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock
@@ -171,6 +172,10 @@ class CSR extends Module with CsrRegDefine {
       Fill(2, priv(0))
     else
       Privilege.Level.M
+
+  when (io.in.valid) {
+    printf("csr enable\n");
+  }
 }
 
 private object CsrAddr {

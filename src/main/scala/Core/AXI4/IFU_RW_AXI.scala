@@ -13,23 +13,23 @@ class IFURWIO extends Bundle with Config {
   val ifuin = Flipped(new IFU2RW) //ifu data in
   val ifu2crossbar = new AXI4IO   //RW 2 crossbar AXI4
 }
+
 class IFURW extends Module with Config{
   val io : IFURWIO = IO(new IFURWIO)
   val axi4 : AXI4IO = io.ifu2crossbar  // axi4 signal
-//  val (ar,r)  = (axi4.ar.bits, axi4.r.bits)
   object RState {
-    val idle :: addr :: read :: r_end :: Nil = Enum(4)//-->  0 :: 1 :: 2  three states
-    // addr in IFU is PC , and data in IFU is instruction
+    val idle :: ar_valid :: ar_trans :: r_trans :: r_done :: Nil = Enum(5)//-->  0 :: 1 :: 2  three states
   }
 
   val rState : UInt = RegInit(RState.idle)
 
   //----------------------------状态机转移信号----------------------------
+  val ifu_valid : Bool = io.ifuin.valid
+  val ar_ready : Bool = axi4.ar.ready
   val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
   val r_hs  : Bool = axi4.r.valid  & axi4.r.ready
   val r_valid : Bool = axi4.r.valid
-
-  val r_done : Bool = r_hs & axi4.r.bits.last
+  val r_done : Bool = axi4.r.bits.last
 
   //----------------------------初始化-----------------------------------
   val ar_valid  : UInt = WireInit(0.U)
@@ -57,14 +57,13 @@ class IFURW extends Module with Config{
   when(reset.asBool()) {
     rState := RState.idle
   }.otherwise{
-    when (io.ifuin.valid) {
-      switch(rState) {
-        is(RState.idle)  {               rState := RState.addr}
-        is(RState.addr)  {when(ar_hs)   {rState := RState.read}}
-        is(RState.read)  {when(r_done)  {rState := RState.r_end}}
-        // todo: 检查是否可以合并idle和r_end状态
-        is(RState.r_end) {rState := RState.idle} // 等一个周期就恢复idle
-      }
+    switch(rState) {
+      is(RState.idle)     {when(ifu_valid)    {rState := RState.ar_valid}}
+      is(RState.ar_valid) {when(ar_ready)     {rState := RState.ar_trans}}
+      is(RState.ar_trans) {when(r_valid)      {rState := RState.r_trans}}
+      is(RState.r_trans)  {when(r_done)       {rState := RState.r_done}}
+      // todo: 检查是否可以合并idle和r_end状态
+      is(RState.r_done)   { rState := RState.idle }
     }
   }
 
@@ -72,7 +71,7 @@ class IFURW extends Module with Config{
 
   switch(rState) {
     is(RState.idle) {
-      ar_valid  := io.ifuin.valid
+      ar_valid  := false.B
       ar_addr   := ar_addr_new
       ar_len    := ar_len_new
       ar_prot   := ar_prot_new
@@ -82,8 +81,8 @@ class IFURW extends Module with Config{
       ifu_ready := false.B
       ifu_rdata  := 0.U
     }//fuck zero
-    is(RState.addr) {
-      ar_valid  := io.ifuin.valid
+    is(RState.ar_valid) {
+      ar_valid  := true.B
       ar_addr   := ar_addr_new
       ar_len    := ar_len_new
       ar_prot   := ar_prot_new
@@ -94,8 +93,19 @@ class IFURW extends Module with Config{
       ifu_rdata := 0.U
       //TODO 考虑burst后ar.bits :=
     }
-    is(RState.read) {
-      ar_valid  := 0.U
+    is(RState.ar_trans) {
+      ar_valid  := false.B
+      ar_addr   := ar_addr_new
+      ar_len    := ar_len_new
+      ar_prot   := ar_prot_new
+      ar_size   := ar_size_new
+
+      r_ready   := true.B
+      ifu_ready := false.B
+      ifu_rdata := 0.U
+    }
+    is(RState.r_trans) {
+      ar_valid  := false.B
       ar_addr   := ar_addr_new
       ar_len    := ar_len_new
       ar_prot   := ar_prot_new
@@ -106,8 +116,8 @@ class IFURW extends Module with Config{
       ifu_rdata := 0.U
       //TODO 考虑burst后r.bits :=
     }
-    is(RState.r_end) {
-      ar_valid  := 0.U
+    is(RState.r_done) {
+      ar_valid  := false.B
       ar_addr   := ar_addr_new
       ar_len    := ar_len_new
       ar_prot   := ar_prot_new

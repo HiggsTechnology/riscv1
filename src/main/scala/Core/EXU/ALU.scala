@@ -28,18 +28,18 @@ object ALUOpType {
 }
 
 class ALUIO extends Bundle {
-  val in  = Flipped(new CfCtrl)
-  val out = new ALU_OUTIO
+  val in  = Flipped(Valid(new CfCtrl))
+  val out = Valid(new ALU_OUTIO)
 }
 
 class ALU extends Module with Config {
   val io = IO(new ALUIO)
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
-  src1 := io.in.data.src1
-  src2 := io.in.data.src2
-  val shamt = Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), src2(4, 0), src2(5, 0))
-  val res = LookupTree(io.in.ctrl.funcOpType, List(
+  src1 := io.in.bits.data.src1
+  src2 := io.in.bits.data.src2
+  val shamt = Mux(ALUOpType.isWordOp(io.in.bits.ctrl.funcOpType), src2(4, 0), src2(5, 0))
+  val res = LookupTree(io.in.bits.ctrl.funcOpType, List(
     ALUOpType.add   ->   (src1 + src2),
     ALUOpType.sll   ->   (src1 << shamt),
     ALUOpType.slt   ->   (Cat(0.U((XLEN - 1).W), src1.asSInt() < src2.asSInt())),
@@ -57,8 +57,11 @@ class ALU extends Module with Config {
     ALUOpType.sraw  ->   ((src1(31,0).asSInt() >> shamt).asUInt()),
     ALUOpType.lui  ->    (src2)
   ))
-
-  io.out.aluRes := Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), SignExt(res(31,0), 64), res)
-
+  // 非流水线状态，立即完成
+  io.out.valid := io.in.valid
+  io.out.bits.aluRes := Mux(ALUOpType.isWordOp(io.in.bits.ctrl.funcOpType), SignExt(res(31,0), 64), res)
+  when (io.in.valid) {
+    printf("alu enable\n")
+  }
 }
 

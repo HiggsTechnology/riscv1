@@ -19,18 +19,18 @@ object BRUOpType {
 }
 
 class BRUIO extends Bundle {
-  val in  = Flipped(new CfCtrl)
-  val out = new BRU_OUTIO
+  val in  = Flipped(Valid(new CfCtrl))
+  val out = Valid(new BRU_OUTIO)
 }
 
 class BRU extends Module with Config {
   val io = IO(new BRUIO)
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
-  src1 := io.in.data.src1
-  src2 := io.in.data.src2
+  src1 := io.in.bits.data.src1
+  src2 := io.in.bits.data.src2
 
-  io.out.valid := (io.in.ctrl.funcType === FuncType.bru) && LookupTree(io.in.ctrl.funcOpType, List(
+  io.out.bits.ena := (io.in.bits.ctrl.funcType === FuncType.bru) && LookupTree(io.in.bits.ctrl.funcOpType, List(
     BRUOpType.jal   ->  (true.B),
     BRUOpType.jalr  ->  (true.B),
     BRUOpType.beq   ->  (src1 === src2),
@@ -40,8 +40,11 @@ class BRU extends Module with Config {
     BRUOpType.bltu  ->  (src1 < src2),
     BRUOpType.bgeu  ->  (src1 >= src2)
   ))
-  
-  io.out.new_pc := Mux((io.in.ctrl.funcOpType === BRUOpType.jalr),
-    Cat(io.in.data.src1(XLEN - 1,1), 0.U(1.W)) + io.in.data.imm, io.in.cf.pc + io.in.data.imm)
-
+  // 非流水线实现，立即完成
+  io.out.valid := io.in.valid
+  io.out.bits.new_pc := Mux(io.in.bits.ctrl.funcOpType === BRUOpType.jalr,
+    Cat(io.in.bits.data.src1(XLEN - 1,1), 0.U(1.W)) + io.in.bits.data.imm, io.in.bits.cf.pc + io.in.bits.data.imm)
+  when (io.in.valid) {
+    printf("bru enable\n");
+  }
 }

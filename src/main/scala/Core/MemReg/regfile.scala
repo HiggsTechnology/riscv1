@@ -2,6 +2,7 @@ package Core.MemReg
 
 import Core.Config.Config
 import chisel3._
+import chisel3.util.Valid
 
 class RegfileFunc extends Config {
   val regs = RegInit(VecInit(Seq.fill(32)(0.U(XLEN.W))))
@@ -32,7 +33,7 @@ class RegWriteIO extends Bundle with Config {
 class RegfileIO extends Bundle {
   val src1  = new RegReadIO
   val src2  = new RegReadIO
-  val rd    = Flipped(new RegWriteIO)
+  val rd    = Flipped(Valid(new RegWriteIO))
 }
 
 class Regfile extends Module {
@@ -44,8 +45,8 @@ class Regfile extends Module {
   // printf("Print during simulation: io.rd.addr is %d\n", io.rd.addr)
   // printf("Print during simulation: io.rd.data is %x\n", io.rd.data)
   // printf("Print during simulation: regfile.regs(io.rd.addr) is %x\n", regfile.read(io.rd.addr))
-  when(io.rd.ena) {
-    regfile.write(io.rd.addr, io.rd.data)
+  when(io.rd.valid && io.rd.bits.ena) {
+    regfile.write(io.rd.bits.addr, io.rd.bits.data)
   }
   io.src1.data := regfile.read(io.src1.addr)
   io.src2.data := regfile.read(io.src2.addr)

@@ -4,6 +4,7 @@ import Core.Config.Config
 import Core.IDU.FuncType
 import Core.MemReg.RAMHelper
 import chisel3._
+import chisel3.util.Valid
 import utils.{CfCtrl, LSU2RW, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
@@ -30,22 +31,29 @@ object LSUOpType {
   def needMemWrite(func: UInt): Bool = isStore(func) || isSC(func)
 }
 
-class LSUIO extends Bundle with Config {
-  val valid = Input(Bool())
-  val in    = Flipped(new CfCtrl)
-  val out   = new LSU_OUTIO
-  val lsu2rw = new LSU2RW
+class LSUIO(use_axi: Boolean = false) extends Bundle with Config {
+  val in      = Flipped(Valid(new CfCtrl))
+  val out     = Valid(new LSU_OUTIO)
+  val lsu2rw  = if (use_axi) new LSU2RW else null
 }
 
-class LSU extends Module with Config {
-
-  def genWmask(addr: UInt, sizeEncode: UInt): UInt = {
-    (LookupTree(sizeEncode, List(
+class LSU(use_axi: Boolean) extends Module with Config {
+  def genWmask(sizeEncode: UInt): UInt = {
+    LookupTree(sizeEncode, List(
       "b00".U -> BigInt(0xff).U(XLEN.W), //0001 << addr(2:0)
       "b01".U -> BigInt(0xffff).U(XLEN.W), //0011
       "b10".U -> BigInt(0xffffffffL).U(XLEN.W), //1111
       "b11".U -> (BigInt(Long.MaxValue) * 2 + 1).U(XLEN.W) //11111111
-    )) ).asUInt()
+    )).asUInt()
+  }
+  // copy from axi branch written by BigZyb
+  def genStrb(sizeEncode: UInt): UInt = {
+    LookupTree(sizeEncode, List(
+      "b00".U -> 0x1.U, //0001 << addr(2:0) 1111 1111
+      "b01".U -> 0x3.U, //0011              1111 1111 1111 1111
+      "b10".U -> 0xf.U, //1111              1111 1111 1111 1111 1111 1111 1111 1111
+      "b11".U -> 0xff.U //11111111
+    )) .asUInt()
   }
 
   def genWdata(data: UInt, sizeEncode: UInt): UInt = {
@@ -57,34 +65,54 @@ class LSU extends Module with Config {
     ))
   }
 
+  val io = IO(new LSUIO(use_axi))
 
-  val io = IO(new LSUIO)
-  val addr = Mux(io.valid, io.in.data.src1 + io.in.data.imm, 0.U)
-  val storedata = io.in.data.src2
-  val isStore = LSUOpType.isStore(io.in.ctrl.funcOpType)
+  val addr = Mux(io.in.valid, io.in.bits.data.src1 + io.in.bits.data.imm, 0.U)
+  val storedata = io.in.bits.data.src2
+  val isStore = LSUOpType.isStore(io.in.bits.ctrl.funcOpType)
+  val rdataSel = WireInit(0.U)
+  if (use_axi) {
+    val rdata  = io.lsu2rw.rdata //read data in
+    rdataSel  := (rdata >> (addr(2, 0) * 8.U)).asUInt()
 
-  val rdataSel = RegInit(0.U)
-  io.lsu2rw.valid := io.valid
-  io.lsu2rw.is_write := isStore
+    val data_out = WireInit(0.U)
+    val strb_out = WireInit(0.U)
+    val size = io.in.bits.ctrl.funcOpType(1,0)
 
-  val data_out = RegInit(0.U)
-  val strb_out = RegInit(0.U)
-  val r_hs = io.valid && io.lsu2rw.rready
-  val w_hs = io.valid && io.lsu2rw.wready
-  val size = io.in.ctrl.funcOpType(1,0)
-  when(r_hs){
-    rdataSel  := io.lsu2rw.rdata //read data in
-  }
-  when(w_hs){
-    strb_out  := genWmask(addr, size)
+    strb_out  := genStrb(size)
     data_out  := genWdata(storedata, size)
+
+    io.lsu2rw.valid := io.in.valid
+    io.lsu2rw.is_write := isStore
+    io.lsu2rw.addr  := addr
+    io.lsu2rw.wstrb := strb_out << addr(2, 0)
+    io.lsu2rw.wdata := data_out << (addr(2,0) << 3.U)
+    io.lsu2rw.size  := size
+    when (io.in.valid && !isStore) {
+      printf("lsu: addr: %x, data.src1: %x, data.imm: %x\n", addr, io.in.bits.data.src1, io.in.bits.data.imm);
+    }
   }
-  io.lsu2rw.addr := Mux( r_hs||w_hs , addr , 0.U )
-  io.lsu2rw.strb := strb_out
-  io.lsu2rw.wdata := data_out
+  else {
+    // 通过参数方式解决二者矛盾
+    val ram = Module(new RAMHelper)
+    ram.io.clk := clock
+    ram.io.en := io.in.valid
+    //Load
+    val idx = (addr - PC_START.U) >> 3
+    ram.io.rIdx := idx
+    val rdata = ram.io.rdata
+    rdataSel := (rdata >> (addr(2, 0) * 8.U)).asUInt()
+    ram.io.wIdx := idx
+    ram.io.wen  := (io.in.bits.ctrl.funcType === FuncType.lsu) & isStore
 
+    val size = io.in.bits.ctrl.funcOpType(1,0)
+    val wdata_align = genWdata(storedata, size) << (addr(2, 0) * 8.U)
+    val mask_align = genWmask(size) << (addr(2, 0) * 8.U)
+    ram.io.wdata := wdata_align
+    ram.io.wmask := mask_align
+  }
 
-  io.out.rdata := LookupTree(io.in.ctrl.funcOpType, List(
+  io.out.bits.rdata := LookupTree(io.in.bits.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
     LSUOpType.lw   -> SignExt(rdataSel(31, 0), XLEN),
@@ -93,6 +121,16 @@ class LSU extends Module with Config {
     LSUOpType.lhu  -> ZeroExt(rdataSel(15, 0), XLEN),
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
+
+  // IO 连线
+  if(use_axi) {
+    io.out.valid := io.lsu2rw.ready
+  } else {
+    io.out.valid := io.in.valid
+  }
+  when (io.in.valid) {
+    printf("lsu enable\n");
+  }
 
 
 }

@@ -15,14 +15,20 @@ class SimTopIO extends Bundle {
 }
 
 class SimTop extends MultiIOModule {
-  val io : SimTopIO = IO(new SimTopIO())
+  val ifu_use_axi: Boolean = false
+  val lsu_use_axi: Boolean = false
 
+  val io : SimTopIO = IO(new SimTopIO())
   io.uart.in.valid  := false.B
   io.uart.out.valid := false.B
   io.uart.out.ch  := 0.U
-  val rvcore = Module(new Top)
-  val axi4 = rvcore.io.axi4
-  io.memAXI_0 <> rvcore.io.axi4
+  val rvcore = Module(new Top(ifu_use_axi, lsu_use_axi))
+
+  if(ifu_use_axi || lsu_use_axi) {
+    io.memAXI_0 <> rvcore.io.axi4
+  } else {
+    io.memAXI_0 <> DontCare
+  }
 
   val instrCommit = Module(new DifftestInstrCommit)
   instrCommit.io.clock := clock
@@ -32,7 +38,12 @@ class SimTop extends MultiIOModule {
   instrCommit.io.isRVC := false.B
   instrCommit.io.scFailed := false.B
 
-  instrCommit.io.valid := RegNext(RegNext(rvcore.io.valid))
+  if(ifu_use_axi) {
+    instrCommit.io.valid := RegNext(RegNext(rvcore.io.valid))
+  } else {
+    instrCommit.io.valid := RegNext(RegNext(rvcore.io.valid))
+  }
+
   instrCommit.io.pc    := RegNext(RegNext(rvcore.io.out.pc))
 
   instrCommit.io.instr := RegNext(RegNext(rvcore.io.out.instr))
