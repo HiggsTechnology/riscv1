@@ -35,7 +35,7 @@ class ExuTOPIO extends Bundle with Config with rsConfig{
   ///val valid = Output(Vec(2,Bool())) ///握手
 }
 
-///1,,写到orderq,保留站，指针给保留站
+///1,,写到orderqueue,保留站,指针给保留站
 ///2,,orderq控制指令的发射
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
 class ExuTop extends Module with {
@@ -63,48 +63,150 @@ class ExuTop extends Module with {
   orderqueue.io.in := io.in
 
   //读寄存器数据选择通路src1、src2
-  rs.io.decode.
+  //lq//RS应该需要侦听当前入队指令的物理寄存器
+  val preg = Module(new Regfile(4,2,128))///新写
+  val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+  for(i <- 0 until 2){
+    preg.io.read(2*i).addr := io.in(i).psrc(0)
+    preg.io.read(2*i+1).addr := io.in(i).psrc(1)
+    preg_data(i)(0) := preg.io.read(2*i).data
+    preg_data(i)(1) := preg.io.read(2*i+1).data
+  }
+
+  val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+  for(i <- 0 until 2){
+    src_in(i)(0) := LookupTree(io.in(i).bits.ctrl.src1Type, List(
+      SrcType1.reg  -> preg_data(i)(0),
+      SrcType1.pc   -> io.in(i).bits.cf.pc,
+      SrcType1.uimm -> io.in(i).bits.data.uimm_ext
+    ))
+    src_in(i)(1) := LookupTree(io.in(i).bits.ctrl.src2Type, List(
+      SrcType2.reg  -> preg_data(i)(1),
+      SrcType2.imm  -> io.in(i).bits.data.imm
+    ))
+
+  }
+
   for(i <- 0 until 2){
     when(io.rs_num_in(i)===0.U && io.in(i).valid){
-      alu1rs.io.in <> io.in(i) //in orderqueue rs  读寄存器
-      orderqueue.io.enqPtr <> alu1rs.io.Enqptr
-      rs.io.in.srcState(0) := io.busytablein(2*i)
-      rs.io.in.srcState(1) := io.busytablein(2*i+1)
+      csrrs.io.in <> io.in(i) //in orderqueue rs  读寄存器
+      orderqueue.io.enqPtr := csrrs.io.Enqptr
+      csrrs.io.in.srcState(0) := io.busytablein(2*i)
+      csrrs.io.in.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
+      csrrs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===1.U && io.in(i).valid){
-      orderqueue.io.out <> alu2rs.io.DispatchOrder
-      orderqueue.io.enqPtr <> alu2rs.io.Enqptr
+      brurs.io.in <> io.in(i) //in orderqueue rs  读寄存器
+      orderqueue.io.enqPtr := brurs.io.Enqptr
+      brurs.io.in.srcState(0) := io.busytablein(2*i)
+      brurs.io.in.srcState(1) := io.busytablein(2*i+1)
+      //寄存器的输入
+      brurs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===2.U && io.in(i).valid){
-      orderqueue.io.out <> brurs.io.DispatchOrder
-      orderqueue.io.enqPtr <> brurs.io.Enqptr
+      alu1rs.io.in <> io.in(i) //in orderqueue rs  读寄存器
+      orderqueue.io.enqPtr := alu1rs.io.Enqptr
+      alu1rs.io.in.srcState(0) := io.busytablein(2*i)
+      alu1rs.io.in.srcState(1) := io.busytablein(2*i+1)
+      //寄存器的输入
+      alu1rs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===3.U && io.in(i).valid){
-      orderqueue.io.out <> csrrs.io.DispatchOrder
-      orderqueue.io.enqPtr <> csrrs.io.Enqptr
+      alu2rs.io.in <> io.in(i) //in orderqueue rs  读寄存器
+      orderqueue.io.enqPtr := alu2rs.io.Enqptr
+      alu2rs.io.in.srcState(0) := io.busytablein(2*i)
+      alu2rs.io.in.srcState(1) := io.busytablein(2*i+1)
+      //寄存器的输入
+      alu2rs.io.SrcIn := rs_preg(i)
     }
     when(rs_num_in(i)===4.U && io.in(i).valid){
-      orderqueue.io.out <> lsurs.io.DispatchOrder
-      orderqueue.io.enqPtr <> lsurs.io.Enqptr
+      lsurs.io.in <> io.in(i) //in orderqueue rs  读寄存器
+      orderqueue.io.enqPtr := lsurs.io.Enqptr
+      lsurs.io.in.srcState(0) := io.busytablein(2*i)
+      lsurs.io.in.srcState(1) := io.busytablein(2*i+1)
+      //寄存器的输入
+      lsurs.io.SrcIn := rs_preg(i)
     }
   }
 
+  //2,,orderq控制指令的发射
   csrrs.io.DispatchOrder := orderqueue.io.out
+  brurs.io.DispatchOrder := orderqueue.io.out
   alu1rs.io.DispatchOrder := orderqueue.io.out
   alu2rs.io.DispatchOrder := orderqueue.io.out
+  lsurs.io.DispatchOrder := orderqueue.io.out
 
-
-  //2
-
+  ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
 
   //rs to exu
-  alu1.io.in <> alu1rs.out
-  alu1.io.src := alu1rs.SrcOut
-  alu2.io.in <> alu2rs.out
-  alu2.io.src := alu2rs.SrcOut
+  //执行单元运算，有decouple，直接连接
+  csr.io.in <> csrrs.io.out
+  csr.io.src := csrrs.io.SrcOut
+  bru.io.in <> brurs.io.out
+  bru.io.src := brurs.io.SrcOut
+  alu1.io.in <> alu1rs.io.out
+  alu1.io.src := alu1rs.io.SrcOut
+  alu2.io.in <> alu2rs.io.out
+  alu2.io.src := alu2rs.io.SrcOut
+  lsu.io.in <> lsurs.io.out
+  lsu.io.src := lsurs.io.SrcOut
 
   //exu res write back
+  ///我建议在MicroOp中加入orderque指针，或者
+  ///根据保留站序号，两条指令都是同一执行单元时此拍只能执行一条
+  val ExuResult = Wire(Vec(2,new CommitIO))
+
+  //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
+  for(i <- 0 until 2){
+    rs_num_in(i)
+    ///val func = io.in(i).bits.decode.ctrl.funcType
+    ///val op = io.in(i).bits.decode.ctrl.funcOpType
+    lsu.io.lsu2rw <> DontCare
+    val alu_ena = func === FuncType.alu
+    val lsu_ena = func === FuncType.lsu
+    val bru_ena = func === FuncType.bru
+    val csr_ena = func === FuncType.csr
+
+    lsu.io.valid := lsu_ena
+    // csr 维护内部状态需要启用信号
+    csr.io.ena  := csr_ena
+    alu.io.in <> io.in.bits
+    lsu.io.in <> io.in.bits
+    bru.io.in <> io.in.bits
+    csr.io.in <> io.in.bits
+
+    private val wb_ena = Wire(Bool())
+    private val wdata = Wire(UInt(XLEN.W))
+    wb_ena := MuxLookup(func, false.B, Array(
+      FuncType.alu -> true.B,
+      FuncType.lsu -> LSUOpType.isLoad(op),
+      FuncType.bru -> BRUOpType.isJalr(io.in.bits.ctrl.funcOpType),
+      // csrr*[i]指令都需要写入寄存器堆，ecall ebreak mret等指令的rd对应位置为x0，置true也没有影响
+      FuncType.csr -> true.B
+    ))
+    wdata := MuxLookup(func, 0.U(XLEN.W), Array(
+      FuncType.alu -> alu.io.out.aluRes,
+      FuncType.lsu -> lsu.io.out.rdata,
+      FuncType.bru -> (io.in.bits.cf.pc + 4.U),
+      FuncType.csr -> csr.io.out.rdata
+    ))
+    // 当译码信号有效时才写入
+    io.reg_write_back.ena   := wb_ena & io.in.valid
+    io.reg_write_back.addr  := io.in.bits.ctrl.rfrd
+    io.reg_write_back.data  := wdata
+
+    // lsu和csr都会影响pc的值
+    io.branch.valid := io.in.valid
+    io.branch <> MuxLookup(func, 0.U.asTypeOf(new BRU_OUTIO), Array(
+      FuncType.bru -> bru.io.out,
+      FuncType.csr -> csr.io.out.jmp
+    ))
+
+  }
+
+
+
   ///当前周期事情，在rs内比较是否
   //lookuptree选择功能单元，得到两个CommitIO，是否valid在rs与功能单元握手
   //写回rename、保留站、寄存器；如果乱序，第一步写回rs和rob，rob顺序写回reg和rename
