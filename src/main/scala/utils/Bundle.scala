@@ -1,6 +1,6 @@
 package utils
 
-import Core.Config.Config
+import Core.Config.{Config, SrcState}
 import Core.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.MemReg.RegWriteIO
 import chisel3._
@@ -88,9 +88,4 @@ class CommitIO extends Bundle with Config {
   val old_pdest = UInt(PhyRegIdxWidth.W)
   val ldest = UInt(5.W)//logic
   val rfWen = Bool()
-}
-
-class RSExuIO extends Bundle with Config {
-  val reg_write_back = Flipped(new RegWriteIO)
-  val pdest = Output(UInt(PhyRegIdxWidth.W))
 }

@@ -3,7 +3,6 @@ package Core.MemReg
 import Core.Config.Config
 import chisel3._
 
-val PhyRegIdxWidth = 7
 
 class RegfileFunc(numPreg: Int) extends Config {
   val regs = RegInit(VecInit(Seq.fill(numPreg)(0.U(XLEN.W))))

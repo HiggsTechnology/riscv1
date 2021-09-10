@@ -1,5 +1,6 @@
 package Core.RS
 
+import Core.Config.Config
 import chisel3._
 import chisel3.util._
 import utils._
@@ -7,45 +8,44 @@ import Core.EXU.ALU
 import Core.EXU.BRU
 import Core.EXU.CSR
 import Core.EXU.LSU
+import Core.IDU.{SrcType1, SrcType2}
+import Core.MemReg.Regfile
+import Core.OrderQueue
+import Core.OrderQueue.OrderQueue
 
-trait rsConfig{
-  rsSize :Int = 2
-}
 
+
+/*
 class EXU_OUTIO extends Bundle {
   val reg_write_back = Flipped(new RegWriteIO)///原四级写反没用到
   val pdest = Output(UInt(PhyRegIdxWidth.W))
 }
+ */
 ///CommitIO,逻辑、物理地址数据，还要加回到重命名模块、BusyTable
 
 
-class ExuTOPIO extends Bundle with Config with rsConfig{
+class ExuTOPIO extends Bundle with Config {
   val in = Vec(2, ValidIO(new MicroOp))///此模块里，DispatchQueue在外部，给到OrderQueue
-  val rs_num_in = Vec(2, Input(UInt(log2Up(ExuNUM).W)))///此模块里，给到rs的序号，OrderQueueBook
+  val rs_num_in = Vec(2, Input(UInt(log2Up(ExuNum).W)))///此模块里，给到rs的序号，OrderQueueBook
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
-  ///val writeBusyin = Vec(2,new writeBusyIO))///Input地址，Output布尔
-  ///val readBusyin = Vec(ExuNum,Vec(rsSize,new readBusyIO)))///Input地址，Output布尔
-  ///val rs_RegRead = Vec(ExuNum,Vec(rsSize,flipped(new RegReadIO)))//一个Commit、发射出来指令的物理地址到Busytable
 
   //val redirect         = new BRU_OUTIO///BRU可能Redirect_OUTIO,与朱航他们讨论
   val out = Vec(2,ValidIO(new CommitIO))///满足两条指令同时写回...decouple多一层是否准备好
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
-  val rsFull = Vec(ExuNUM,Output(Bool()))
-  //val SrcOut = Vec(2,Output(UInt(XLEN.W)))///Src输出, valid在MicroOp
-  ///val valid = Output(Vec(2,Bool())) ///握手
+  val rsFull = Vec(ExuNum,Output(Bool()))
 }
 
 ///1,,写到orderqueue,保留站,指针给保留站
 ///2,,orderq控制指令的发射
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
-class ExuTop extends Module with {
+class ExuTop extends Module with Config{
   val io  = IO(new ExuTOPIO)
   //val exu = Module(new EXU)///原四级需要修改，添加为1csr 1jump 2alu 1lsu，并为执行单元编号，与rsNum相同
-  val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNUM, name = "CSRRS")))
-  val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNUM, name = "BRURS")))
-  val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNUM, name = "ALU1RS"))///nFu,循环判断是否为
-  val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNUM, name = "ALU2RS")))
-  val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNUM, name = "LSURS")))
+  val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS")))
+  val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS")))
+  val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
+  val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS")))
+  val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "LSURS")))
   val csr = Module(new CSR)
   val bru = Module(new BRU)
   val alu1 = Module(new ALU)
@@ -57,9 +57,8 @@ class ExuTop extends Module with {
   //val dispatchqueue = Module(new DispatchQueue)
   ///从目前设计来看，需要的是
 
-
   //orderqueue
-  orderqueue.io.rs_num_in := io.rs_num_in
+  orderqueue.io.rs_num := io.rs_num_in
   orderqueue.io.in := io.in
 
   //读寄存器数据选择通路src1、src2
@@ -91,42 +90,42 @@ class ExuTop extends Module with {
     when(io.rs_num_in(i)===0.U && io.in(i).valid){
       csrrs.io.in <> io.in(i) //in orderqueue rs  读寄存器
       orderqueue.io.enqPtr := csrrs.io.Enqptr
-      csrrs.io.in.srcState(0) := io.busytablein(2*i)
-      csrrs.io.in.srcState(1) := io.busytablein(2*i+1)
+      csrrs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
+      csrrs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
       //寄存器的输入
       csrrs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===1.U && io.in(i).valid){
       brurs.io.in <> io.in(i) //in orderqueue rs  读寄存器
       orderqueue.io.enqPtr := brurs.io.Enqptr
-      brurs.io.in.srcState(0) := io.busytablein(2*i)
-      brurs.io.in.srcState(1) := io.busytablein(2*i+1)
+      brurs.io.in.bits.srcState(0) := io.busytablein(2*i)
+      brurs.io.in.bits.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
       brurs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===2.U && io.in(i).valid){
       alu1rs.io.in <> io.in(i) //in orderqueue rs  读寄存器
       orderqueue.io.enqPtr := alu1rs.io.Enqptr
-      alu1rs.io.in.srcState(0) := io.busytablein(2*i)
-      alu1rs.io.in.srcState(1) := io.busytablein(2*i+1)
+      alu1rs.io.in.bits.srcState(0) := io.busytablein(2*i)
+      alu1rs.io.in.bits.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
       alu1rs.io.SrcIn := src_in(i)
     }
     when(io.rs_num_in(i)===3.U && io.in(i).valid){
       alu2rs.io.in <> io.in(i) //in orderqueue rs  读寄存器
       orderqueue.io.enqPtr := alu2rs.io.Enqptr
-      alu2rs.io.in.srcState(0) := io.busytablein(2*i)
-      alu2rs.io.in.srcState(1) := io.busytablein(2*i+1)
+      alu2rs.io.in.bits.srcState(0) := io.busytablein(2*i)
+      alu2rs.io.in.bits.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
-      alu2rs.io.SrcIn := rs_preg(i)
+      alu2rs.io.SrcIn := src_in(i)
     }
-    when(rs_num_in(i)===4.U && io.in(i).valid){
+    when(io.rs_num_in(i)===4.U && io.in(i).valid){
       lsurs.io.in <> io.in(i) //in orderqueue rs  读寄存器
       orderqueue.io.enqPtr := lsurs.io.Enqptr
-      lsurs.io.in.srcState(0) := io.busytablein(2*i)
-      lsurs.io.in.srcState(1) := io.busytablein(2*i+1)
+      lsurs.io.in.bits.srcState(0) := io.busytablein(2*i)
+      lsurs.io.in.bits.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
-      lsurs.io.SrcIn := rs_preg(i)
+      lsurs.io.SrcIn := src_in(i)
     }
   }
 
@@ -155,88 +154,63 @@ class ExuTop extends Module with {
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
   ///根据保留站序号，两条指令都是同一执行单元时此拍只能执行一条
-  val ExuResult = Wire(Vec(2,new CommitIO))
+  val ExuResult = Wire(Vec(2,ValidIO(new CommitIO)))
 
   //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
+  //并行通知保留站、寄存器
+  //-------------找输出为有效的功能单元--------------
+  val first_inst = Wire(Vec(6, Bool()))
+  val second_inst = Wire(Vec(6, Bool()))
+  first_inst(0) := false.B
+  first_inst(1) := csr.io.out.valid && !crs.io.out.bits.isScecond///目前没有这个信号
+  first_inst(2) := bru.io.out.valid && !bru.io.out.bits.isScecond
+  first_inst(3) := alu1.io.out.valid && !alu1.io.out.bits.isScecond
+  first_inst(4) := alu2.io.out.valid && !alu2.io.out.bits.isScecond
+  first_inst(5) := lsu.io.out.valid && !lsu.io.out.bits.isScecond
+  second_inst(0) := false.B
+  second_inst(1) := csr.io.out.valid && crs.io.out.bits.isScecond///目前没有这个信号
+  second_inst(2) := bru.io.out.valid && bru.io.out.bits.isScecond
+  second_inst(3) := alu1.io.out.valid && alu1.io.out.bits.isScecond
+  second_inst(4) := alu2.io.out.valid && alu2.io.out.bits.isScecond
+  second_inst(5) := lsu.io.out.valid && lsu.io.out.bits.isScecond
+
+  val first_num =  ParallelPriorityEncoder(first_inst)
+  val second_num = ParallelPriorityEncoder(second_inst)
+
+  val commit_default = Wire(ValidIO(new CommitIO))
+  commit_default.valid := false.B
+
+   ExuResult(0):= MuxLookup(first_num,commit_default,Array(
+     1.U -> csr.io.commit///---------------这里接口是改成commit形式还是保留原形式，根据执行单元类型选择？
+     2.U -> bru.io.commit
+     3.U -> alu1.io.commit
+     4.U -> alu2.io.commit
+     5.U -> lsu.io.commit
+   ))
+  ExuResult(1):= MuxLookup(second_num_num,commit_default,Array(
+    1.U -> csr.io.commit
+    2.U -> bru.io.commit
+    3.U -> alu1.io.commit
+    4.U -> alu2.io.commit
+    5.U -> lsu.io.commit
+  ))
+
+  csrrs.io.ExuResult := ExuResult
+  brurs.io.ExuResult := ExuResult
+  alu1rs.io.ExuResult := ExuResult
+  alu2rs.io.ExuResult := ExuResult
+  lsurs.io.ExuResult := ExuResult
+
   for(i <- 0 until 2){
-    rs_num_in(i)
-    ///val func = io.in(i).bits.decode.ctrl.funcType
-    ///val op = io.in(i).bits.decode.ctrl.funcOpType
-    lsu.io.lsu2rw <> DontCare
-    val alu_ena = func === FuncType.alu
-    val lsu_ena = func === FuncType.lsu
-    val bru_ena = func === FuncType.bru
-    val csr_ena = func === FuncType.csr
-
-    lsu.io.valid := lsu_ena
-    // csr 维护内部状态需要启用信号
-    csr.io.ena  := csr_ena
-    alu.io.in <> io.in.bits
-    lsu.io.in <> io.in.bits
-    bru.io.in <> io.in.bits
-    csr.io.in <> io.in.bits
-
-    private val wb_ena = Wire(Bool())
-    private val wdata = Wire(UInt(XLEN.W))
-    wb_ena := MuxLookup(func, false.B, Array(
-      FuncType.alu -> true.B,
-      FuncType.lsu -> LSUOpType.isLoad(op),
-      FuncType.bru -> BRUOpType.isJalr(io.in.bits.ctrl.funcOpType),
-      // csrr*[i]指令都需要写入寄存器堆，ecall ebreak mret等指令的rd对应位置为x0，置true也没有影响
-      FuncType.csr -> true.B
-    ))
-    wdata := MuxLookup(func, 0.U(XLEN.W), Array(
-      FuncType.alu -> alu.io.out.aluRes,
-      FuncType.lsu -> lsu.io.out.rdata,
-      FuncType.bru -> (io.in.bits.cf.pc + 4.U),
-      FuncType.csr -> csr.io.out.rdata
-    ))
-    // 当译码信号有效时才写入
-    io.reg_write_back.ena   := wb_ena & io.in.valid
-    io.reg_write_back.addr  := io.in.bits.ctrl.rfrd
-    io.reg_write_back.data  := wdata
-
-    // lsu和csr都会影响pc的值
-    io.branch.valid := io.in.valid
-    io.branch <> MuxLookup(func, 0.U.asTypeOf(new BRU_OUTIO), Array(
-      FuncType.bru -> bru.io.out,
-      FuncType.csr -> csr.io.out.jmp
-    ))
-
+    preg.io.write(i).addr := ExuResult(i).pdest
+    preg.io.write(i).ena := ExuResult(i).rfWen
+    preg.io.write(i).data := ExuResult(i).res
+    io.out(i).bits := ExuResult(i)
   }
 
+  ///io.out(0).valid := ParallelORR(first_inst)
+  ///io.out(1).valid := ParallelORR(second_inst)
 
 
-  ///当前周期事情，在rs内比较是否
-  //lookuptree选择功能单元，得到两个CommitIO，是否valid在rs与功能单元握手
-  //写回rename、保留站、寄存器；如果乱序，第一步写回rs和rob，rob顺序写回reg和rename
-
-  val exu_seq = Seq(csr,bru,alu1,alu2,lsu)
-  for (i <- 0 until ExuNUM){
-    alu1rs.ExuResult(i) <> exu_seq(i).CommitIO
-  }
-  for (i <- 0 until ExuNUM){
-    alu2rs.ExuResult(i) <> exu_seq(i).CommitIO
-  }
-  for (i <- 0 until ExuNUM){
-    brurs.ExuResult(i) <> exu_seq(i).CommitIO
-  }
-  for (i <- 0 until ExuNUM){
-    csrrs.ExuResult(i) <> exu_seq(i).CommitIO
-  }
-  for (i <- 0 until ExuNUM){
-    lsurs.ExuResult(i) <> exu_seq(i).CommitIO
-  }
-
-  val rs_seq = Seq(csrrs,brurs,alu1rs,alu2rs,lsurs)
-  //reg和rs
-  for (i <- 0 until ExuNUM){
-      rs_seq(i).readBusy <> io.rs_
-      rs_seq(i).RegRead <> io.rs_RegRead(i)
-  }
-
-  ///保留站侦听所有功能单元输出，选择有用信号
-
-  // 更改rename
 
 }

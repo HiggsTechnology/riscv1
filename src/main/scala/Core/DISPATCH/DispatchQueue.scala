@@ -1,10 +1,11 @@
 package Core.DISPATCH
 
+import Core.Config.Config
+import Core.Config.Config.{DispatchQueueSize, ExuNum}
 import chisel3._
 import chisel3.util._
 import utils._
 
-val DispatchQueueSize = 8
 
 
 class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueSize) with HasCircularQueuePtrHelper{

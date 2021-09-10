@@ -65,6 +65,23 @@ trait Config {
   def nCSR : Int = 1
 
   def nLSU : Int = 1
+
+  def ExuNum :Int = 5
+
+  def rsSize :Int = 2
+
+  def PhyRegIdxWidth : Int = 7
+
+  def OrderQueueSize : Int = 32
+
+  def DispatchQueueSize : Int = 8
+}
+
+object SrcState {
+  def busy    = "b0".U
+  def rdy     = "b1".U
+  // def specRdy = "b10".U // speculative ready, for future use
+  def apply() = UInt(1.W)
 }
 
 /** 可以import *.Config._ 在文件的全局导入 */
