@@ -35,7 +35,7 @@ class RSDispatch extends Bundle{
 class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with HasRSConst {
   val io = IO(new Bundle {
     //in
-    val in = Flipped(Decoupled(new OrderQueue.MicroOp))/////封装
+    val in = Flipped(Decoupled(new MicroOp))/////封装
     val Enqptr = Input(UInt(log2Up(OrderQueueSize).W))///////入列指针，本次入列指令的编号
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))///Src, valid在MicroOp
     //侦听，，比较rs valid是要true，然后去比pdest与psrc是不是对的，srcState一定要false才能写。即三个条件，for循环同时做
@@ -43,7 +43,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     //out
     val DispatchOrder = Input(new RSDispatch)///发射指令编号，当前指令valid、下一条valid////for循环对比（dispatchNUM与保留站Enqptr是否一致,rs_valid order_valid）｜｜（dispatchNUM+1与保留站Enqptr是否一致 rs_valid order_next_valid）//几位布尔选择策略
     ///找到序号后，检查操作数是否准备好，做个前递选择通路，一旦srcState是false，就把ExuResult。。三选一，一种是保留站数据，还有两个是ExuResult的1和2
-    val out = Decoupled(new OrderQueue.MicroOp)///
+    val out = Decoupled(new MicroOp)///
     val SrcOut = Vec(2,Output(UInt(XLEN.W)))///Src输出, valid在MicroOp
     ////val emptySize = Output(UInt(log2Up(size).W))///output if RS is empty, io.empty :=rsEmpty
     val full = Output(Bool())///output if RS is full,>=2
@@ -51,7 +51,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   ////need
   val rsSize = size
-  val decode  = Mem(rsSize, new OrderQueue.MicroOp) //
+  val decode  = Mem(rsSize, new MicroOp) //
   val valid   = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
