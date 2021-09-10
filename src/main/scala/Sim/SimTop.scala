@@ -1,10 +1,9 @@
 package Sim
 
-import chisel3._
-import chisel3.util._
-import difftest._
 import Core.AXI4.AXI4IO
 import Core.TOP.Top
+import chisel3._
+import difftest._
 
 
 class SimTopIO extends Bundle {
@@ -15,8 +14,8 @@ class SimTopIO extends Bundle {
 }
 
 class SimTop extends MultiIOModule {
-  val ifu_use_axi: Boolean = false
-  val lsu_use_axi: Boolean = false
+  val ifu_use_axi: Boolean = true
+  val lsu_use_axi: Boolean = true
 
   val io : SimTopIO = IO(new SimTopIO())
   io.uart.in.valid  := false.B

@@ -8,9 +8,10 @@ import Core.IDU.IDU
 import Core.IFU.IFU
 import Core.WBU.WBU
 import Core.MemReg.{RegWriteIO, Regfile}
+import Core.AXI4.{AXI4IO, CROSSBAR_Nto1, IFURW, LSURW}
+import utils.{Pc_Instr, bool2int}
+
 import chisel3._
-import utils.Pc_Instr
-import Core.AXI4.{AXI4IO, IFURW, LSURW}
 
 class TOPIO(use_axi: Boolean = true) extends Bundle {
   val out   = new Pc_Instr
@@ -24,6 +25,9 @@ class Top(
    ifu_use_axi: Boolean = false,
    lsu_use_axi: Boolean = false
   ) extends Module {
+
+  val num_axi4_master: Int = bool2int(ifu_use_axi) + bool2int(lsu_use_axi)
+
   val use_axi = ifu_use_axi || lsu_use_axi
   val io  = IO(new TOPIO(use_axi))
   val ifu = Module(new IFU(ifu_use_axi))
@@ -34,14 +38,24 @@ class Top(
   val reg = Module(new Regfile)
   val ifuaxi = if(ifu_use_axi) Module(new IFURW) else null
   val lsuaxi = if(lsu_use_axi) Module(new LSURW) else null
-  if (ifu_use_axi) {
-    io.axi4                 <>  ifuaxi.io.ifu2crossbar
+  val crossbar_xto1 = if(num_axi4_master > 1) Module(new CROSSBAR_Nto1(1,1)) else null
+
+  if (ifu_use_axi && num_axi4_master == 1) {
+    io.axi4                 <>  ifuaxi.io.to_crossbar
     ifuaxi.io.ifuin         <>  ifu.io.ifu2rw
   }
 
-  if (lsu_use_axi) {
-    io.axi4               <>  lsuaxi.io.lsu2crossbar
+  if (lsu_use_axi && num_axi4_master == 1) {
+    io.axi4               <>  lsuaxi.io.to_crossbar
     lsuaxi.io.lsuin       <>  exu.io.lsu2rw
+  }
+
+  if (num_axi4_master > 1) {
+    io.axi4                 <>  crossbar_xto1.io.out
+    crossbar_xto1.io.in(0)  <>  ifuaxi.io.to_crossbar
+    ifuaxi.io.ifuin         <>  ifu.io.ifu2rw
+    crossbar_xto1.io.in(1)  <>  lsuaxi.io.to_crossbar
+    lsuaxi.io.lsuin         <>  exu.io.lsu2rw
   }
 
   ifu.io.out              <>  idu.io.in
@@ -63,7 +77,16 @@ class Top(
   // 当写回和pc修改都完成后，可以继续取指
   val first_inst = RegInit(true.B)
 
-  val ifu_stall = !wbu.io.out.valid
+  // 适应AXI4和ramhelper两种不同的stall策略
+  var ifu_stall : Bool = false.B
+  if (ifu_use_axi) {
+    ifu_stall = RegInit(false.B)
+    withClock((~clock.asUInt).asBool.asClock()){
+      ifu_stall := !wbu.io.out.valid
+    }
+  } else {
+    ifu_stall = !wbu.io.out.valid
+  }
 
   io.valid     := withClock(clock){
     // 在写回valid的下一个周期才能写入寄存器，所以在下一个周期向difftest提交指令
@@ -77,5 +100,5 @@ class Top(
   printf("reset:%d, exu.io.out.valid:%d, " +
     "wbu.io.out.valid:%d, io.valid: %d, " +
     "ifu_stall: %d, pc: %x, inst: %x\n",
-    reset.asBool(), exu.io.reg_write_back.valid, wbu.io.out.valid, io.valid, ifu_stall, ifu.io.out.bits.pc, ifu.io.out.bits.instr);
+    reset.asBool(), exu.io.reg_write_back.valid, wbu.io.out.valid, io.valid, ifu_stall, ifu.io.out.bits.pc, ifu.io.out.bits.instr)
 }

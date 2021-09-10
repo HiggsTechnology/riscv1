@@ -1,57 +1,57 @@
 package Core.AXI4
-import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE, addrBits}
+import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
 import Core.Config.Config
 import chisel3._
-import utils._
 import chisel3.util._
+import utils._
 
 object requireType {
   val r :: w :: Nil = Enum(2)
 }
 
 class IFURWIO extends Bundle with Config {
-  val ifuin = Flipped(new IFU2RW) //ifu data in
-  val ifu2crossbar = new AXI4IO   //RW 2 crossbar AXI4
+  val ifuin : IFU2RW = Flipped(new IFU2RW) //ifu data in
+  val to_crossbar : AXI4IO = new AXI4IO   //RW 2 crossbar AXI4
 }
 
 class IFURW extends Module with Config{
   val io : IFURWIO = IO(new IFURWIO)
-  val axi4 : AXI4IO = io.ifu2crossbar  // axi4 signal
+  val axi4 : AXI4IO = io.to_crossbar  // axi4 signal
   object RState {
     val idle :: ar_valid :: ar_trans :: r_trans :: r_done :: Nil = Enum(5)//-->  0 :: 1 :: 2  three states
   }
 
-  val rState : UInt = RegInit(RState.idle)
+  private val rState : UInt = RegInit(RState.idle)
 
   //----------------------------状态机转移信号----------------------------
-  val ifu_valid : Bool = io.ifuin.valid
-  val ar_ready : Bool = axi4.ar.ready
-  val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
-  val r_hs  : Bool = axi4.r.valid  & axi4.r.ready
-  val r_valid : Bool = axi4.r.valid
-  val r_done : Bool = axi4.r.bits.last
+  private val ifu_valid : Bool = io.ifuin.valid
+  private val ar_ready : Bool = axi4.ar.ready
+  private val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
+  private val r_hs  : Bool = axi4.r.valid  & axi4.r.ready
+  private val r_valid : Bool = axi4.r.valid
+  private val r_done : Bool = axi4.r.bits.last
 
   //----------------------------初始化-----------------------------------
   val ar_valid  : UInt = WireInit(0.U)
-  val ar_id     : UInt = WireInit(0.U)
-  val ar_len    : UInt = WireInit(0.U)
-  val ar_size   : UInt = WireInit(0.U)
-  val ar_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
-  val ar_lock   : UInt = WireInit(0.U)
-  val ar_cache  : UInt = WireInit("b0010".U)
-  val ar_qos    : UInt = WireInit(0.U)
-  val ar_user   : UInt = WireInit(0.U)
-  val ar_prot   : UInt = WireInit(0.U)
-  val ar_region : UInt = WireInit(0.U)
-  val ar_addr   : UInt = WireInit(0.U)
-  val r_ready   : UInt = WireInit(0.U)
-  val ifu_ready : UInt = WireInit(0.U)
-  val ifu_rdata : UInt = WireInit(0.U)
+  private val ar_id     : UInt = WireInit(0.U)
+  private val ar_len    : UInt = WireInit(0.U)
+  private val ar_size   : UInt = WireInit(0.U)
+  private val ar_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
+  private val ar_lock   : UInt = WireInit(0.U)
+  private val ar_cache  : UInt = WireInit("b0010".U)
+  private val ar_qos    : UInt = WireInit(0.U)
+  private val ar_user   : UInt = WireInit(0.U)
+  private val ar_prot   : UInt = WireInit(0.U)
+  private val ar_region : UInt = WireInit(0.U)
+  private val ar_addr   : UInt = WireInit(0.U)
+  private val r_ready   : UInt = WireInit(0.U)
+  private val ifu_ready : UInt = WireInit(0.U)
+  private val ifu_rdata : UInt = WireInit(0.U)
 
-  val ar_addr_new   = Cat(io.ifuin.pc(XLEN-1, AXI4Parameters.addrAlignedBits), 0.U((AXI4Parameters.addrAlignedBits).W))
-  val ar_len_new    = 0.U
-  val ar_prot_new   = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
-  val ar_size_new   = AXI_SIZE.bytes32
+  private val ar_addr_new   = Cat(io.ifuin.pc(XLEN-1, AXI4Parameters.addrAlignedBits), 0.U(AXI4Parameters.addrAlignedBits.W))
+  private val ar_len_new    = 0.U
+  private val ar_prot_new   = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
+  private val ar_size_new   = AXI_SIZE.bytes32
 
   //-------------------------状态机-------------------------------
   when(reset.asBool()) {
@@ -149,9 +149,12 @@ class IFURW extends Module with Config{
   io.ifuin.ready      := ifu_ready
   io.ifuin.rdata      := ifu_rdata
 
-  printf("----------------------------------------------------\n")
-  printf("ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n", axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
-  printf("raddr: %x%x, rdata: %x%x%x%x\n", axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0), axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0))
-  printf("rState: %d\n", rState)
+  when (rState =/= RState.idle){
+    printf("----------------------ifu axi----------------------\n")
+    printf("ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n", axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
+    printf("read_addr: %x, raddr: %x%x, rdata: %x%x%x%x\n", io.ifuin.pc(31,0), axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0), axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0))
+    printf("rState: %d\n", rState)
+  }
+
 
 }

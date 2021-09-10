@@ -23,3 +23,6 @@ object ZeroExt {
   }
 }
 
+object bool2int {
+  def apply(b:Boolean) : Int = if (b) 1 else 0
+}

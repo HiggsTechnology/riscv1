@@ -16,35 +16,44 @@ class IFUIO(use_axi:Boolean=false) extends Bundle {
 
 class IFU(use_axi:Boolean=false) extends Module with Config {
   val io = IO(new IFUIO(use_axi))
-  val pc = RegInit(PC_START.U(XLEN.W))
-  val pc_next = RegInit((PC_START + 4).U(XLEN.W))
-
-
+  // pc初始化为80000000-4，访存通过Mux使用npc(next pc)和pc，
+  // 完美解决立即取指和多周期取指情况下，要求pc既能hold住，又不需要等到下一个周期使用的矛盾
+  val pc = RegInit((PC_START-4).U(XLEN.W))
+  val npc = WireInit(0.U)
   val inst = WireInit(0.U)
-
+  val reg_inst = RegInit(0.U)
   if (use_axi) {
+    val b_ena = RegInit(false.B)
+    val b_new_pc = RegInit(0.U)
+    withClock((~clock.asUInt).asBool.asClock()){
+      b_ena := io.bru.bits.ena
+      b_new_pc := io.bru.bits.new_pc
+    }
+    npc := Mux(b_ena, b_new_pc, pc + 4.U)
     when(!io.stall) {
-      pc      := Mux(io.bru.bits.ena, io.bru.bits.new_pc, pc + 4.U)
+      pc      := npc
     }
     // pc不会被立即使用，而是在rw中延迟一个周期
     // Todo: 在IFU_RW_AXI把这个延迟的周期删去，取指减少一个周期
-    io.ifu2rw.valid   := true.B
-    io.ifu2rw.pc      := pc
+    io.ifu2rw.valid   := RegNext(!io.stall)
+    io.ifu2rw.pc      := Mux(!io.stall, npc, pc)
     val rdata         = io.ifu2rw.rdata
+    inst := MuxLookup(pc(AXI4Parameters.addrAlignedBits-1,2), 0.U, Array(
+      0.U -> rdata(32*1-1, 32*0),
+      1.U -> rdata(32*2-1, 32*1),
+      2.U -> rdata(32*3-1, 32*2),
+      3.U -> rdata(32*4-1, 32*3),
+      4.U -> rdata(32*5-1, 32*4),
+      5.U -> rdata(32*6-1, 32*5),
+      6.U -> rdata(32*7-1, 32*6),
+      7.U -> rdata(32*8-1, 32*7),
+    ))
     when(io.ifu2rw.ready) {
-      inst := MuxLookup(pc(AXI4Parameters.addrAlignedBits-1,2), 0.U, Array(
-        0.U -> rdata(32*1-1, 32*0),
-        1.U -> rdata(32*2-1, 32*1),
-        2.U -> rdata(32*3-1, 32*2),
-        3.U -> rdata(32*4-1, 32*3),
-        4.U -> rdata(32*5-1, 32*4),
-        5.U -> rdata(32*6-1, 32*5),
-        6.U -> rdata(32*7-1, 32*6),
-        7.U -> rdata(32*8-1, 32*7),
-      ))
+      reg_inst := inst
     }
-    io.out.bits.pc    := pc
-    io.out.bits.instr := inst
+    io.out.bits.pc    := Mux(!io.stall, npc, pc)
+    // Todo: hold住且当前周期可使用的更优雅的写法
+    io.out.bits.instr := Mux(io.ifu2rw.ready, inst, reg_inst)
     // 告知下一个模块，数据可用
     io.out.valid      := io.ifu2rw.ready
   }
@@ -63,11 +72,9 @@ class IFU(use_axi:Boolean=false) extends Module with Config {
     ram.io.wdata := DontCare
     ram.io.wmask := DontCare
 
-    inst :=   Mux(pc(2),rdata(63,32),rdata(31,0))
     io.out.valid    := true.B
 
     io.out.bits.pc  := pc
-    io.out.bits.instr := inst
+    io.out.bits.instr := Mux(pc(2),rdata(63,32),rdata(31,0))
   }
-  printf("bru: valid: %d, ena: %d, new pc: %x\n", io.bru.valid, io.bru.bits.ena, io.bru.bits.new_pc(31,0))
 }

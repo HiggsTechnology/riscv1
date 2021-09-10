@@ -6,13 +6,13 @@ import utils._
 import chisel3.util._
 
 class LSURWIO extends Bundle with Config {
-  val lsuin = Flipped(new LSU2RW)
-  val lsu2crossbar = new AXI4IO
+  val lsuin : LSU2RW = Flipped(new LSU2RW)
+  val to_crossbar : AXI4IO = new AXI4IO
 }
 
 class LSURW extends Module with Config {
   val io : LSURWIO = IO(new LSURWIO)
-  val axi4 : AXI4IO = io.lsu2crossbar
+  private val axi4 : AXI4IO = io.to_crossbar
   val (ar, aw, w, r, b) = (axi4.ar.bits, axi4.aw.bits, axi4.w.bits, axi4.r.bits, axi4.b.bits)
   object RState {
     val idle :: ar_valid :: ar_trans :: r_trans :: r_done :: Nil = Enum(5)
@@ -21,62 +21,62 @@ class LSURW extends Module with Config {
     val idle :: valid :: trans :: wait_resp :: done :: Nil = Enum(5)//
   }
 
-  val rState : UInt = RegInit(RState.idle)
-  val wState : UInt = RegInit(WState.idle)
+  private val rState : UInt = RegInit(RState.idle)
+  private val wState : UInt = RegInit(WState.idle)
 
-  val lsu_valid : Bool = io.lsuin.valid
-  val lsu_r_valid : Bool = lsu_valid & !io.lsuin.is_write
-  val lsu_w_valid : Bool = lsu_valid & io.lsuin.is_write
+  private val lsu_valid : Bool = io.lsuin.valid
+  private val lsu_r_valid : Bool = lsu_valid & !io.lsuin.is_write
+  private val lsu_w_valid : Bool = lsu_valid & io.lsuin.is_write
 
   //----------------------------状态机转移信号----------------------------
-  val ar_ready : Bool = axi4.ar.ready
-  val aw_ready : Bool = axi4.aw.ready
-  val w_ready : Bool = axi4.w.ready
-  val b_valid : Bool = axi4.b.valid
-  val r_valid : Bool = axi4.r.valid
-  val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
-  val r_hs : Bool = axi4.r.valid  & axi4.r.ready
-  val aw_hs : Bool = axi4.aw.valid & axi4.aw.ready
-  val w_hs : Bool = axi4.w.valid  & axi4.w.ready
-  val b_hs : Bool = axi4.b.valid  & axi4.b.ready
+  private val ar_ready : Bool = axi4.ar.ready
+  private val aw_ready : Bool = axi4.aw.ready
+  private val w_ready : Bool = axi4.w.ready
+  private val b_valid : Bool = axi4.b.valid
+  private val r_valid : Bool = axi4.r.valid
+  private val ar_hs : Bool = axi4.ar.valid & axi4.ar.ready
+  private val r_hs : Bool = axi4.r.valid  & axi4.r.ready
+  private val aw_hs : Bool = axi4.aw.valid & axi4.aw.ready
+  private val w_hs : Bool = axi4.w.valid  & axi4.w.ready
+  private val b_hs : Bool = axi4.b.valid  & axi4.b.ready
 
 
-  val r_done : Bool = axi4.r.bits.last
-  val w_done : Bool = axi4.w.bits.last
+  private val r_done : Bool = axi4.r.bits.last
+  private val w_done : Bool = axi4.w.bits.last
 
 
   //----------------------------读初始化-----------------------------------
 
-  val ar_valid  : Bool = WireInit(false.B)
-  val ar_addr   : UInt = WireInit(0.U)
-  val ar_prot   : UInt = WireInit(0.U)
-  val ar_id     : UInt = WireInit(0.U)
-  val ar_user   : UInt = WireInit(0.U)
-  val ar_len    : UInt = WireInit(0.U)
-  val ar_size   : UInt = WireInit(0.U)
-  val ar_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
-  val ar_lock   : UInt = WireInit(0.U)
-  val ar_cache  : UInt = WireInit("b0010".U)
-  val ar_qos    : UInt = WireInit(0.U)
-  val ar_region : UInt = WireInit(0.U)
-  val r_ready   : Bool = WireInit(false.B)
-  val lsu_addr  : UInt = RegInit(0.U)
-  val lsu_rdata : UInt = WireInit(0.U)
-  val lsu_wdata : UInt = io.lsuin.wdata
-  val lsu_wstrb : UInt = io.lsuin.wstrb
-  val lsu_r_ready : Bool = WireInit(false.B)
-  val lsu_w_ready : Bool = WireInit(false.B)
+  private val ar_valid  : Bool = WireInit(false.B)
+  private val ar_addr   : UInt = WireInit(0.U)
+  private val ar_prot   : UInt = WireInit(0.U)
+  private val ar_id     : UInt = WireInit(0.U)
+  private val ar_user   : UInt = WireInit(0.U)
+  private val ar_len    : UInt = WireInit(0.U)
+  private val ar_size   : UInt = WireInit(0.U)
+  private val ar_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
+  private val ar_lock   : UInt = WireInit(0.U)
+  private val ar_cache  : UInt = WireInit("b0010".U)
+  private val ar_qos    : UInt = WireInit(0.U)
+  private val ar_region : UInt = WireInit(0.U)
+  private val r_ready   : Bool = WireInit(false.B)
+  private val lsu_addr  : UInt = RegInit(0.U)
+  private val lsu_rdata : UInt = WireInit(0.U)
+  private val lsu_wdata : UInt = io.lsuin.wdata
+  private val lsu_wstrb : UInt = io.lsuin.wstrb
+  private val lsu_r_ready : Bool = WireInit(false.B)
+  private val lsu_w_ready : Bool = WireInit(false.B)
 
   //----------------------------读数据处理-----------------------------------
 
 //  val ar_addr_new = lsu_addr
-  val ar_addr_new = Cat(
+  private val ar_addr_new = Cat(
     lsu_addr(XLEN-1, AXI4Parameters.addrAlignedBits),
     0.U(AXI4Parameters.addrAlignedBits.W)
   )
-  val ar_len_new  = 0.U
-  val ar_prot_new = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
-  val ar_size_new = AXI4Parameters.AXI_SIZE.bytes32
+  private val ar_len_new  = 0.U
+  private val ar_prot_new = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
+  private val ar_size_new = AXI4Parameters.AXI_SIZE.bytes32
 
   //-------------------------状态机-------------------------------
   when(reset.asBool()) {
@@ -178,28 +178,28 @@ class LSURW extends Module with Config {
   }
 
   //----------------------------写初始化-----------------------------------
-  val aw_valid  : Bool = WireInit(false.B)
-  val aw_addr   : UInt = WireInit(0.U)
-  val aw_prot   : UInt = WireInit(0.U)
-  val aw_id     : UInt = WireInit(0.U)
-  val aw_user   : UInt = WireInit(0.U)
-  val aw_len    : UInt = WireInit(0.U)
-  val aw_size   : UInt = WireInit(0.U)
-  val aw_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
-  val aw_lock   : UInt = WireInit(0.U)
-  val aw_cache  : UInt = WireInit("b0010".U)
-  val aw_qos    : UInt = WireInit(0.U)
-  val aw_region : UInt = WireInit(0.U)
-  val w_valid   : Bool = WireInit(false.B)
-  val w_data    : UInt = WireInit(0.U)
-  val w_strb    : UInt = WireInit(0.U)
-  val w_last    : UInt = WireInit(0.U)
-  val w_user    : UInt = WireInit(0.U)
-  val b_ready   : Bool = WireInit(false.B)
+  private val aw_valid  : Bool = WireInit(false.B)
+  private val aw_addr   : UInt = WireInit(0.U)
+  private val aw_prot   : UInt = WireInit(0.U)
+  private val aw_id     : UInt = WireInit(0.U)
+  private val aw_user   : UInt = WireInit(0.U)
+  private val aw_len    : UInt = WireInit(0.U)
+  private val aw_size   : UInt = WireInit(0.U)
+  private val aw_burst  : UInt = WireInit(AXI4Parameters.BURST_INCR)
+  private val aw_lock   : UInt = WireInit(0.U)
+  private val aw_cache  : UInt = WireInit("b0010".U)
+  private val aw_qos    : UInt = WireInit(0.U)
+  private val aw_region : UInt = WireInit(0.U)
+  private val w_valid   : Bool = WireInit(false.B)
+  private val w_data    : UInt = WireInit(0.U)
+  private val w_strb    : UInt = WireInit(0.U)
+  private val w_last    : UInt = WireInit(0.U)
+  private val w_user    : UInt = WireInit(0.U)
+  private val b_ready   : Bool = WireInit(false.B)
 
   //----------------------------写数据处理-----------------------------------
 //  val aw_addr_new = lsu_addr
-  val aw_addr_new = Cat(
+  private val aw_addr_new = Cat(
     lsu_addr(XLEN-1, 3),
     0.U(3.W)
   )
@@ -207,25 +207,25 @@ class LSURW extends Module with Config {
 //    io.lsuin.addr(XLEN-1, AXI4Parameters.addrAlignedBits),
 //    0.U(AXI4Parameters.addrAlignedBits.W)
 //  )
-  val aw_len_new  = 0.U
-  val aw_prot_new = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
+  private val aw_len_new  = 0.U
+  private val aw_prot_new = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
 //  val aw_size_new = io.lsuin.size   //
-  val aw_size_new = AXI4Parameters.AXI_SIZE.bytes8   //
-  val w_data_new  = lsu_wdata(63,0)
+  private val aw_size_new = AXI4Parameters.AXI_SIZE.bytes8   //
+  private val w_data_new  = lsu_wdata(63,0)
 //  val w_data_new  = MuxLookup(lsu_addr(AXI4Parameters.addrAlignedBits-1,3), 0.U, Array(
 //    0.U -> Cat(0.U(192.W), lsu_wdata(63,0)            ),
 //    1.U -> Cat(0.U(128.W), lsu_wdata(63,0), 0.U( 64.W)),
 //    2.U -> Cat(0.U( 64.W), lsu_wdata(63,0), 0.U(128.W)),
 //    3.U -> Cat(            lsu_wdata(63,0), 0.U(192.W)),
 //  ))
-  val w_strb_new  = lsu_wstrb(7,0)
+  private val w_strb_new  = lsu_wstrb(7,0)
 //  val w_strb_new  = MuxLookup(lsu_addr(AXI4Parameters.addrAlignedBits-1,3), 0.U, Array(
 //    0.U -> Cat(0.U(24.W), lsu_wstrb(7,0)            ),
 //    1.U -> Cat(0.U(16.W), lsu_wstrb(7,0), 0.U( 8.W) ),
 //    2.U -> Cat(0.U( 8.W), lsu_wstrb(7,0), 0.U(16.W) ),
 //    3.U -> Cat(           lsu_wstrb(7,0), 0.U(24.W) ),
 //  ))
-  val w_last_new  = true.B            // Todo: Support burst
+  private val w_last_new  = true.B            // Todo: Support burst
 
   //----------------------------写过程响应-----------------------------------
   when (!reset.asBool()) {
@@ -334,7 +334,7 @@ class LSURW extends Module with Config {
   axi4.r.ready          := r_ready
 
   when(rState =/= RState.idle) {
-    printf("----------------------------------------------------\n")
+    printf("----------------------lsu axi-------------------------\n")
     printf("lsu_r_valid:%d, lsu_r_ready:%d, ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n",
       lsu_r_valid, lsu_r_ready, axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
     printf("read_addr: %x%x, raddr: %x%x, rdata: %x%x%x%x, read_data: %x%x\n",
@@ -344,7 +344,7 @@ class LSURW extends Module with Config {
     )
     printf("rState: %d\n", rState)
   }.elsewhen(wState =/= WState.idle){
-    printf("----------------------------------------------------\n")
+    printf("----------------------lsu axi-------------------------\n")
     printf("lsu_w_valid:%d, aw_valid: %d, aw_ready: %d, w_valid: %d, w_ready: %d, b_valid: %d, b_ready: %d\n",lsu_w_valid, axi4.aw.valid, axi4.aw.ready, axi4.w.valid, axi4.w.ready, axi4.b.valid, axi4.b.ready)
     printf("waddr: %x%x, wstrb:%x, wdata: %x%x%x%x\n", axi4.aw.bits.addr(63,32), axi4.aw.bits.addr(31,0), axi4.w.bits.strb, axi4.w.bits.data(255, 192), axi4.w.bits.data(191, 128), axi4.w.bits.data(127,64), axi4.w.bits.data(63,0))
     printf("wState: %d\n", wState)
