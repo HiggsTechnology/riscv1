@@ -1,10 +1,10 @@
 package Core.IFU
 
-import Core.Config.Config
-import Core.MemReg.RAMHelper
+import Core.ExuBlock.MemReg.RAMHelper
+import Core.{BRU_OUTIO, Config, IFU2RW, Pc_Instr}
 import chisel3._
 import chisel3.util._
-import utils.{BRU_OUTIO, IFU2RW, Pc_Instr}
+import utils.IFU2RW
 
 class IFUIO extends Bundle {
   val in  = Flipped(new BRU_OUTIO)  //branch

@@ -1,5 +1,5 @@
 package Core.AXI4
-import Core.Config.Config
+import Core.Config
 import chisel3._
 
 

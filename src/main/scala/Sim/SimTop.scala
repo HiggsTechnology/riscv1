@@ -2,10 +2,9 @@ package Sim
 
 import chisel3._
 import chisel3.util._
-import difftest._
 import Chisel.unless
 import Core.AXI4.AXI4IO
-import Core.TOP.Top
+import Core.Top
 
 
 class SimTopIO extends Bundle {
