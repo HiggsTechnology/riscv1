@@ -80,9 +80,19 @@ class MicroOp extends CfCtrl {
   val OQIdx = Output(new OrderQueuePtr)
 }
 
-class CommitIO extends Bundle with Config {
+class FuInPut extends Bundle with Config{
+  val src = Vec(2, Input(UInt(XLEN.W)))
+  val uop = Flippe(new MicroOp)
+  val isSecond = Input(Bool())
+}
+
+class FuOutPut extends Bundle with Config{
   val res = Output(UInt(XLEN.W))
-  val branch         = new BRU_OUTIO
+  val uop = new MicroOp
+  val isSecond = Output(Bool())
+}
+
+class CommitIO extends Bundle with Config {
   val pdest = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = UInt(PhyRegIdxWidth.W)
   val ldest = UInt(5.W)//logic
