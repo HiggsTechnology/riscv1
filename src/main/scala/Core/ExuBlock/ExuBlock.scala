@@ -8,17 +8,8 @@ import Core.ExuBlock.RS.RS
 import Core.{CommitIO, Config, MicroOp}
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
-
-
-/*
-class EXU_OUTIO extends Bundle {
-  val reg_write_back = Flipped(new RegWriteIO)///原四级写反没用到
-  val pdest = Output(UInt(PhyRegIdxWidth.W))
-}
- */
-///CommitIO,逻辑、物理地址数据，还要加回到重命名模块、BusyTable
 
 
 class ExuTOPIO extends Bundle with Config {
@@ -26,10 +17,10 @@ class ExuTOPIO extends Bundle with Config {
   val rs_num_in = Vec(2, Input(UInt(log2Up(ExuNum).W)))///此模块里，给到rs的序号，OrderQueueBook
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
-  //val redirect         = new BRU_OUTIO///BRU可能Redirect_OUTIO,与朱航他们讨论
+  val redirect  = Vec(2,new BRU_OUTIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
   val out = Vec(2,ValidIO(new CommitIO))///满足两条指令同时写回...decouple多一层是否准备好
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
-  val rsFull = Vec(ExuNum,Output(Bool()))
+  val rs_can_allocate = Vec(ExuNum,Output(Bool()))
 }
 
 ///1,,写到orderqueue,保留站,指针给保留站
@@ -38,17 +29,27 @@ class ExuTOPIO extends Bundle with Config {
 class ExuTop extends Module with Config{
   val io  = IO(new ExuTOPIO)
   //val exu = Module(new EXU)///原四级需要修改，添加为1csr 1jump 2alu 1lsu，并为执行单元编号，与rsNum相同
-  val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS")))
-  val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS")))
+  val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS"))
+  val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
-  val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS")))
-  val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "LSURS")))
+  val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS"))
+  val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "LSURS"))
   val csr = Module(new CSR)
   val bru = Module(new BRU)
   val alu1 = Module(new ALU)
   val alu2 = Module(new ALU)
   val lsu = Module(new LSU)
   val orderqueue = Module(new OrderQueue)
+  val preg = Module(new Regfile(4,2,128))///新写
+  private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+  private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+  private val ExuResult = Wire(Vec(2,ValidIO(new FuOutPut)))
+  private val first_inst = Wire(Vec(6, Bool()))
+  private val second_inst = Wire(Vec(6, Bool()))
+  private val first_num =  ParallelPriorityEncoder(first_inst)
+  private val second_num = ParallelPriorityEncoder(second_inst)
+  private val FuOutPut_default = Wire(ValidIO(new FuOutPut))
+  private val commit = Wire(Vec(2,ValidIO(new CommitIO)))
   ////val ReservationStaions = Seq(alu1rs,alu2rs,brurs,csrrs,lsurs)
 
   //val dispatchqueue = Module(new DispatchQueue)
@@ -60,8 +61,6 @@ class ExuTop extends Module with Config{
 
   //读寄存器数据选择通路src1、src2
   //lq//RS应该需要侦听当前入队指令的物理寄存器
-  val preg = Module(new Regfile(4,2,128))///新写
-  val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   for(i <- 0 until 2){
     preg.io.read(2*i).addr := io.in(i).bits.psrc(0)
     preg.io.read(2*i+1).addr := io.in(i).bits.psrc(1)
@@ -69,7 +68,7 @@ class ExuTop extends Module with Config{
     preg_data(i)(1) := preg.io.read(2*i+1).data
   }
 
-  val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+
   for(i <- 0 until 2){
     src_in(i)(0) := LookupTree(io.in(i).bits.ctrl.src1Type, List(
       SrcType1.reg  -> preg_data(i)(0),
@@ -152,41 +151,63 @@ class ExuTop extends Module with Config{
   //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
   //并行通知保留站、寄存器
   //-------------找输出为有效的功能单元--------------
-  val first_inst = Wire(Vec(6, Bool()))
-  val second_inst = Wire(Vec(6, Bool()))
   first_inst(0) := false.B
-  first_inst(1) := csr.io.out.valid && !crs.io.out.bits.isScecond///目前没有这个信号
-  first_inst(2) := bru.io.out.valid && !bru.io.out.bits.isScecond
-  first_inst(3) := alu1.io.out.valid && !alu1.io.out.bits.isScecond
-  first_inst(4) := alu2.io.out.valid && !alu2.io.out.bits.isScecond
-  first_inst(5) := lsu.io.out.valid && !lsu.io.out.bits.isScecond
+  first_inst(1) := (csr.io.out.valid && !csr.io.out.bits.isSecond) || (csr.io.jmp.valid && !csr.io.out.bits.isSecond)
+  first_inst(2) := (bru.io.out.valid && !bru.io.out.bits.isSecond) || (bru.io.jmp.valid && !bru.io.out.bits.isSecond)
+  first_inst(3) := alu1.io.out.valid && !alu1.io.out.bits.isSecond
+  first_inst(4) := alu2.io.out.valid && !alu2.io.out.bits.isSecond
+  first_inst(5) := lsu.io.out.valid && !lsu.io.out.bits.isSecond///
   second_inst(0) := false.B
-  second_inst(1) := csr.io.out.valid && crs.io.out.bits.isScecond///目前没有这个信号
-  second_inst(2) := bru.io.out.valid && bru.io.out.bits.isScecond
-  second_inst(3) := alu1.io.out.valid && alu1.io.out.bits.isScecond
-  second_inst(4) := alu2.io.out.valid && alu2.io.out.bits.isScecond
-  second_inst(5) := lsu.io.out.valid && lsu.io.out.bits.isScecond
+  second_inst(1) := (csr.io.out.valid && csr.io.out.bits.isSecond) || (csr.io.jmp.valid && !csr.io.out.bits.isSecond)
+  second_inst(2) := (bru.io.out.valid && bru.io.out.bits.isSecond) || (bru.io.jmp.valid && bru.io.out.bits.isSecond)
+  second_inst(3) := alu1.io.out.valid && alu1.io.out.bits.isSecond
+  second_inst(4) := alu2.io.out.valid && alu2.io.out.bits.isSecond
+  second_inst(5) := lsu.io.out.valid && lsu.io.out.bits.isSecond
 
-  val first_num =  ParallelPriorityEncoder(first_inst)
-  val second_num = ParallelPriorityEncoder(second_inst)
 
   //执行单元的提交使用CommitIO,在ExuBlock里使用FuOutPut决定指令
-  val commit_default = Wire(ValidIO(new CommitIO))
-  commit_default.valid := false.B
-  ExuResult(0):= MuxLookup(first_num,commit_default,Array(
-     1.U -> csr.io.commit///---------------这里接口是改成commit形式还是保留原形式，根据执行单元类型选择？
-     2.U -> bru.io.commit
-     3.U -> alu1.io.commit
-     4.U -> alu2.io.commit
-     5.U -> lsu.io.commit
+  FuOutPut_default.valid := false.B
+  ExuResult(0):= MuxLookup(first_num,FuOutPut_default,Array(
+     1.U -> csr.io.out,///---------------这里接口是改成commit形式还是保留原形式，根据执行单元类型选择？
+     2.U -> bru.io.out,
+     3.U -> alu1.io.out,
+     4.U -> alu2.io.out,
+     5.U -> lsu.io.out
    ))
-  ExuResult(1):= MuxLookup(second_num,commit_default,Array(
-    1.U -> csr.io.commit
-    2.U -> bru.io.commit
-    3.U -> alu1.io.commit
-    4.U -> alu2.io.commit
-    5.U -> lsu.io.commit
+  ExuResult(1):= MuxLookup(second_num,FuOutPut_default,Array(
+    1.U -> csr.io.out,
+    2.U -> bru.io.out,
+    3.U -> alu1.io.out,
+    4.U -> alu2.io.out,
+    5.U -> lsu.io.out
   ))
+  //选择跳转信号
+  when(first_inst(1)){
+    when(csr.io.jmp.valid){
+      ExuResult(0).bits.res := csr.io.jmp.bits.new_pc
+      io.redirect(0).new_pc := csr.io.jmp.bits.new_pc///todo:外部连接IFU
+      io.redirect(0).valid := csr.io.jmp.bits.valid
+    }
+  }.elsewhen(first_inst(2)){
+    when(bru.io.jmp.valid){
+      ExuResult(0).bits.res := bru.io.jmp.bits.new_pc
+      io.redirect(0).new_pc := bru.io.jmp.bits.new_pc
+      io.redirect(0).valid := bru.io.jmp.bits.valid
+    }
+  }
+  when(second_inst(1)){
+    when(csr.io.jmp.valid){
+      ExuResult(1).bits.res := csr.io.jmp.bits.new_pc
+      io.redirect(1).new_pc := csr.io.jmp.bits.new_pc
+      io.redirect(1).valid := csr.io.jmp.bits.valid
+    }
+  }.elsewhen(second_inst(2)){
+    when(bru.io.jmp.valid){
+      ExuResult(1).bits.res := bru.io.jmp.bits.new_pc
+      io.redirect(1).new_pc := bru.io.jmp.bits.new_pc
+      io.redirect(1).valid := bru.io.jmp.bits.valid
+    }
+  }
 
   csrrs.io.ExuResult := ExuResult
   brurs.io.ExuResult := ExuResult
@@ -195,15 +216,22 @@ class ExuTop extends Module with Config{
   lsurs.io.ExuResult := ExuResult
 
   for(i <- 0 until 2){
-    preg.io.write(i).addr := ExuResult(i).pdest
-    preg.io.write(i).ena := ExuResult(i).rfWen
-    preg.io.write(i).data := ExuResult(i).res
-    io.out(i).bits := ExuResult(i)
+    preg.io.write(i).addr := ExuResult(i).bits.uop.pdest
+    preg.io.write(i).ena := ExuResult(i).bits.uop.ctrl.rfWen && ExuResult(i).valid
+    preg.io.write(i).data := ExuResult(i).bits.res
+    commit(i).valid := ExuResult(i).valid
+    commit(i).bits.pdest := ExuResult(i).bits.uop.pdest
+    commit(i).bits.old_pdest := ExuResult(i).bits.uop.old_pdest
+    commit(i).bits.ldest := ExuResult(i).bits.uop.ctrl.rfrd
+    commit(i).bits.rfWen := ExuResult(i).bits.uop.ctrl.rfWen
   }
 
-  io.rsFull(0) := csrrs.io.full
-  io.rsFull(1) := brurs.io.full
-  io.rsFull(2) := alu1rs.io.full
-  io.rsFull(3) := alu2rs.io.full
-  io.rsFull(4) := lsurs.io.full
+  ///todo:返回rename?rename在外部例化，直接给io.out不就OK了？
+  io.out <> commit
+
+  io.rs_can_allocate(0) := !csrrs.io.full///can_allocate
+  io.rs_can_allocate(1) := !brurs.io.full
+  io.rs_can_allocate(2) := !alu1rs.io.full
+  io.rs_can_allocate(3) := !alu2rs.io.full
+  io.rs_can_allocate(4) := !lsurs.io.full
 }

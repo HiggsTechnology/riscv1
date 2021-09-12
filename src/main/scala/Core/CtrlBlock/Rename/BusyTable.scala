@@ -2,7 +2,7 @@ package Core.CtrlBlock.Rename
 
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 class BusyTableReadIO extends Bundle {
   val req = Input(UInt(PhyRegIdxWidth.W))

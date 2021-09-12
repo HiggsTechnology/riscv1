@@ -1,10 +1,11 @@
 package Core.ExuBlock.FU
 
-import Core.{CfCtrl, Config, LSU2RW, LSU_OUTIO}
+import Core.{CfCtrl, Config, FuInPut, FuOutPut, LSU2RW, LSU_OUTIO}
 import Core.CtrlBlock.IDU.FuncType
 import Core.ExuBlock.MemReg.RAMHelper
 import chisel3._
-import Core.utils.{LookupTree, SignExt, ZeroExt}
+import chisel3.util.ValidIO
+import utils.{LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U
@@ -32,8 +33,8 @@ object LSUOpType {
 
 class LSUIO extends Bundle with Config {
   val valid = Input(Bool())
-  val in    = Flipped(new CfCtrl)
-  val out   = new LSU_OUTIO
+  val in  = Flipped(ValidIO(new FuInPut))
+  val out = ValidIO(new FuOutPut)
   val lsu2rw = new LSU2RW
 }
 
@@ -59,9 +60,9 @@ class LSU extends Module with Config {
 
 
   val io = IO(new LSUIO)
-  val addr = Mux(io.valid, io.in.data.src1 + io.in.data.imm, 0.U)
-  val storedata = io.in.data.src2
-  val isStore = LSUOpType.isStore(io.in.ctrl.funcOpType)
+  val addr = Mux(io.valid, io.in.src(0) + io.in.uop.data.imm, 0.U)
+  val storedata = io.in.src(0)
+  val isStore = LSUOpType.isStore(io.in.uop.ctrl.funcOpType)
 
   val rdataSel = RegInit(0.U)
   io.lsu2rw.valid := io.valid
@@ -71,7 +72,7 @@ class LSU extends Module with Config {
   val strb_out = RegInit(0.U)
   val r_hs = io.valid && io.lsu2rw.rready
   val w_hs = io.valid && io.lsu2rw.wready
-  val size = io.in.ctrl.funcOpType(1,0)
+  val size = io.in.uop.ctrl.funcOpType(1,0)
   when(r_hs){
     rdataSel  := io.lsu2rw.rdata //read data in
   }
@@ -84,7 +85,7 @@ class LSU extends Module with Config {
   io.lsu2rw.wdata := data_out
 
 
-  io.out.rdata := LookupTree(io.in.ctrl.funcOpType, List(
+  io.out.res := LookupTree(io.in.uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
     LSUOpType.lw   -> SignExt(rdataSel(31, 0), XLEN),
@@ -93,6 +94,6 @@ class LSU extends Module with Config {
     LSUOpType.lhu  -> ZeroExt(rdataSel(15, 0), XLEN),
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
-
-
+  io.out.uop := io.in.uop
+  io.out.isSecond := io.out.isSecond
 }

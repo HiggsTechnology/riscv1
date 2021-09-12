@@ -24,7 +24,7 @@ object ALUOpType {
   def srlw = "b0100101".U
   def sraw = "b0101101".U
 
-  def isWordOp(func: UInt) = func(5)  //if 32bit 
+  def isWordOp(func: UInt) = func(5)  //if 32bit
 }
 
 class ALUIO extends Bundle {

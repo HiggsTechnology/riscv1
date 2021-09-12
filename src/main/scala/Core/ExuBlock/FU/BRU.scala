@@ -1,10 +1,10 @@
 package Core.ExuBlock.FU
 
-import Core.{BRU_OUTIO, CfCtrl, Config}
+import Core.{BRU_OUTIO, Config, FuInPut, FuOutPut}
 import Core.CtrlBlock.IDU.FuncType
 import chisel3._
 import chisel3.util._
-import Core.utils.LookupTree
+import utils.LookupTree
 
 object BRUOpType {
   def jal  = "b1011000".U
@@ -19,18 +19,19 @@ object BRUOpType {
 }
 
 class BRUIO extends Bundle {
-  val in  = Flipped(new CfCtrl)
-  val out = new BRU_OUTIO
+  val in  = Flipped(ValidIO(new FuInPut))
+  val out = ValidIO(new FuOutPut)
+  val jmp : ValidIO[BRU_OUTIO] = ValidIO(new BRU_OUTIO)
 }
 
 class BRU extends Module with Config {
   val io = IO(new BRUIO)
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
-  src1 := io.in.data.src1
-  src2 := io.in.data.src2
+  src1 := io.in.bits.src(0)
+  src2 := io.in.bits.src(1)
 
-  io.out.valid := (io.in.ctrl.funcType === FuncType.bru) && LookupTree(io.in.ctrl.funcOpType, List(
+  io.jmp.bits.taken := (io.in.bits.uop.ctrl.funcType === FuncType.bru) && LookupTree(io.in.bits.uop.ctrl.funcOpType, List(
     BRUOpType.jal   ->  (true.B),
     BRUOpType.jalr  ->  (true.B),
     BRUOpType.beq   ->  (src1 === src2),
@@ -40,8 +41,9 @@ class BRU extends Module with Config {
     BRUOpType.bltu  ->  (src1 < src2),
     BRUOpType.bgeu  ->  (src1 >= src2)
   ))
-  
-  io.out.new_pc := Mux((io.in.ctrl.funcOpType === BRUOpType.jalr),
-    Cat(io.in.data.src1(XLEN - 1,1), 0.U(1.W)) + io.in.data.imm, io.in.cf.pc + io.in.data.imm)
 
+  io.out.bits.res := Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
+    Cat(io.in.bits.src(0)(XLEN - 1,1), 0.U(1.W)) + io.in.bits.uop.data.imm, io.in.bits.uop.cf.pc + io.in.bits.uop.data.imm)
+  io.out.bits.uop := io.in.bits.uop
+  io.out.bits.isSecond := io.out.bits.isSecond
 }

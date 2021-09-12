@@ -2,7 +2,7 @@ package Core.CtrlBlock.Rename
 
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 class FreeListPtr extends CircularQueuePtr[FreeListPtr](
   NRPhyRegs - 32

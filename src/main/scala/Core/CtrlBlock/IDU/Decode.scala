@@ -2,7 +2,7 @@ package Core.CtrlBlock.IDU
 
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 trait InstrType {
   def InstrN  = "b0000".U

@@ -1,7 +1,7 @@
 package Core.AXI4
 import Core.{Config, IFU2RW}
 import chisel3._
-import Core.utils._
+import utils._
 import chisel3.util._
 
 object requireType {

@@ -5,7 +5,7 @@ import Core.Config.{ExuNum, OrderQueueSize, PhyRegIdxWidth}
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 
 

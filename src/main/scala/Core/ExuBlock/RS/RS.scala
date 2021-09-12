@@ -3,10 +3,10 @@ package Core.ExuBlock.RS
 import Core.Config.{OrderQueueSize, PhyRegIdxWidth, XLEN}
 import Core.ExuBlock.OrderQueue
 import Core.ExuBlock.OrderQueue.{OrderQueuePtr, RSDispatch}
-import Core.{CommitIO, FuInPut, MicroOp}
+import Core.{CommitIO, FuInPut, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 
 trait HasRSConst{
@@ -27,7 +27,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     ///val Enqptr = Input(UInt(log2Up(OrderQueueSize).W))///////入列指针，本次入列指令的编号
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))///Src, valid在MicroOp
     //侦听，，比较rs valid是要true，然后去比pdest与psrc是不是对的，srcState一定要false才能写。即三个条件，for循环同时做
-    val ExuResult = Vec(2, new CommitIO)///new 物理地址prf、写回结果、valid
+    val ExuResult = Vec(2, ValidIO(new FuOutPut))///new 物理地址prf、写回结果、valid
     //out
     val DispatchOrder = Input(new RSDispatch)///发射指令编号，当前指令valid、下一条valid////for循环对比（dispatchNUM与保留站Enqptr是否一致,rs_valid order_valid）｜｜（dispatchNUM+1与保留站Enqptr是否一致 rs_valid order_next_valid）//几位布尔选择策略
     ///找到序号后，检查操作数是否准备好，做个前递选择通路，一旦srcState是false，就把ExuResult。。三选一，一种是保留站数据，还有两个是ExuResult的1和2
@@ -69,13 +69,13 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
   //侦听执行单元结果
   for (i <- 0 until rsSize){
     for(j <- 0 until 2){
-      when(valid(i) && (io.ExuResult(j).pdest & psrc1(i)).asBool() && (srcState1(i)===false.B)){
-        src1(i) := io.ExuResult(j).res
+      when(valid(i) && io.ExuResult(j).valid && (io.ExuResult(j).bits.uop.pdest & psrc1(i)).asBool() && (srcState1(i)===false.B)){
+        src1(i) := io.ExuResult(j).bits.res
         srcState1(i) := true.B
         src1bus(i) := j.U
       }
-      when(valid(i) && (io.ExuResult(j).pdest & psrc2(i)).asBool() && (srcState1(i)===false.B)){
-        src2(i) := io.ExuResult(j).res
+      when(valid(i) && io.ExuResult(j).valid && (io.ExuResult(j).bits.uop.pdest & psrc2(i)).asBool() && (srcState1(i)===false.B)){
+        src2(i) := io.ExuResult(j).bits.res
         srcState2(i) := true.B
         src2bus(i) := j.U
       }
@@ -110,11 +110,11 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     io.out.valid := dispatchReady////rsReadygo // && validNext(dequeueSelect)
     io.out.bits.uop := decode(dequeueSelect)
     io.out.bits.src(0) := MuxLookup(src1bus(dequeueSelect),src1(dequeueSelect),Array(
-      0.U  ->  io.ExuResult(0).res,
-      1.U ->  io.ExuResult(1).res))
+      0.U  ->  io.ExuResult(0).bits.res,
+      1.U ->  io.ExuResult(1).bits.res))
     io.out.bits.src(1) := MuxLookup(src2bus(dequeueSelect),src2(dequeueSelect),Array(
-      0.U  ->  io.ExuResult(0).res,
-      1.U ->  io.ExuResult(1).res))
+      0.U  ->  io.ExuResult(0).bits.res,
+      1.U ->  io.ExuResult(1).bits.res))
     io.out.bits.isSecond := isSecond
     //释放当前工作站
     valid(dequeueSelect) := false.B

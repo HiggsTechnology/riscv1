@@ -92,7 +92,6 @@ class FuOutPut extends Bundle with Config{
 }
 
 class CommitIO extends Bundle with Config {
-  val res = Output(UInt(XLEN.W))
   val pdest = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = UInt(PhyRegIdxWidth.W)
   val ldest = UInt(5.W)//logic

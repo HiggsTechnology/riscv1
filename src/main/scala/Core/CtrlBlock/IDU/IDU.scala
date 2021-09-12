@@ -5,7 +5,7 @@ import Core.{CfCtrl, Config, Pc_Instr}
 import chisel3._
 import chisel3.util._
 import RVIInstr._
-import Core.utils.{LookupTree, SignExt, ZeroExt}
+import utils.{LookupTree, SignExt, ZeroExt}
 
 
 class IDUIO extends Bundle {
