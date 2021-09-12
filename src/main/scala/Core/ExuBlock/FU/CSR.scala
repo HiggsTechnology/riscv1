@@ -7,7 +7,6 @@ import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
 import chisel3.util.{Cat, Enum, Fill, MuxLookup, is, log2Ceil, switch}
-import utils.BRU_OUTIO
 
 object CsrOpType {
   def RW    : UInt = "b00001".U(FuncOpType.width)

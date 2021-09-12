@@ -4,7 +4,7 @@ import Core.{CfCtrl, Config, LSU2RW, LSU_OUTIO}
 import Core.CtrlBlock.IDU.FuncType
 import Core.ExuBlock.MemReg.RAMHelper
 import chisel3._
-import utils.{LookupTree, SignExt, ZeroExt}
+import Core.utils.{LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U

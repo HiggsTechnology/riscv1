@@ -4,7 +4,7 @@ import Core.CtrlBlock.IDU.FuncType
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 
 class DispatchIO extends Bundle with Config {

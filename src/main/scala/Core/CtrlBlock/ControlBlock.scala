@@ -4,7 +4,7 @@ import Core.Config.ExuNum
 import Core.{CommitIO, MicroOp, Pc_Instr}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 
 class ControlBlockIO extends Bundle{

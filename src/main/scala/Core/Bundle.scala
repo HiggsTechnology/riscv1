@@ -1,6 +1,5 @@
 package Core
 
-
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.ExuBlock.MemReg.RegWriteIO
 import Core.ExuBlock.OrderQueue.OrderQueuePtr
@@ -82,7 +81,7 @@ class MicroOp extends CfCtrl {
 
 class FuInPut extends Bundle with Config{
   val src = Vec(2, Input(UInt(XLEN.W)))
-  val uop = Flippe(new MicroOp)
+  val uop = Flipped(new MicroOp)
   val isSecond = Input(Bool())
 }
 
@@ -93,6 +92,7 @@ class FuOutPut extends Bundle with Config{
 }
 
 class CommitIO extends Bundle with Config {
+  val res = Output(UInt(XLEN.W))
   val pdest = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = UInt(PhyRegIdxWidth.W)
   val ldest = UInt(5.W)//logic

@@ -8,7 +8,7 @@ import Core.ExuBlock.RS.RS
 import Core.{CommitIO, Config, MicroOp}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 
 
@@ -63,8 +63,8 @@ class ExuTop extends Module with Config{
   val preg = Module(new Regfile(4,2,128))///新写
   val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   for(i <- 0 until 2){
-    preg.io.read(2*i).addr := io.in(i).psrc(0)
-    preg.io.read(2*i+1).addr := io.in(i).psrc(1)
+    preg.io.read(2*i).addr := io.in(i).bits.psrc(0)
+    preg.io.read(2*i+1).addr := io.in(i).bits.psrc(1)
     preg_data(i)(0) := preg.io.read(2*i).data
     preg_data(i)(1) := preg.io.read(2*i+1).data
   }
@@ -118,7 +118,7 @@ class ExuTop extends Module with Config{
     }
     when(io.rs_num_in(i)===4.U && io.in(i).valid){
       lsurs.io.in <> io.in(i) //in orderqueue rs  读寄存器
-      lsurs.io.Enqptr:= orderqueue.io.enqPtr(i)
+      alu2rs.io.in.bits.OQIdx := orderqueue.io.enqPtr(i)
       lsurs.io.in.bits.srcState(0) := io.busytablein(2*i)
       lsurs.io.in.bits.srcState(1) := io.busytablein(2*i+1)
       //寄存器的输入
@@ -138,15 +138,11 @@ class ExuTop extends Module with Config{
   //rs to exu
   //执行单元运算，有decouple，直接连接
   csr.io.in <> csrrs.io.out
-  csr.io.src := csrrs.io.SrcOut
   bru.io.in <> brurs.io.out
-  bru.io.src := brurs.io.SrcOut
   alu1.io.in <> alu1rs.io.out
-  alu1.io.src := alu1rs.io.SrcOut
   alu2.io.in <> alu2rs.io.out
-  alu2.io.src := alu2rs.io.SrcOut
   lsu.io.in <> lsurs.io.out
-  lsu.io.src := lsurs.io.SrcOut
+
 
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
@@ -174,10 +170,10 @@ class ExuTop extends Module with Config{
   val first_num =  ParallelPriorityEncoder(first_inst)
   val second_num = ParallelPriorityEncoder(second_inst)
 
+  //执行单元的提交使用CommitIO,在ExuBlock里使用FuOutPut决定指令
   val commit_default = Wire(ValidIO(new CommitIO))
   commit_default.valid := false.B
-
-   ExuResult(0):= MuxLookup(first_num,commit_default,Array(
+  ExuResult(0):= MuxLookup(first_num,commit_default,Array(
      1.U -> csr.io.commit///---------------这里接口是改成commit形式还是保留原形式，根据执行单元类型选择？
      2.U -> bru.io.commit
      3.U -> alu1.io.commit
@@ -205,9 +201,9 @@ class ExuTop extends Module with Config{
     io.out(i).bits := ExuResult(i)
   }
 
-  ///io.out(0).valid := ParallelORR(first_inst)
-  ///io.out(1).valid := ParallelORR(second_inst)
-
-
-
+  io.rsFull(0) := csrrs.io.full
+  io.rsFull(1) := brurs.io.full
+  io.rsFull(2) := alu1rs.io.full
+  io.rsFull(3) := alu2rs.io.full
+  io.rsFull(4) := lsurs.io.full
 }

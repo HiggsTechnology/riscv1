@@ -5,13 +5,13 @@ import Core.Config.{ExuNum, OrderQueueSize, PhyRegIdxWidth}
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 
 
 class RSDispatch extends Bundle{
   val valid = Bool()
-  val dispatchNUM = UInt(log2Up(OrderQueueSize).W)///第N条指令在OrderQueue里的序号
+  val dispatchNUM = new OrderQueuePtr///UInt(log2Up(OrderQueueSize).W)///第N条指令在OrderQueue里的序号
   val validNext = Bool()///第一条指令序号为N,那么第一个valid就是rs里这第N条能不能发射给执行单元，
 }
 
@@ -65,7 +65,7 @@ class OrderQueue extends Module with Config with HasCircularQueuePtrHelper {
 
   //dequeue
 
-  io.out.dispatchNUM := deq_vec(0).value
+  io.out.dispatchNUM := deq_vec(0)
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))///判断Orderqueue里还有几个元素
   when(isEmpty){
     io.out.valid := false.B

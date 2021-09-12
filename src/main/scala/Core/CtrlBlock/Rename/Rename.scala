@@ -3,7 +3,7 @@ package Core.CtrlBlock.Rename
 import Core.{CfCtrl, CommitIO, MicroOp}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 
 

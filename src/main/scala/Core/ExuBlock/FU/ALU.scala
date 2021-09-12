@@ -3,7 +3,7 @@ package Core.ExuBlock.FU
 import Core.{ALU_OUTIO, CfCtrl, Config}
 import chisel3._
 import chisel3.util._
-import utils._
+import Core.utils._
 
 object ALUOpType {
   def add  = "b1000000".U

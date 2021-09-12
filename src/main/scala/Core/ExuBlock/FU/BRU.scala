@@ -4,7 +4,7 @@ import Core.{BRU_OUTIO, CfCtrl, Config}
 import Core.CtrlBlock.IDU.FuncType
 import chisel3._
 import chisel3.util._
-import utils.LookupTree
+import Core.utils.LookupTree
 
 object BRUOpType {
   def jal  = "b1011000".U

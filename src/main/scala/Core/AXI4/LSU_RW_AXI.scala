@@ -2,7 +2,7 @@ package Core.AXI4
 import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
 import Core.{Config, LSU2RW}
 import chisel3._
-import utils._
+import Core.utils._
 import chisel3.util._
 
 
