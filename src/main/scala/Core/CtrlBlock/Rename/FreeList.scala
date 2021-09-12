@@ -1,12 +1,13 @@
 package Core.CtrlBlock.Rename
 
+import Core.Config
 import chisel3._
 import chisel3.util._
 import utils._
 
-class FreeListPtr extends CircularQueuePtr[FreeListPtr](
-  NRPhyRegs - 32
-)
+class FreeListPtr extends CircularQueuePtr[FreeListPtr](128-32) with Config {
+  //  NRPhyRegs = 32
+}
 
 object FreeListPtr {
   def apply(f: Bool, v:UInt): FreeListPtr = {
@@ -17,27 +18,24 @@ object FreeListPtr {
   }
 }
 
-class FreeList extends Module with Config{
-  val io = IO(new Bundle() {
-    val flush = Input(Bool())
-
-    val req = new Bundle {
-      // need to alloc (not actually do the allocation)
-      val allocReqs = Vec(2, Input(Bool()))
-      // response pdest according to alloc
-      val pdests = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
-      // alloc new phy regs// freelist can alloc
-      val canAlloc = Output(Bool())
-      // actually do the allocation
-      val doAlloc = Input(Bool())
-    }
-
-
-    // dealloc phy regs
-    val deallocReqs = Input(Vec(2, Bool()))
-    val deallocPregs = Input(Vec(2, UInt(PhyRegIdxWidth.W)))
-  })
-
+class FreeListIO extends Bundle with Config{
+  val flush = Input(Bool())
+  val req = new Bundle {
+    // need to alloc (not actually do the allocation)
+    val allocReqs = Vec(2, Input(Bool()))
+    // response pdest according to alloc
+    val pdests = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
+    // alloc new phy regs// freelist can alloc
+    val canAlloc = Output(Bool())
+    // actually do the allocation
+    val doAlloc = Input(Bool())
+  }
+  // dealloc phy regs
+  val deallocReqs = Input(Vec(2, Bool()))
+  val deallocPregs = Input(Vec(2, UInt(PhyRegIdxWidth.W)))
+}
+class FreeList extends Module with Config with HasCircularQueuePtrHelper {
+  val io = IO(new FreeListIO)
   val FL_SIZE = NRPhyRegs - 32
 
   // init: [32, 127]
@@ -46,7 +44,10 @@ class FreeList extends Module with Config{
   val tailPtr = RegInit(FreeListPtr(true.B, 0.U))
 
   // dealloc: commited instructions's 'old_pdest' enqueue
+  //PopCount 数有几个1.U   PopCount("b1011".U)  // evaluates to 3.U
+  //.take 取元素
   for(i <- 0 until 2){
+    //TODO for 定义val?
     val offset = if(i == 0) 0.U else PopCount(io.deallocReqs.take(i))
     val ptr = tailPtr + offset
     val idx = ptr.value
@@ -58,12 +59,10 @@ class FreeList extends Module with Config{
   tailPtr := tailPtrNext
 
   // allocate new pregs to rename instructions
-
   // number of free regs in freelist
   val freeRegs = Wire(UInt())
   // use RegNext for better timing
   io.req.canAlloc := RegNext(freeRegs >= 2.U)
-
 
   val allocatePtrs = (0 until 2).map(i => headPtr + i.U)
   val allocatePdests = VecInit(allocatePtrs.map(ptr => freeList(ptr.value)))
@@ -76,7 +75,5 @@ class FreeList extends Module with Config{
   freeRegs := distanceBetween(tailPtr, headPtrNext)
 
   headPtr := Mux(io.flush,FreeListPtr(!tailPtrNext.flag, tailPtrNext.value),headPtrNext)
-
-
 
 }

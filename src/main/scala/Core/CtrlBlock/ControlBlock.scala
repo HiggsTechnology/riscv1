@@ -1,10 +1,14 @@
 package Core.CtrlBlock
 
+import Core.Config
 import Core.Config.ExuNum
+import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
+import Core.CtrlBlock.IDU.IDU
+import Core.CtrlBlock.Rename.{BusyTable, Rename}
 import Core.{CommitIO, MicroOp, Pc_Instr}
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 
 class ControlBlockIO extends Bundle{
@@ -12,21 +16,18 @@ class ControlBlockIO extends Bundle{
   val out = Vec(2, Flipped(ValidIO(new MicroOp)))
   val rs_num_out = Vec(2, Output(UInt(log2Up(ExuNum).W)))
   val rs_can_allocate = Vec(ExuNum, Input(Bool()))
-
   val pregValid = Vec(4, Output(Bool()))
   val commit = Vec(2, Flipped(ValidIO(new CommitIO)))
 }
 
-
 class ControlBlock extends Module with Config{
   val io = IO(new ControlBlockIO)
-
   val decoders = Seq.fill(2)(Module(new IDU))
   val rename = Module(new Rename)
   val intBusyTable = Module(new BusyTable(4, 2))
   val dispatch = Module(new Dispatch)
   val disQueue = Module(new DispatchQueue)
-
+  //TODO rename.io.flush?
   //decoder to rename
   for(i <- 0 until 2){
     decoders(i).io.in := io.in(i)
@@ -47,11 +48,11 @@ class ControlBlock extends Module with Config{
     io.pregValid(readportNUM+1) := intBusyTable.io.read(readportNUM+1).resp
 
     //alloc
-    intBusyTable.io.allocPregs(i).vaild := rename.io.out(i).valid
+    intBusyTable.io.allocPregs(i).valid := rename.io.out(i).valid
     intBusyTable.io.allocPregs(i).bits := rename.io.out(i).bits.pdest
 
     //commit
-    intBusyTable.io.wbPregs(i).vaild := io.commit(i).valid
+    intBusyTable.io.wbPregs(i).valid := io.commit(i).valid
     intBusyTable.io.wbPregs(i).bits := io.commit(i).bits.pdest
   }
 

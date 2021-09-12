@@ -15,8 +15,7 @@ class CtrlSignalIO extends Bundle with Config {
   val src2Type     = Output(SrcType2.uwidth)
   val funcType     = Output(FuncType.uwidth)
   val funcOpType   = Output(FuncOpType.uwidth)
-  val rfSrc1       = Output(UInt(5.W))    //src regfile address//logic
-  val rfSrc2       = Output(UInt(5.W))
+  val rfSrc        = Vec(2,Output(UInt(5.W))) //src regfile address//logic
   val rfrd         = Output(UInt(5.W))    //rd regfile address
   val rfWen        = Output(Bool())       //regfile write enable
 }

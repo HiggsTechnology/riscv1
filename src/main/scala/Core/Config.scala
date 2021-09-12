@@ -73,6 +73,8 @@ trait Config {
 
   def PhyRegIdxWidth : Int = 7
 
+  def NRPhyRegs : Int = 128
+
   def OrderQueueSize : Int = 32
 
   def DispatchQueueSize : Int = 8
