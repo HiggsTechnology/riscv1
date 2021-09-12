@@ -79,9 +79,9 @@ class MicroOp extends CfCtrl {
 }
 
 class FuInPut extends Bundle with Config{
-  val src = Vec(2, Input(UInt(XLEN.W)))
-  val uop = Flipped(new MicroOp)
-  val isSecond = Input(Bool())
+  val src = Vec(2, Output(UInt(XLEN.W)))
+  val uop = new MicroOp
+  val isSecond = Output(Bool())
 }
 
 class FuOutPut extends Bundle with Config{
@@ -92,7 +92,7 @@ class FuOutPut extends Bundle with Config{
 
 class CommitIO extends Bundle with Config {
   val pdest = Output(UInt(PhyRegIdxWidth.W))
-  val old_pdest = UInt(PhyRegIdxWidth.W)
-  val ldest = UInt(5.W)//logic
-  val rfWen = Bool()
+  val old_pdest = Output(UInt(PhyRegIdxWidth.W))
+  val ldest = Output(UInt(5.W))//logic
+  val rfWen = Output(Bool())
 }

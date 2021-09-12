@@ -5,7 +5,7 @@ import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
 import Core.ExuBlock.MemReg.Regfile
 import Core.ExuBlock.OrderQueue.OrderQueue
 import Core.ExuBlock.RS.RS
-import Core.{CommitIO, Config, MicroOp}
+import Core.{BRU_OUTIO, CommitIO, Config, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -146,7 +146,6 @@ class ExuTop extends Module with Config{
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
   ///根据保留站序号，两条指令都是同一执行单元时此拍只能执行一条
-  val ExuResult = Wire(Vec(2,ValidIO(new CommitIO)))
 
   //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
   //并行通知保留站、寄存器
