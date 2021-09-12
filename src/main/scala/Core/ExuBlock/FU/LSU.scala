@@ -7,7 +7,7 @@ import chisel3._
 import chisel3.util.ValidIO
 import utils.{LookupTree, SignExt, ZeroExt}
 
-object LSUOpType { 
+object LSUOpType {
   def lb   = "b0000000".U
   def lh   = "b0000001".U
   def lw   = "b0000010".U

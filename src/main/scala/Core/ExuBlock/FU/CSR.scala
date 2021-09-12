@@ -1,12 +1,13 @@
 package Core.ExuBlock.FU
 
-import Core.{BRU_OUTIO, CfCtrl, Config}
+import Core.{BRU_OUTIO, CfCtrl, Config, FuInPut, FuOutPut}
 import Core.Define.Traps
 import Core.CtrlBlock.IDU.FuncOpType
 import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
-import chisel3.util.{Cat, Enum, Fill, MuxLookup, is, log2Ceil, switch}
+import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, ValidIO, is, log2Ceil, switch}
+
 
 object CsrOpType {
   def RW    : UInt = "b00001".U(FuncOpType.width)
@@ -27,28 +28,25 @@ object CsrOpType {
 
 class CSR extends Module with CsrRegDefine {
   class CSRIO extends Bundle {
-//    class CSRInPort extends Bundle {
-//      val ena     : Bool = Input(Bool())
-//      val addr    : UInt = Input(UInt(CsrAddr.ADDR_W))
-//      val src     : UInt = Input(UInt(DATA_WIDTH))
-//      val pc      : UInt = Input(UInt(ADDR_WIDTH))
-//      val op_type : UInt = Input(UInt(FuncOpType.width))
-//    }
-    class CSROutPort extends Bundle {
-      val rdata : UInt          = Output(UInt(DATA_WIDTH))
-      val jmp   : BRU_OUTIO     = new BRU_OUTIO
-    }
+    //    class CSRInPort extends Bundle {
+    //      val ena     : Bool = Input(Bool())
+    //      val addr    : UInt = Input(UInt(CsrAddr.ADDR_W))
+    //      val src     : UInt = Input(UInt(DATA_WIDTH))
+    //      val pc      : UInt = Input(UInt(ADDR_WIDTH))
+    //      val op_type : UInt = Input(UInt(FuncOpType.width))
+    //    }
     val ena : Bool = Input(Bool())
-    val in : CfCtrl = Flipped(new CfCtrl)
-    val out : CSROutPort = new CSROutPort
+    val in  = Flipped(ValidIO(new FuInPut))
+    val out = ValidIO(new FuOutPut)
+    val jmp   : Valid[BRU_OUTIO]     = ValidIO(new BRU_OUTIO)
   }
   val io : CSRIO = IO(new CSRIO)
-  private val op = io.in.ctrl.funcOpType
+  private val op = io.in.bits.uop.ctrl.funcOpType
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
-  private val src = io.in.data.src1
+  private val src = io.in.bits.src(0)
   // 读写CSR的地址
-  private val addr = io.in.data.imm(CSR_ADDR_LEN - 1, 0)
-  private val pc = io.in.cf.pc
+  private val addr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
+  private val pc = io.in.bits.uop.cf.pc
   private val ena = io.ena
   // 为了用Enum，被迫下划线命名枚举。。。bullshxt
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
@@ -70,8 +68,8 @@ class CSR extends Module with CsrRegDefine {
     minstret := minstret + 1.U
   }
   private val is_mret = CsrOpType.MRET === op
-//  private val is_sret = CsrOpType.SRET === op
-//  private val is_uret = CsrOpType.URET === op
+  //  private val is_sret = CsrOpType.SRET === op
+  //  private val is_uret = CsrOpType.URET === op
   private val is_jmp : Bool = CsrOpType.isJmp(op)
   private val is_ret = CsrOpType.isRet(op) & is_jmp
   private val new_pc = WireInit(0.U(ADDR_WIDTH))
@@ -138,9 +136,9 @@ class CSR extends Module with CsrRegDefine {
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
-  io.out.jmp.new_pc := new_pc
-  io.out.jmp.valid := trap_valid
-  io.out.rdata := rdata
+  io.jmp.new_pc := new_pc
+  io.jmp.taken := trap_valid
+  io.out.res := rdata
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock

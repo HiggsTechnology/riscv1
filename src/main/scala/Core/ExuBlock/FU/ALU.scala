@@ -1,9 +1,9 @@
 package Core.ExuBlock.FU
 
-import Core.{ALU_OUTIO, CfCtrl, Config}
+import Core.{Config, FuInPut, FuOutPut}
 import chisel3._
 import chisel3.util._
-import Core.utils._
+import utils._
 
 object ALUOpType {
   def add  = "b1000000".U
@@ -28,18 +28,18 @@ object ALUOpType {
 }
 
 class ALUIO extends Bundle {
-  val in  = Flipped(new CfCtrl)
-  val out = new ALU_OUTIO
+  val in  = Flipped(ValidIO(new FuInPut))
+  val out = ValidIO(new FuOutPut)
 }
 
 class ALU extends Module with Config {
   val io = IO(new ALUIO)
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
-  src1 := io.in.data.src1
-  src2 := io.in.data.src2
-  val shamt = Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), src2(4, 0), src2(5, 0))
-  val res = LookupTree(io.in.ctrl.funcOpType, List(
+  src1 := io.in.bits.src(0)
+  src2 := io.in.bits.src(1)
+  val shamt = Mux(ALUOpType.isWordOp(io.in.bits.uop.ctrl.funcOpType), src2(4, 0), src2(5, 0))
+  val res = LookupTree(io.in.bits.uop.ctrl.funcOpType, List(
     ALUOpType.add   ->   (src1 + src2),
     ALUOpType.sll   ->   (src1 << shamt),
     ALUOpType.slt   ->   (Cat(0.U((XLEN - 1).W), src1.asSInt() < src2.asSInt())),
@@ -58,7 +58,8 @@ class ALU extends Module with Config {
     ALUOpType.lui  ->    (src2)
   ))
 
-  io.out.aluRes := Mux(ALUOpType.isWordOp(io.in.ctrl.funcOpType), SignExt(res(31,0), 64), res)
-
+  io.out.bits.res := Mux(ALUOpType.isWordOp(io.in.bits.uop.ctrl.funcOpType), SignExt(res(31,0), 64), res)
+  io.out.bits.uop := io.in.bits.uop
+  io.out.bits.isSecond := io.out.bits.isSecond
 }
 
