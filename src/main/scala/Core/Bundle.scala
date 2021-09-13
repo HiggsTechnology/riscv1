@@ -21,7 +21,7 @@ class CtrlSignalIO extends Bundle with Config {
 }
 
 class DataSrcIO extends Bundle with Config {
-  val imm  = Output(UInt(XLEN.W))
+  val imm      = Output(UInt(XLEN.W))
   val uimm_ext = Output(UInt(XLEN.W))
 }
 
@@ -37,7 +37,7 @@ class ALU_OUTIO extends Bundle with Config {
 
 class BRU_OUTIO extends Bundle with Config {
   val new_pc = Output(UInt(XLEN.W))
-  val taken = Output(Bool())
+  val valid  = Output(Bool())
 }
 
 class LSU_OUTIO extends Bundle with Config {
@@ -71,28 +71,28 @@ class IFU2RW extends  Bundle with Config{
 
 // Micro OP
 class MicroOp extends CfCtrl {
-  val srcState = Vec(2, Output(SrcState()))
-  val psrc = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
-  val pdest = Output(UInt(PhyRegIdxWidth.W))
+  val srcState  = Vec(2, Output(SrcState()))
+  val psrc      = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
+  val pdest     = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = Output(UInt(PhyRegIdxWidth.W))//一路返回到freelist
-  val OQIdx = Output(new OrderQueuePtr)
+  val OQIdx     = Output(new OrderQueuePtr)
 }
 
 class FuInPut extends Bundle with Config{
-  val src = Vec(2, Output(UInt(XLEN.W)))
-  val uop = new MicroOp
+  val src      = Vec(2, Output(UInt(XLEN.W)))
+  val uop      = new MicroOp
   val isSecond = Output(Bool())
 }
 
 class FuOutPut extends Bundle with Config{
-  val res = Output(UInt(XLEN.W))
-  val uop = new MicroOp
+  val res      = Output(UInt(XLEN.W))
+  val uop      = new MicroOp
   val isSecond = Output(Bool())
 }
 
 class CommitIO extends Bundle with Config {
-  val pdest = Output(UInt(PhyRegIdxWidth.W))
+  val pdest     = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = Output(UInt(PhyRegIdxWidth.W))
-  val ldest = Output(UInt(5.W))//logic
-  val rfWen = Output(Bool())
+  val ldest     = Output(UInt(5.W))//logic
+  val rfWen     = Output(Bool())
 }

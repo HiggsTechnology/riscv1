@@ -28,7 +28,7 @@ class ExuTOPIO extends Bundle with Config {
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
 class ExuTop extends Module with Config{
   val io  = IO(new ExuTOPIO)
-  //val exu = Module(new EXU)///原四级需要修改，添加为1csr 1jump 2alu 1lsu，并为执行单元编号，与rsNum相同
+  //k i
   val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS"))
   val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为

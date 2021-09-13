@@ -10,7 +10,7 @@ import utils.{LookupTree, SignExt, ZeroExt}
 
 class IDUIO extends Bundle {
   val in  = Flipped(Valid(new Pc_Instr))
-  val out = Valid(new CfCtrl)
+  val out = Decoupled(new CfCtrl)
 }
 
 class IDU extends Module with Config{
