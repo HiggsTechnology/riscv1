@@ -60,9 +60,9 @@ class LSU extends Module with Config {
 
 
   val io = IO(new LSUIO)
-  val addr = Mux(io.valid, io.in.src(0) + io.in.uop.data.imm, 0.U)
-  val storedata = io.in.src(0)
-  val isStore = LSUOpType.isStore(io.in.uop.ctrl.funcOpType)
+  val addr = Mux(io.valid, io.in.bits.src(0) + io.in.bits.uop.data.imm, 0.U)
+  val storedata = io.in.bits.src(0)
+  val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
 
   val rdataSel = RegInit(0.U)
   io.lsu2rw.valid := io.valid
@@ -72,7 +72,7 @@ class LSU extends Module with Config {
   val strb_out = RegInit(0.U)
   val r_hs = io.valid && io.lsu2rw.rready
   val w_hs = io.valid && io.lsu2rw.wready
-  val size = io.in.uop.ctrl.funcOpType(1,0)
+  val size = io.in.bits.uop.ctrl.funcOpType(1,0)
   when(r_hs){
     rdataSel  := io.lsu2rw.rdata //read data in
   }
@@ -85,7 +85,7 @@ class LSU extends Module with Config {
   io.lsu2rw.wdata := data_out
 
 
-  io.out.res := LookupTree(io.in.uop.ctrl.funcOpType, List(
+  io.out.bits.res := LookupTree(io.in.bits.uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
     LSUOpType.lw   -> SignExt(rdataSel(31, 0), XLEN),
@@ -94,6 +94,7 @@ class LSU extends Module with Config {
     LSUOpType.lhu  -> ZeroExt(rdataSel(15, 0), XLEN),
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
-  io.out.uop := io.in.uop
-  io.out.isSecond := io.out.isSecond
+  io.out.bits.uop := io.in.bits.uop
+  io.out.bits.isSecond := io.in.bits.isSecond
+  io.out.valid := io.lsu2rw.rready || io.lsu2rw.wready
 }

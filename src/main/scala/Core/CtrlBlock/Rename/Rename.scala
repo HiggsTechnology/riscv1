@@ -5,97 +5,100 @@ import Core.{CfCtrl, CommitIO, Config, MicroOp}
 import chisel3._
 import chisel3.util._
 import utils._
-
-class RenameIO extends Bundle with Config with HasCircularQueuePtrHelper{
+class RenameIN extends Bundle with Config {
+  val flush  = Input(Bool())
   // from decode buffer
-  val in = Vec(2, Flipped(DecoupledIO(new CfCtrl)))
-  // to dispatch1
-  val out = Vec(2, DecoupledIO(new MicroOp))
-  val flush = Input(Bool())
+  val cfctrl = Vec(2, Flipped(DecoupledIO(new CfCtrl)))
+  // from backend
   val commit = Vec(2, Flipped(ValidIO(new CommitIO)))
+}
+class RenameOUT extends Bundle with Config {
+  // to dispatch1
+  val microop = Vec(2, DecoupledIO(new MicroOp))
   // for debug printing
   val debug_int_rat = Vec(32, Output(UInt(PhyRegIdxWidth.W)))
 }
 
-class Rename extends Module with Config with HasCircularQueuePtrHelper{
-  val io = IO(new RenameIO)
-  val intFreeList = Module(new FreeList)
-  val intRat = Module(new RenameTable(float = false))
-  //TODO valid io
-  intFreeList.io.flush := io.flush
-  intRat.io.flush := io.flush
-
-  val canOut = io.out(0).ready && intFreeList.io.req.canAlloc
-  intFreeList.io.req.doAlloc := io.out(0).ready
-
+class RenameIO extends Bundle with Config {
+  val in  = new RenameIN
+  val out = new RenameOUT
+}
+class Rename extends Module with Config{
   def needDestReg[T <: CfCtrl](x: T): Bool = {
     x.ctrl.rfWen && (x.ctrl.rfrd =/= 0.U)
   }
-
   def needDestRegCommit[T <: CommitIO]( x: T): Bool = {
     x.rfWen && (x.ldest =/= 0.U)
   }
-
-  val uops = Wire(Vec(2, new MicroOp)) //CfCtrl 额外添加5个信号
-  uops.foreach( uop => {
-    uop.srcState(0) := DontCare
-    uop.srcState(1) := DontCare
-  })
+  val io          = IO(new RenameIO)
+  val intFreeList = Module(new FreeList)
+  val intRat      = Module(new RenameTable(float = false))
+  val canOut      = io.out.microop(0).ready && intFreeList.io.req.canAlloc
+  val uops        = io.out.microop
   val needIntDest = Wire(Vec(2, Bool()))
-  val hasValid = Cat(io.in.map(_.valid)).orR
+  val hasValid    =  Cat(io.in.cfctrl.map(_.valid)).orR
+  intFreeList.io.flush       := io.in.flush
+  intRat.io.flush            := io.in.flush
+  intFreeList.io.req.doAlloc := io.out.microop(0).ready
+  for (i<- 0 to 1){
+    uops(i).bits.srcState := DontCare
+    uops(i).bits.OQIdx    := DontCare
+    uops(i).valid         := true.B
+  }
+
   //输入两路decode信息是否valid：Cat(valid(1),valid(2))并位与
 
   for (i <- 0 until 2) {//源decode出保持不变
-    uops(i).cf := io.in(i).bits.cf
-    uops(i).ctrl := io.in(i).bits.ctrl
-    uops(i).data := io.in(i).bits.data
+    uops(i).bits.cf   := io.in.cfctrl(i).bits.cf
+    uops(i).bits.ctrl := io.in.cfctrl(i).bits.ctrl
+    uops(i).bits.data := io.in.cfctrl(i).bits.data
 
-    val inValid = io.in(i).valid
-    needIntDest(i) := inValid && needDestReg(io.in(i).bits) //invalid & 写有效 目标寄存器非0
+    val inValid                      = io.in.cfctrl(i).valid
+    needIntDest(i)                  := inValid && needDestReg(io.in.cfctrl(i).bits) //invalid & 写有效 目标寄存器非0
     intFreeList.io.req.allocReqs(i) := needIntDest(i)
-    io.in(i).ready := !hasValid || canOut
+    io.in.cfctrl(i).ready           := !hasValid || canOut
     for(k <- 0 until 3){
       val rportIdx = i * 3 + k
       if(k != 2){
-        intRat.io.readPorts(rportIdx).addr := uops(i).ctrl.rfSrc(k)
-        uops(i).psrc(k) := intRat.io.readPorts(rportIdx).rdata
+        intRat.io.readPorts(rportIdx).addr := uops(i).bits.ctrl.rfSrc(k)
+        uops(i).bits.psrc(k)               := intRat.io.readPorts(rportIdx).rdata
       } else {
-        intRat.io.readPorts(rportIdx).addr := uops(i).ctrl.rfrd
-        uops(i).old_pdest := intRat.io.readPorts(rportIdx).rdata
+        intRat.io.readPorts(rportIdx).addr := uops(i).bits.ctrl.rfrd
+        uops(i).bits.old_pdest             := intRat.io.readPorts(rportIdx).rdata
       }
     }
-    uops(i).pdest := Mux(uops(i).ctrl.rfrd===0.U, 0.U, intFreeList.io.req.pdests(i))
+    uops(i).bits.pdest := Mux(uops(i).bits.ctrl.rfrd===0.U, 0.U, intFreeList.io.req.pdests(i))
   }
-  when(io.in(0).bits.ctrl.rfrd===io.in(1).bits.ctrl.rfSrc(0) && io.in(1).bits.ctrl.src1Type === SrcType1.reg){
-    uops(1).psrc(0) := uops(0).pdest
+  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(0) && io.in.cfctrl(1).bits.ctrl.src1Type === SrcType1.reg){
+    uops(1).bits.psrc(0) := uops(0).bits.pdest
   }
-  when(io.in(0).bits.ctrl.rfrd===io.in(1).bits.ctrl.rfSrc(1) && io.in(1).bits.ctrl.src2Type === SrcType2.reg){
-    uops(1).psrc(1) := uops(0).pdest
+  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(1) && io.in.cfctrl(1).bits.ctrl.src2Type === SrcType2.reg){
+    uops(1).bits.psrc(1) := uops(0).bits.pdest
   }
   //  for(i <- 0 until 2){
   //    if(io.in(0).bits.ctrl.rfrd === io.in(1).bits.ctrl.rfSrc(i) && io.in(1).bits.ctrl.srcType(i) === SrcType.reg) uops(1).psrc(i) := uops(0).pdest
   //  }
   for(i <- 0 until 2){
-    intRat.io.specWritePorts(i).addr := uops(i).ctrl.rfrd
-    intRat.io.specWritePorts(i).wdata := uops(i).pdest
+    intRat.io.specWritePorts(i).addr  := uops(i).bits.ctrl.rfrd
+    intRat.io.specWritePorts(i).wdata := uops(i).bits.pdest
   }
-  intRat.io.specWritePorts(0) := needIntDest(0) && !(uops(0).ctrl.rfSrc(0) === uops(1).ctrl.rfrd && needIntDest(1))
-  intRat.io.specWritePorts(1) := needIntDest(1)
+  intRat.io.specWritePorts(0).wen := needIntDest(0) && !(uops(0).bits.ctrl.rfrd === uops(1).bits.ctrl.rfrd && needIntDest(1))
+  intRat.io.specWritePorts(1).wen := needIntDest(1)
 
   val commitDestValid = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
-    commitDestValid(i) := io.commit(i).valid && needDestRegCommit(io.commit(i))
+    commitDestValid(i) := io.in.commit(i).valid && needDestRegCommit(io.in.commit(i).bits)
   }
   for(i <- 0 until 2){
-    intRat.io.archWritePorts(i).addr  := io.commit(i).bits.ldest
-    intRat.io.archWritePorts(i).wdata := io.commit(i).bits.pdest
+    intRat.io.archWritePorts(i).addr  := io.in.commit(i).bits.ldest
+    intRat.io.archWritePorts(i).wdata := io.in.commit(i).bits.pdest
   }
-  intRat.io.archWritePorts(0) := commitDestValid(0) && !(io.commit(0).bits.ldest === io.commit(1).bits.ldest && commitDestValid(1))
-  intRat.io.archWritePorts(1) := commitDestValid(1)
-
+  intRat.io.archWritePorts(0).wen := commitDestValid(0) && !(io.in.commit(0).bits.ldest === io.in.commit(1).bits.ldest && commitDestValid(1))
+  intRat.io.archWritePorts(1).wen := commitDestValid(1)
+  // 后端的dealloc请求，传入old pdest释放freeList
   for(i <- 0 until 2){
     intFreeList.io.deallocReqs(i)  := commitDestValid(i)
-    intFreeList.io.deallocPregs(i) := io.commit(i).bits.old_pdest
+    intFreeList.io.deallocPregs(i) := io.in.commit(i).bits.old_pdest
   }
-  io.debug_int_rat := intRat.io.debug_rdata
+  io.out.debug_int_rat := intRat.io.debug_rdata
 }
