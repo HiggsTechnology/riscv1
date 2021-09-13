@@ -95,5 +95,6 @@ class LSU extends Module with Config {
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
   io.out.bits.uop := io.in.bits.uop
-  io.out.bits.isSecond := io.out.bits.isSecond
+  io.out.bits.isSecond := io.in.bits.isSecond
+  io.out.valid := io.lsu2rw.rready || io.lsu2rw.wready
 }

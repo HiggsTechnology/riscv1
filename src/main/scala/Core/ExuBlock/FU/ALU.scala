@@ -60,6 +60,7 @@ class ALU extends Module with Config {
 
   io.out.bits.res := Mux(ALUOpType.isWordOp(io.in.bits.uop.ctrl.funcOpType), SignExt(res(31,0), 64), res)
   io.out.bits.uop := io.in.bits.uop
-  io.out.bits.isSecond := io.out.bits.isSecond
+  io.out.bits.isSecond := io.in.bits.isSecond
+  io.out.valid := io.in.valid
 }
 

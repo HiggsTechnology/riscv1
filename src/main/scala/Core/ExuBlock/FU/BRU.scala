@@ -44,6 +44,10 @@ class BRU extends Module with Config {
 
   io.out.bits.res := Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
     Cat(io.in.bits.src(0)(XLEN - 1,1), 0.U(1.W)) + io.in.bits.uop.data.imm, io.in.bits.uop.cf.pc + io.in.bits.uop.data.imm)
+  io.jmp.bits.new_pc := Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
+    Cat(io.in.bits.src(0)(XLEN - 1,1), 0.U(1.W)) + io.in.bits.uop.data.imm, io.in.bits.uop.cf.pc + io.in.bits.uop.data.imm)
   io.out.bits.uop := io.in.bits.uop
-  io.out.bits.isSecond := io.out.bits.isSecond
+  io.out.bits.isSecond := io.in.bits.isSecond
+  io.out.valid := io.in.valid
+  io.jmp.valid := io.in.valid
 }
