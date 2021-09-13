@@ -7,6 +7,7 @@ import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
 import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, ValidIO, is, log2Ceil, switch}
+import difftest.DifftestCSRState
 
 
 object CsrOpType {
@@ -136,9 +137,9 @@ class CSR extends Module with CsrRegDefine {
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
-  io.jmp.new_pc := new_pc
-  io.jmp.taken := trap_valid
-  io.out.res := rdata
+  io.jmp.bits.new_pc := new_pc
+  io.jmp.bits.taken := trap_valid
+  io.out.bits.res := rdata
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock

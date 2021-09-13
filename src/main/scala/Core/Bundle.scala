@@ -37,7 +37,7 @@ class ALU_OUTIO extends Bundle with Config {
 
 class BRU_OUTIO extends Bundle with Config {
   val new_pc = Output(UInt(XLEN.W))
-  val valid = Output(Bool())
+  val taken = Output(Bool())
 }
 
 class LSU_OUTIO extends Bundle with Config {
