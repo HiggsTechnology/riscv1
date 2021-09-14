@@ -16,13 +16,16 @@
 3. 编译c文件
     make ARCH=riscv64-mycpu ALL=add
 进入主目录下
-4. 生产Verilog文件
-    mill -i __.test.runMain Sim.SimTopMain -td ./build
-5. 生产difftest emu
-    make -C ThirdParty/difftest emu
-6. make NEMU
-    chmod +x build.sh
-    ./build.sh -b -d
 
-7. 对add.bin进行仿真
-    build/emu -i ./ThirdParty/am-kernels/tests/cpu-tests/build/add-riscv64-mycpu.bin
+4. 生产difftest emu
+    make -C ThirdParty/difftest emu
+5. 清理build目录
+    chmod +x build.sh
+    ./build.sh -b -d -m "WITH_DRAMSIM3=1" -c
+6. 生产Verilog文件
+    mill -i __.test.runMain Sim.SimTopMain -td ./build
+7. make NEMU
+    ./build.sh -b -d -m "WITH_DRAMSIM3=1"
+
+8. 对add.bin进行仿真
+    ./build.sh -d -s -a "-i /.../ThirdParty/am-kernels/tests/cpu-tests/build/add-riscv64-mycpu.bin"
