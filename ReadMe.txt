@@ -29,3 +29,7 @@
 
 8. 对add.bin进行仿真
     ./build.sh -d -s -a "-i /.../ThirdParty/am-kernels/tests/cpu-tests/build/add-riscv64-mycpu.bin"
+
+--- 备注
+结尾加上>log.txt ，把输出重定向到文件里
+可以把bin放在项目的bin/目录下，然后./build.sh -r运行
