@@ -9,14 +9,22 @@ import Core.{CommitIO, MicroOp, Pc_Instr}
 import chisel3._
 import chisel3.util._
 import utils._
+//class ControlBlockIO extends Bundle{
+//  val in              = Vec(2, Flipped(Valid(new Pc_Instr)))
+//  val out             = Vec(2, Flipped(ValidIO(new MicroOp)))
+//  val rs_num_out      = Vec(2, Output(UInt(log2Up(ExuNum).W)))
+//  val rs_can_allocate = Vec(ExuNum, Input(Bool()))
+//  val pregValid       = Vec(4, Output(Bool()))
+//  val commit          = Vec(2, Flipped(ValidIO(new CommitIO)))
+//}
 
 class ControlBlockIN extends Bundle{
-  val pcinstr         = Vec(2, Flipped(Valid(new Pc_Instr)))
+  val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val rs_can_allocate = Vec(ExuNum, Input(Bool()))
   val commit          = Vec(2, Flipped(Valid(new CommitIO)))
 }
 class ControlBlockOUT extends Bundle{
-  val microop         = Vec(2, ValidIO(new MicroOp))
+  val microop         = Vec(2, (ValidIO(new MicroOp)))
   val rs_num_out      = Vec(2, Output(UInt(log2Up(ExuNum).W)))
   val pregValid       = Vec(4, Output(Bool()))
 }
@@ -33,16 +41,18 @@ class ControlBlock extends Module with Config{
   val intBusyTable = Module(new BusyTable(4, 2))
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
-  val isFlush      = false.B//TODO 何时冲刷流水线
+  val isFlush      = false.B
+  io.in.pcinstr(0).ready := true.B
+  io.in.pcinstr(1).ready := true.B
   //Decoder & Backend Commit To Rename
   rename.io.in.flush             := isFlush
   intBusyTable.io.flush          := isFlush
   for(i <- 0 until 2){
-    decoders(i).io.in            := io.in.pcinstr(i)
-    rename.io.in.cfctrl(i)       <> decoders(i).io.out
+    decoders(i).io.in              := io.in.pcinstr(i)
+    rename.io.in.cfctrl(i)         <> decoders(i).io.out
     rename.io.out.microop(i).ready := true.B
   }
-  rename.io.in.commit            := io.in.commit
+  rename.io.in.commit         := io.in.commit
   //Rename To Dispatch
   dispatch.io.in.microop_in      := rename.io.out.microop
   //Dispatch To DispatchQueue

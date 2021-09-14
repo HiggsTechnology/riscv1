@@ -58,6 +58,7 @@ trait Config {
   def MISA : BigInt = {
     BigInt(MXL) << (MXLEN - 2) | BigInt(ISAEXT.toInt)
   }
+  def IBufSize  = 16
 
   def nALU : Int = 2
 

@@ -6,7 +6,8 @@ import chisel3._
 import chisel3.util._
 import utils._
 
-class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueSize) with HasCircularQueuePtrHelper{
+class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueSize) with HasCircularQueuePtrHelper {
+  override def cloneType = (new DispatchQueuePtr).asInstanceOf[this.type]
 }
 class DispatchQueueIN extends Bundle {
   val microop_in      = Vec(2, Flipped(ValidIO(new MicroOp)))

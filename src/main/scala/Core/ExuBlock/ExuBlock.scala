@@ -23,15 +23,16 @@ class ExuTOPIO extends Bundle with Config {
   val rs_can_allocate = Vec(ExuNum,Output(Bool()))
 }
 
+///总共3步
 ///1,,写到orderqueue,保留站,指针给保留站
 ///2,,orderq控制指令的发射
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
 class ExuTop extends Module with Config{
   val io  = IO(new ExuTOPIO)
-  //k i
+  //例化5个保留站、5个执行单元，orderqueue和物理寄存器
   val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS"))
   val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
-  val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
+  val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))
   val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS"))
   val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "LSURS"))
   val csr = Module(new CSR)
@@ -40,20 +41,17 @@ class ExuTop extends Module with Config{
   val alu2 = Module(new ALU)
   val lsu = Module(new LSU)
   val orderqueue = Module(new OrderQueue)
-  val preg = Module(new Regfile(4,2,128))///新写
-  private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
-  private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
-  private val ExuResult = Wire(Vec(2,ValidIO(new FuOutPut)))
-  private val first_inst = Wire(Vec(6, Bool()))
-  private val second_inst = Wire(Vec(6, Bool()))
+  val preg = Module(new Regfile(4,2,128))
+  private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))//读物理寄存器，用以保留站侦听
+  private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))//选择源操作数通路，来自物理寄存器还是PC值/立即数
+  private val ExuResult = Wire(Vec(2,ValidIO(new FuOutPut)))//侦听执行单元结果/PC值
+  private val first_inst = Wire(Vec(6, Bool()))//用以侦听确定输出来自哪个执行单元
+  private val second_inst = Wire(Vec(6, Bool()))//用以侦听确定输出来自哪个执行单元
   private val first_num =  ParallelPriorityEncoder(first_inst)
   private val second_num = ParallelPriorityEncoder(second_inst)
-  private val FuOutPut_default = Wire(ValidIO(new FuOutPut))
-  private val commit = Wire(Vec(2,ValidIO(new CommitIO)))
-  ////val ReservationStaions = Seq(alu1rs,alu2rs,brurs,csrrs,lsurs)
+  private val FuOutPut_default = Wire(ValidIO(new FuOutPut))//默认的OutPut
+  private val commit = Wire(Vec(2,ValidIO(new CommitIO)))//
 
-  //val dispatchqueue = Module(new DispatchQueue)
-  ///从目前设计来看，需要的是
 
   //orderqueue
   orderqueue.io.rs_num := io.rs_num_in

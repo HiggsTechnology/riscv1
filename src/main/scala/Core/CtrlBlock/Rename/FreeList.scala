@@ -6,8 +6,10 @@ import chisel3._
 import chisel3.util._
 import utils._
 //定义FreeList指针 继承CircularQueuePtr，深度为NRPhyRegs-32
-class FreeListPtr extends CircularQueuePtr[FreeListPtr](NRPhyRegs-32) with Config {
+class FreeListPtr extends CircularQueuePtr[FreeListPtr](128-32) with Config {
+  override def cloneType = (new FreeListPtr).asInstanceOf[this.type]
 }
+
 object FreeListPtr {
   def apply(f: Bool, v:UInt): FreeListPtr = {
     val ptr = Wire(new FreeListPtr)
