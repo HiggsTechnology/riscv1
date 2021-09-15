@@ -32,10 +32,8 @@ object LSUOpType {
 }
 
 class LSUIO extends Bundle with Config {
-  val valid = Input(Bool())
   val in  = Flipped(ValidIO(new FuInPut))
   val out = ValidIO(new FuOutPut)
-  val lsu2rw = new LSU2RW
 }
 
 class LSU extends Module with Config {
@@ -60,31 +58,33 @@ class LSU extends Module with Config {
 
 
   val io = IO(new LSUIO)
-  val addr = Mux(io.valid, io.in.bits.src(0) + io.in.bits.uop.data.imm, 0.U)
-  val storedata = io.in.bits.src(0)
+  val addr = Mux(io.in.valid, io.in.bits.src(0) + io.in.bits.uop.data.imm, 0.U)
+  val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
+  printf("Print during simulation: addr %x\n", addr)
+  val ram = Module(new RAMHelper)
+  ram.io.clk := clock
+  // printf("io.valid is %d\n", io.valid)
+  ram.io.en := io.in.valid
 
-  val rdataSel = RegInit(0.U)
-  io.lsu2rw.valid := io.valid
-  io.lsu2rw.is_write := isStore
+  //Load
+  val idx = (addr - PC_START.U) >> 3
+  ram.io.rIdx := idx
+  printf("(5)!!!!!!!!!!! WIDX REAL              %x  \n\n", ram.io.rIdx)
+  printf("(4)!!!!!!!!!!! WIDX REAL              %x  \n\n", ram.io.rIdx)
+  val rdata = ram.io.rdata
 
-  val data_out = RegInit(0.U)
-  val strb_out = RegInit(0.U)
-  val r_hs = io.valid && io.lsu2rw.rready
-  val w_hs = io.valid && io.lsu2rw.wready
-  val size = io.in.bits.uop.ctrl.funcOpType(1,0)
-  when(r_hs){
-    rdataSel  := io.lsu2rw.rdata //read data in
-  }
-  when(w_hs){
-    strb_out  := genWmask(addr, size)
-    data_out  := genWdata(storedata, size)
-  }
-  io.lsu2rw.addr := Mux( r_hs||w_hs , addr , 0.U )
-  io.lsu2rw.strb := strb_out
-  io.lsu2rw.wdata := data_out
-
-
+  // val rdataSel = LookupTree(addr(2, 0), List(
+  //   "b000".U -> rdata(63, 0),
+  //   "b001".U -> rdata(63, 8),
+  //   "b010".U -> rdata(63, 16),
+  //   "b011".U -> rdata(63, 24),
+  //   "b100".U -> rdata(63, 32),
+  //   "b101".U -> rdata(63, 40),
+  //   "b110".U -> rdata(63, 48),
+  //   "b111".U -> rdata(63, 56)
+  // ))
+  val rdataSel = rdata >> (addr(2, 0) * 8.U)
   io.out.bits.res := LookupTree(io.in.bits.uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
@@ -94,7 +94,28 @@ class LSU extends Module with Config {
     LSUOpType.lhu  -> ZeroExt(rdataSel(15, 0), XLEN),
     LSUOpType.lwu  -> ZeroExt(rdataSel(31, 0), XLEN)
   ))
+
+  //Store
+  ram.io.wIdx := idx
+  ram.io.wen  := (io.in.bits.uop.ctrl.funcType === FuncType.lsu) & isStore & io.in.valid
+
+  val size = io.in.bits.uop.ctrl.funcOpType(1,0)
+  val wdata_align = genWdata(storedata, size) << (addr(2, 0) * 8.U)
+  val mask_align = genWmask(addr, size) << (addr(2, 0) * 8.U)
+  ram.io.wdata := wdata_align
+  ram.io.wmask := mask_align
+
+  // //Align
+  // val addrAligned = LookupTree(io.in.funcOpType(1,0), List(
+  //   "b00".U   -> true.B,            //b
+  //   "b01".U   -> (addr(0) === 0.U),   //h
+  //   "b10".U   -> (addr(1,0) === 0.U), //w
+  //   "b11".U   -> (addr(2,0) === 0.U)  //d
+  // ))
+  // io.out.loadAddrMisaligned := valid && !isStore && !addrAligned
+  // io.out.storeAddrMisaligned := valid && isStore && !addrAligned
+  io.out.valid := io.in.valid
   io.out.bits.uop := io.in.bits.uop
   io.out.bits.isSecond := io.in.bits.isSecond
-  io.out.valid := io.lsu2rw.rready || io.lsu2rw.wready
+
 }

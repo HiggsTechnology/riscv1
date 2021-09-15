@@ -1,7 +1,7 @@
 package Core.CtrlBlock
 
 import Core.Config
-import Core.Config.ExuNum
+import Core.Config.{ExuNum, PhyRegIdxWidth}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
 import Core.CtrlBlock.Rename.{BusyTable, Rename}
@@ -27,6 +27,7 @@ class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
   val rs_num_out      = Vec(2, Output(UInt(log2Up(ExuNum).W)))
   val pregValid       = Vec(4, Output(Bool()))
+  val debug_int_rat = Vec(32, Output(UInt(PhyRegIdxWidth.W)))
 }
 class ControlBlockIO extends Bundle{
   val in              = new ControlBlockIN
@@ -78,4 +79,6 @@ class ControlBlock extends Module with Config{
     intBusyTable.io.wbPregs(i).valid        := io.in.commit(i).valid
     intBusyTable.io.wbPregs(i).bits         := io.in.commit(i).bits.pdest
   }
+
+  io.out.debug_int_rat := rename.io.out.debug_int_rat
 }

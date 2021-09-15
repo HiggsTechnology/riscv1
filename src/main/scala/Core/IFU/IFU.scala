@@ -88,7 +88,7 @@ class IFU extends Module with Config {
     io.out(0).valid := false.B
     io.out(1).valid := false.B
     when(io.in.valid){
-      pc := Mux(io.in.bits.valid, io.in.bits.new_pc, pc)
+      pc := Mux(io.in.bits.taken, io.in.bits.new_pc, pc)
       ifuState := IFUState.continue
     }
   }

@@ -36,7 +36,6 @@ class CSR extends Module with CsrRegDefine {
     //      val pc      : UInt = Input(UInt(ADDR_WIDTH))
     //      val op_type : UInt = Input(UInt(FuncOpType.width))
     //    }
-    val ena : Bool = Input(Bool())
     val in  = Flipped(ValidIO(new FuInPut))
     val out = ValidIO(new FuOutPut)
     val jmp   : Valid[BRU_OUTIO]     = ValidIO(new BRU_OUTIO)
@@ -48,7 +47,7 @@ class CSR extends Module with CsrRegDefine {
   // 读写CSR的地址
   private val addr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
   private val pc = io.in.bits.uop.cf.pc
-  private val ena = io.ena
+  private val ena = io.in.valid
   // 为了用Enum，被迫下划线命名枚举。。。bullshxt
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
@@ -148,24 +147,24 @@ class CSR extends Module with CsrRegDefine {
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock
   csrCommit.io.coreid         := 0.U
-  csrCommit.io.priviledgeMode := RegNext(currentPriv)
-  csrCommit.io.mstatus        := RegNext(mstatus.asUInt())
-  csrCommit.io.sstatus        := RegNext(0.U)
-  csrCommit.io.mepc           := RegNext(mepc)
-  csrCommit.io.sepc           := RegNext(0.U)
-  csrCommit.io.mtval          := RegNext(mtval)
-  csrCommit.io.stval          := RegNext(0.U)
-  csrCommit.io.mtvec          := RegNext(mtvec)
-  csrCommit.io.stvec          := RegNext(0.U)
-  csrCommit.io.mcause         := RegNext(mcause)
-  csrCommit.io.scause         := RegNext(0.U)
-  csrCommit.io.satp           := RegNext(0.U)
-  csrCommit.io.mip            := RegNext(mip)
-  csrCommit.io.mie            := RegNext(mie)
-  csrCommit.io.mscratch       := RegNext(mscratch)
-  csrCommit.io.sscratch       := RegNext(0.U)
-  csrCommit.io.mideleg        := RegNext(mideleg)
-  csrCommit.io.medeleg        := RegNext(medeleg)
+  csrCommit.io.priviledgeMode := currentPriv
+  csrCommit.io.mstatus        := mstatus.asUInt()
+  csrCommit.io.sstatus        := 0.U
+  csrCommit.io.mepc           := mepc
+  csrCommit.io.sepc           := 0.U
+  csrCommit.io.mtval          := mtval
+  csrCommit.io.stval          := 0.U
+  csrCommit.io.mtvec          := mtvec
+  csrCommit.io.stvec          := 0.U
+  csrCommit.io.mcause         := mcause
+  csrCommit.io.scause         := 0.U
+  csrCommit.io.satp           := 0.U
+  csrCommit.io.mip            := mip
+  csrCommit.io.mie            := mie
+  csrCommit.io.mscratch       := mscratch
+  csrCommit.io.sscratch       := 0.U
+  csrCommit.io.mideleg        := mideleg
+  csrCommit.io.medeleg        := medeleg
 
   def legalizePrivilege(priv: UInt): UInt =
     if (supportUser)

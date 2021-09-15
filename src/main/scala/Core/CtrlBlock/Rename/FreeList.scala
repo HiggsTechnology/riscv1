@@ -68,11 +68,12 @@ class FreeList extends Module with Config with HasCircularQueuePtrHelper {
     io.req.pdests(i) := allocatePdests(/*if (i == 0) 0.U else */PopCount(io.req.allocReqs.take(i)))
   }
   // 在canAlloc---队列未满的条件 以及 doAlloc---请求分配均有效的情况下，头指针前移
-  val headPtrAllocate = headPtr + PopCount(io.req.allocReqs)+
+  val headPtrAllocate = headPtr + PopCount(io.req.allocReqs)
   val freeRegs = Wire(UInt())
+  val headPtrNext = Mux(io.req.canAlloc && io.req.doAlloc, headPtrAllocate, headPtr)
   freeRegs := distanceBetween(tailPtr, headPtrNext)
   io.req.canAlloc := RegNext(freeRegs >= 2.U)
-  val headPtrNext = Mux(io.req.canAlloc && io.req.doAlloc, headPtrAllocate, headPtr)
+
   // 非冲刷则输出
   headPtr := Mux(io.flush,FreeListPtr(!tailPtrNext.flag, tailPtrNext.value),headPtrNext)
 }

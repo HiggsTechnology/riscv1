@@ -1,7 +1,7 @@
 package Core.ExuBlock.OrderQueue
 
-import Core.Config.SrcState
 import Core.Config.{ExuNum, OrderQueueSize, PhyRegIdxWidth}
+import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -16,7 +16,7 @@ class RSDispatch extends Bundle{
 }
 
 class OrderQueueIO extends Bundle {
-  val in  = Vec(2, ValidIO(new MicroOp))
+  val in  = Vec(2, Flipped(ValidIO(new MicroOp)))
   val rs_num = Vec(2, Input(UInt(log2Up(ExuNum).W)))
   val enqPtr = Vec(2, Output(new OrderQueuePtr))
   val out = Output(new RSDispatch)
@@ -31,7 +31,7 @@ class OrderQueueData extends Bundle {
 }
 
 class OrderQueuePtr extends CircularQueuePtr[OrderQueuePtr](OrderQueueSize) with HasCircularQueuePtrHelper{
-  override def cloneType = (new IbufPtr).asInstanceOf[this.type]
+  override def cloneType = (new OrderQueuePtr).asInstanceOf[this.type]
 }
 
 class OrderQueue extends Module with Config with HasCircularQueuePtrHelper {
@@ -60,7 +60,7 @@ class OrderQueue extends Module with Config with HasCircularQueuePtrHelper {
     io.enqPtr(i) := enq_vec(i)
   }
 
-  val vaild_enq = VecInit(io.in.map(_.vaild))
+  val vaild_enq = VecInit(io.in.map(_.valid))
   enq_vec := VecInit(enq_vec.map(_ + PopCount(vaild_enq)))
 
   //dequeue
