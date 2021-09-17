@@ -63,7 +63,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   // RS enqueue
   ///io.in.ready := rsAllowin
-  val enqueueSelect = ParallelPriorityEncoder(valid)
+  val enqueueSelect = ParallelPriorityEncoder(valid.map(!_))
 
   //侦听执行单元结果
   for (i <- 0 until rsSize){
@@ -80,7 +80,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     }
   }
 
-  when(io.in.fire()){
+  when(io.in.valid){
     decode(enqueueSelect) := io.in.bits
     valid(enqueueSelect) := true.B////
     srcState1(enqueueSelect) := io.in.bits.srcState(0)
@@ -105,8 +105,8 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
   val dequeueSelectBool = Wire(Vec(rsSize,Bool()))
   ///val srcbusSeq = VecInit(Seq.fill(rsSize)(VecInit(Seq.fill(2)(false.B))))//
   for (i <- 0 until rsSize) {
-    dequeueSelectBool(i) := (decode(i).OQIdx===io.DispatchOrder.dispatchNUM && valid(i) && io.DispatchOrder.valid)||((decode(i).OQIdx.value===(io.DispatchOrder.dispatchNUM.value+1.U)) && valid(i) && io.DispatchOrder.validNext)///位亦或，之后调试
-    isSecondSeq(i) := ((decode(i).OQIdx.value===(io.DispatchOrder.dispatchNUM.value+1.U)) && valid(i) && io.DispatchOrder.validNext)
+    dequeueSelectBool(i) := (decode(i).OQIdx===io.DispatchOrder.dispatchNUM && valid(i) && io.DispatchOrder.valid)||((decode(i).OQIdx===(io.DispatchOrder.dispatchNUM+1.U)) && valid(i) && io.DispatchOrder.validNext)///位亦或，之后调试
+    isSecondSeq(i) := ((decode(i).OQIdx===(io.DispatchOrder.dispatchNUM+1.U)) && valid(i) && io.DispatchOrder.validNext)
   }
   ///val dequeueSelect = Wire(UInt(log2Up(size).W))//log2Up用以设定位宽
   val dequeueSelect = ParallelPriorityEncoder(dequeueSelectBool)//返回相等的编号////PriorityEncoder(instRdy)注意，这几步的线变量是否会多余？？
@@ -128,6 +128,22 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   ///io.empty := rsEmpty
   io.full := rsFull
+
+  // printf("rsNum:%d enq, valid %d, pc %x, inst %x, OQ %d\n",rsNum.U, io.in.valid, io.in.bits.cf.pc, io.in.bits.cf.instr, io.in.bits.OQIdx.value)
+
+
+  // printf("rsNum:%d, rs_disNum %d, valid %d, isSecond %d,\n",rsNum.U,dequeueSelect,io.out.valid,io.out.bits.isSecond)
+  // for(i <- 0 until size){
+  //   printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, OQ %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).OQIdx.value)
+  //   printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
+  // }
+  if(rsNum==1){
+    for(i <- 0 until size){
+      printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, OQ %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).OQIdx.value)
+      printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
+    }
+  }
+
 }
 
 

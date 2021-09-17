@@ -61,17 +61,16 @@ class LSU extends Module with Config {
   val addr = Mux(io.in.valid, io.in.bits.src(0) + io.in.bits.uop.data.imm, 0.U)
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
-  printf("Print during simulation: addr %x\n", addr)
+  //printf("Print during simulation: addr %x\n", addr)
   val ram = Module(new RAMHelper)
   ram.io.clk := clock
-  // printf("io.valid is %d\n", io.valid)
+  //printf("io.in.valid is %d\n", io.in.valid)
   ram.io.en := io.in.valid
 
   //Load
   val idx = (addr - PC_START.U) >> 3
   ram.io.rIdx := idx
-  printf("(5)!!!!!!!!!!! WIDX REAL              %x  \n\n", ram.io.rIdx)
-  printf("(4)!!!!!!!!!!! WIDX REAL              %x  \n\n", ram.io.rIdx)
+
   val rdata = ram.io.rdata
 
   // val rdataSel = LookupTree(addr(2, 0), List(

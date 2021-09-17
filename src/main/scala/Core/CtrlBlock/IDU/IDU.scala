@@ -9,7 +9,7 @@ import utils.{LookupTree, SignExt, ZeroExt}
 
 
 class IDUIO extends Bundle {
-  val in  = Flipped(Valid(new Pc_Instr))
+  val in  = Flipped(Decoupled(new Pc_Instr))
   val out = Decoupled(new CfCtrl)
 }
 
@@ -48,5 +48,7 @@ class IDU extends Module with Config{
 
   io.out.bits.data.imm  := imm
   io.out.bits.data.uimm_ext := uimm_ext
+
+  io.in.ready := io.out.ready
 
 }

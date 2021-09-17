@@ -142,7 +142,7 @@ class CSR extends Module with CsrRegDefine {
   io.out.bits.uop := io.in.bits.uop
   io.out.bits.isSecond := io.in.bits.isSecond
   io.out.valid := io.in.valid
-  io.jmp.valid := io.in.valid
+  io.jmp.valid := io.in.valid & is_jmp
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock

@@ -43,19 +43,21 @@ class ControlBlock extends Module with Config{
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
   val isFlush      = false.B
-  io.in.pcinstr(0).ready := true.B
-  io.in.pcinstr(1).ready := true.B
+  //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
+  //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
   //Decoder & Backend Commit To Rename
   rename.io.in.flush             := isFlush
   intBusyTable.io.flush          := isFlush
   for(i <- 0 until 2){
-    decoders(i).io.in              := io.in.pcinstr(i)
+    decoders(i).io.in              <> io.in.pcinstr(i)
     rename.io.in.cfctrl(i)         <> decoders(i).io.out
-    rename.io.out.microop(i).ready := true.B
+    //rename.io.out.microop(i).ready := true.B
   }
   rename.io.in.commit         := io.in.commit
   //Rename To Dispatch
   dispatch.io.in.microop_in      := rename.io.out.microop
+  rename.io.out.microop(0).ready := disQueue.io.out.can_allocate
+  rename.io.out.microop(1).ready := disQueue.io.out.can_allocate
   //Dispatch To DispatchQueue
   dispatch.io.in.can_allocate    := disQueue.io.out.can_allocate
   disQueue.io.in.microop_in      := dispatch.io.out.microop_out
@@ -70,8 +72,8 @@ class ControlBlock extends Module with Config{
     val readportNUM = 2*i
     intBusyTable.io.read(readportNUM).req   := io.out.microop(i).bits.psrc(0)
     intBusyTable.io.read(readportNUM+1).req := io.out.microop(i).bits.psrc(1)
-    io.out.pregValid(readportNUM)           := intBusyTable.io.read(readportNUM).resp
-    io.out.pregValid(readportNUM+1)         := intBusyTable.io.read(readportNUM+1).resp
+    io.out.pregValid(readportNUM)           := intBusyTable.io.read(readportNUM).resp || io.out.microop(i).bits.psrc(0) === 0.U
+    io.out.pregValid(readportNUM+1)         := intBusyTable.io.read(readportNUM+1).resp || io.out.microop(i).bits.psrc(1) === 0.U
     //alloc
     intBusyTable.io.allocPregs(i).valid     := rename.io.out.microop(i).valid
     intBusyTable.io.allocPregs(i).bits      := rename.io.out.microop(i).bits.pdest
@@ -81,4 +83,6 @@ class ControlBlock extends Module with Config{
   }
 
   io.out.debug_int_rat := rename.io.out.debug_int_rat
+
+  //printf("CtrlBlock io.valid %d %d, decode.valid %d %d, rename.valid %d %d\n", io.in.pcinstr(0).valid, io.in.pcinstr(1).valid, decoders(0).io.out.valid, decoders(1).io.out.valid, rename.io.out.microop(0).valid, rename.io.out.microop(1).valid)
 }

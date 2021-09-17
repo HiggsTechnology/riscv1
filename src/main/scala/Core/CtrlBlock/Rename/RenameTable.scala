@@ -50,4 +50,8 @@ class RenameTable(float: Boolean) extends Module with Config {
     }
   }
   io.debug_rdata := arch_table
+
+  // for(i <- 0 until 32){
+  //   printf("Rename Table %d is %d\n",i.U,spec_table(i))
+  // }
 }

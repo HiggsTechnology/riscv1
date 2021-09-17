@@ -70,13 +70,13 @@ trait Config {
 
   def ExuNum :Int = 5
 
-  def rsSize :Int = 2
+  def rsSize :Int = 8
 
   def PhyRegIdxWidth : Int = 7
 
   def NRPhyRegs : Int = 128
 
-  def OrderQueueSize : Int = 32
+  def OrderQueueSize : Int = 16
 
   def DispatchQueueSize : Int = 8
 }

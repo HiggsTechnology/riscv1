@@ -43,7 +43,7 @@ class Rename extends Module with Config{
   for (i<- 0 to 1){
     uops(i).bits.srcState := DontCare
     uops(i).bits.OQIdx    := DontCare
-    uops(i).valid         := true.B
+    uops(i).valid         := io.in.cfctrl(i).valid & intFreeList.io.req.canAlloc
   }
 
   //输入两路decode信息是否valid：Cat(valid(1),valid(2))并位与
@@ -75,6 +75,10 @@ class Rename extends Module with Config{
   when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(1) && io.in.cfctrl(1).bits.ctrl.src2Type === SrcType2.reg){
     uops(1).bits.psrc(1) := uops(0).bits.pdest
   }
+  // for(i <- 0 until 2){
+  //   printf("Rename stage: pc %x, instr %x, lsrc %d %d, psrc %d %d, ldest %d, pdest %d\n",uops(i).bits.cf.pc,uops(i).bits.cf.instr,uops(i).bits.ctrl.rfSrc(0),uops(i).bits.ctrl.rfSrc(1),uops(i).bits.psrc(0),uops(i).bits.psrc(1),uops(i).bits.ctrl.rfrd,uops(i).bits.pdest)
+  //   printf("Rename fire: %d\n",io.out.microop(i).fire)
+  // }
   //  for(i <- 0 until 2){
   //    if(io.in(0).bits.ctrl.rfrd === io.in(1).bits.ctrl.rfSrc(i) && io.in(1).bits.ctrl.srcType(i) === SrcType.reg) uops(1).psrc(i) := uops(0).pdest
   //  }
@@ -82,8 +86,8 @@ class Rename extends Module with Config{
     intRat.io.specWritePorts(i).addr  := uops(i).bits.ctrl.rfrd
     intRat.io.specWritePorts(i).wdata := uops(i).bits.pdest
   }
-  intRat.io.specWritePorts(0).wen := needIntDest(0) && !(uops(0).bits.ctrl.rfrd === uops(1).bits.ctrl.rfrd && needIntDest(1))
-  intRat.io.specWritePorts(1).wen := needIntDest(1)
+  intRat.io.specWritePorts(0).wen := needIntDest(0) && !(uops(0).bits.ctrl.rfrd === uops(1).bits.ctrl.rfrd && needIntDest(1)) && io.out.microop(0).fire
+  intRat.io.specWritePorts(1).wen := needIntDest(1) && io.out.microop(1).fire
 
   val commitDestValid = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){

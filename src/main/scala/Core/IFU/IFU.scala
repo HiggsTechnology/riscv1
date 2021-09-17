@@ -37,7 +37,7 @@ class IFU extends Module with Config {
   //RAMHelper
   val ram1 = Module(new RAMHelper)
   ram1.io.clk := clock
-  ram1.io.en  := true.B
+  ram1.io.en  := !reset.asBool
   val idx1 = (pc - PC_START.U) >> 3
   ram1.io.rIdx := idx1
   val rdata1 = ram1.io.rdata
@@ -51,7 +51,7 @@ class IFU extends Module with Config {
 
   val ram2 = Module(new RAMHelper)
   ram2.io.clk := clock
-  ram2.io.en  := true.B
+  ram2.io.en  := !reset.asBool
   val idx2 = (pc + 4.U - PC_START.U) >> 3
   ram2.io.rIdx := idx2
   val rdata2 = ram2.io.rdata
@@ -92,5 +92,8 @@ class IFU extends Module with Config {
       ifuState := IFUState.continue
     }
   }
+  printf("--------one inst--------\n")
+  printf("inst1: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,idx1,rdata1,io.out(0).bits.instr)
+  printf("inst2: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,idx2,rdata2,io.out(1).bits.instr)
 
 }

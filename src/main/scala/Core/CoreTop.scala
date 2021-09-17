@@ -7,22 +7,20 @@ import Core.ExuBlock.ExuBlock
 import Core.IFU.{IFU, Ibuffer}
 import chisel3._
 import chisel3.util.ValidIO
+import difftest._
 
-class TOPIN extends Bundle {
-    val bruin = Flipped(ValidIO(new BRU_OUTIO))
-}
-class TOPOUT extends Bundle {
-    val ctrlBlockOut = new ControlBlockOUT
-}
-
-class TOPIO extends Bundle {
-    val in  = new TOPIN
-    val out = new TOPOUT
+class SimTopIO extends Bundle {
+  val logCtrl = new LogCtrlIO
+  val perfInfo = new PerfInfoIO
+  val uart = new UARTIO
 }
 
-class CoreTop extends Module {
-    val io       = IO(new TOPIO)
-    io.out := DontCare
+class SimTop extends Module {
+    val io       = IO(new SimTopIO)
+    io.uart.in.valid  := false.B
+    io.uart.out.valid := false.B
+    io.uart.out.ch  := 0.U
+
     val ifu      = Module(new IFU)
     val ibf      = Module(new Ibuffer)
     val ctrlblock = Module(new ControlBlock)
