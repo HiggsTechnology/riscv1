@@ -69,11 +69,16 @@ class Rename extends Module with Config{
     }
     uops(i).bits.pdest := Mux(uops(i).bits.ctrl.rfrd===0.U, 0.U, intFreeList.io.req.pdests(i))
   }
-  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(0) && io.in.cfctrl(1).bits.ctrl.src1Type === SrcType1.reg){
+
+  val inst0_wen =io.in.cfctrl(0).bits.ctrl.rfWen
+  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(0) && io.in.cfctrl(1).bits.ctrl.src1Type === SrcType1.reg && inst0_wen){
     uops(1).bits.psrc(0) := uops(0).bits.pdest
   }
-  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(1) && io.in.cfctrl(1).bits.ctrl.src2Type === SrcType2.reg){
+  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfSrc(1) && io.in.cfctrl(1).bits.ctrl.src2Type === SrcType2.reg && inst0_wen){
     uops(1).bits.psrc(1) := uops(0).bits.pdest
+  }
+  when(io.in.cfctrl(0).bits.ctrl.rfrd===io.in.cfctrl(1).bits.ctrl.rfrd && inst0_wen){
+    uops(1).bits.old_pdest := uops(0).bits.pdest
   }
   // for(i <- 0 until 2){
   //   printf("Rename stage: pc %x, instr %x, lsrc %d %d, psrc %d %d, ldest %d, pdest %d\n",uops(i).bits.cf.pc,uops(i).bits.cf.instr,uops(i).bits.ctrl.rfSrc(0),uops(i).bits.ctrl.rfSrc(1),uops(i).bits.psrc(0),uops(i).bits.psrc(1),uops(i).bits.ctrl.rfrd,uops(i).bits.pdest)
