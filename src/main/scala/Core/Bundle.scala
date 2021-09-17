@@ -1,8 +1,8 @@
 package Core
 
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
+import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.MemReg.RegWriteIO
-import Core.ExuBlock.OrderQueue.OrderQueuePtr
 import chisel3._
 
 class Pc_Instr extends Bundle with Config {

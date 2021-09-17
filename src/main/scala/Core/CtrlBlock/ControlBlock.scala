@@ -4,6 +4,7 @@ import Core.Config
 import Core.Config.{ExuNum, PhyRegIdxWidth}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
+import Core.CtrlBlock.ROB.{ROB}
 import Core.CtrlBlock.Rename.{BusyTable, Rename}
 import Core.{CommitIO, MicroOp, Pc_Instr}
 import chisel3._
