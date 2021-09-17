@@ -42,7 +42,7 @@ class Rename extends Module with Config{
   intFreeList.io.req.doAlloc := io.out.microop(0).ready
   for (i<- 0 to 1){
     uops(i).bits.srcState := DontCare
-    uops(i).bits.OQIdx    := DontCare
+    uops(i).bits.ROBIdx    := DontCare
     uops(i).valid         := io.in.cfctrl(i).valid & intFreeList.io.req.canAlloc
   }
 

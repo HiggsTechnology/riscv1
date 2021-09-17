@@ -36,7 +36,7 @@ class SimTop extends Module {
     exublock.io.busytablein         <>  ctrlblock.io.out.pregValid
     ctrlblock.io.in.rs_can_allocate <>  exublock.io.rs_can_allocate
 
-    ctrlblock.io.in.commit          <>  exublock.io.out
+    ctrlblock.io.in.exuCommit          <>  exublock.io.exuCommit
 
     exublock.io.debug_int_rat := ctrlblock.io.out.debug_int_rat
 

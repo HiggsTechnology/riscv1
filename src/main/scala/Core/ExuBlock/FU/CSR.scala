@@ -140,7 +140,6 @@ class CSR extends Module with CsrRegDefine {
   io.jmp.bits.taken := trap_valid
   io.out.bits.res := rdata
   io.out.bits.uop := io.in.bits.uop
-  io.out.bits.isSecond := io.in.bits.isSecond
   io.out.valid := io.in.valid
   io.jmp.valid := io.in.valid & is_jmp
 

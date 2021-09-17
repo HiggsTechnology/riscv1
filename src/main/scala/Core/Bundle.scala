@@ -75,19 +75,23 @@ class MicroOp extends CfCtrl {
   val psrc      = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
   val pdest     = Output(UInt(PhyRegIdxWidth.W))
   val old_pdest = Output(UInt(PhyRegIdxWidth.W))//一路返回到freelist
-  val OQIdx     = Output(new OrderQueuePtr)
+  val ROBIdx     = Output(new ROBPtr)
 }
 
 class FuInPut extends Bundle with Config{
   val src      = Vec(2, Output(UInt(XLEN.W)))
   val uop      = new MicroOp
-  val isSecond = Output(Bool())
 }
 
 class FuOutPut extends Bundle with Config{
   val res      = Output(UInt(XLEN.W))
   val uop      = new MicroOp
-  val isSecond = Output(Bool())
+}
+
+class ExuCommit extends Bundle with Config {
+  val ROBIdx   = Output(new ROBPtr)
+  val pdest    = Output(UInt(PhyRegIdxWidth.W))
+  val res      = Output(UInt(XLEN.W))
 }
 
 class CommitIO extends Bundle with Config {

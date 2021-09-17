@@ -6,7 +6,7 @@ import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
 import Core.CtrlBlock.ROB.{ROB}
 import Core.CtrlBlock.Rename.{BusyTable, Rename}
-import Core.{CommitIO, MicroOp, Pc_Instr}
+import Core.{ MicroOp, Pc_Instr, ExuCommit}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -22,7 +22,7 @@ import utils._
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val rs_can_allocate = Vec(ExuNum, Input(Bool()))
-  val commit          = Vec(2, Flipped(Valid(new CommitIO)))
+  val exuCommit = Vec(5,Flipped(ValidIO(new ExuCommit)))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
@@ -40,9 +40,10 @@ class ControlBlock extends Module with Config{
   //Instantiate Modules
   val decoders     = Seq.fill(2)(Module(new IDU))
   val rename       = Module(new Rename)
-  val intBusyTable = Module(new BusyTable(4, 2))
+  val intBusyTable = Module(new BusyTable(4, 5))
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
+  val rob          = Module(new ROB)
   val isFlush      = false.B
   //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
   //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
@@ -54,11 +55,18 @@ class ControlBlock extends Module with Config{
     rename.io.in.cfctrl(i)         <> decoders(i).io.out
     //rename.io.out.microop(i).ready := true.B
   }
-  rename.io.in.commit         := io.in.commit
+  rename.io.in.commit         := rob.io.commit
+
+  //ROB
+  rob.io.in := rename.io.out.microop
+  rob.io.exuCommit := io.in.exuCommit
   //Rename To Dispatch
   dispatch.io.in.microop_in      := rename.io.out.microop
-  rename.io.out.microop(0).ready := disQueue.io.out.can_allocate
-  rename.io.out.microop(1).ready := disQueue.io.out.can_allocate
+  for(i <- 0 until 2){
+    dispatch.io.in.microop_in(i).bits.ROBIdx := rob.io.enqPtr(i)
+  }
+  rename.io.out.microop(0).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
+  rename.io.out.microop(1).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
   //Dispatch To DispatchQueue
   dispatch.io.in.can_allocate    := disQueue.io.out.can_allocate
   disQueue.io.in.microop_in      := dispatch.io.out.microop_out
@@ -78,9 +86,11 @@ class ControlBlock extends Module with Config{
     //alloc
     intBusyTable.io.allocPregs(i).valid     := rename.io.out.microop(i).valid
     intBusyTable.io.allocPregs(i).bits      := rename.io.out.microop(i).bits.pdest
+  }
+  for(i <- 0 until 5){
     //commit
-    intBusyTable.io.wbPregs(i).valid        := io.in.commit(i).valid
-    intBusyTable.io.wbPregs(i).bits         := io.in.commit(i).bits.pdest
+    intBusyTable.io.wbPregs(i).valid        := io.in.exuCommit(i).valid
+    intBusyTable.io.wbPregs(i).bits         := io.in.exuCommit(i).bits.pdest
   }
 
   io.out.debug_int_rat := rename.io.out.debug_int_rat

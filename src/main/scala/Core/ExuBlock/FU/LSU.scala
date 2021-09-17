@@ -115,6 +115,5 @@ class LSU extends Module with Config {
   // io.out.storeAddrMisaligned := valid && isStore && !addrAligned
   io.out.valid := io.in.valid
   io.out.bits.uop := io.in.bits.uop
-  io.out.bits.isSecond := io.in.bits.isSecond
 
 }
