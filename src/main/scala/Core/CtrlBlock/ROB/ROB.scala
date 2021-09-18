@@ -2,7 +2,7 @@ package Core.CtrlBlock.ROB
 
 import Core.Config.robSize
 import Core.{CommitIO, Config, MicroOp, ExuCommit}
-import difftest.{ DifftestInstrCommit}
+import difftest.{DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -97,11 +97,25 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
   }
 
-  printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
-  printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
-  for(i <- 0 until robSize){
-    printf("ROB %d: valid %d, wb %d, pc %x, inst %x\n",i.U, valid(i), wb(i),data(i).cf.pc,data(i).cf.instr)
+  val hitTrap = Wire(Vec(2, Bool()))
+  for(i <- 0 until 2){
+    hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U
   }
+
+  val trap = Module(new DifftestTrapEvent)
+  trap.io.clock := clock
+  trap.io.coreid := 0.U
+  trap.io.valid := hitTrap(0) || hitTrap(1)
+  trap.io.code := 0.U
+  trap.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
+  trap.io.cycleCnt := 0.U
+  trap.io.instrCnt := 0.U
+
+  // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
+  // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
+  // for(i <- 0 until robSize){
+  //   printf("ROB %d: valid %d, wb %d, pc %x, inst %x\n",i.U, valid(i), wb(i),data(i).cf.pc,data(i).cf.instr)
+  // }
 
 }
 
