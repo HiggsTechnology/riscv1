@@ -2,6 +2,7 @@ package Core
 
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
+import Core.ExuBlock.Mem.LSQPtr
 import Core.ExuBlock.MemReg.RegWriteIO
 import chisel3._
 

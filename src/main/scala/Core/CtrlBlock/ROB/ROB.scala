@@ -12,7 +12,7 @@ class ROBIO extends Bundle {
   val enqPtr = Vec(2, Output(new ROBPtr))
   val can_allocate = Output(Bool())
 
-  val exuCommit = Vec(5,Flipped(ValidIO(new ExuCommit)))
+  val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
   val commit = Vec(2,ValidIO(new CommitIO))
 
 }
@@ -57,7 +57,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   enq_vec := VecInit(enq_vec.map(_ + PopCount(vaild_enq)))
 
   //writeback
-  for(i <- 0 until 5){
+  for(i <- 0 until 6){
     when(io.exuCommit(i).valid){
       wb(io.exuCommit(i).bits.ROBIdx.value) := true.B
       res(io.exuCommit(i).bits.ROBIdx.value) := io.exuCommit(i).bits.res

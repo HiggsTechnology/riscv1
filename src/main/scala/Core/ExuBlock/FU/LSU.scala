@@ -58,7 +58,7 @@ class LSU extends Module with Config {
 
 
   val io = IO(new LSUIO)
-  val addr = Mux(io.in.valid, io.in.bits.src(0) + io.in.bits.uop.data.imm, 0.U)
+  val addr = Mux(io.in.valid, io.in.bits.src(0), 0.U)
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
   //printf("Print during simulation: addr %x\n", addr)

@@ -22,7 +22,7 @@ import utils._
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val rs_can_allocate = Vec(ExuNum, Input(Bool()))
-  val exuCommit = Vec(5,Flipped(ValidIO(new ExuCommit)))
+  val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
@@ -40,7 +40,7 @@ class ControlBlock extends Module with Config{
   //Instantiate Modules
   val decoders     = Seq.fill(2)(Module(new IDU))
   val rename       = Module(new Rename)
-  val intBusyTable = Module(new BusyTable(4, 5))
+  val intBusyTable = Module(new BusyTable(4, 6))
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
   val rob          = Module(new ROB)
@@ -93,7 +93,7 @@ class ControlBlock extends Module with Config{
     intBusyTable.io.allocPregs(i).valid     := rename.io.out.microop(i).valid
     intBusyTable.io.allocPregs(i).bits      := rename.io.out.microop(i).bits.pdest
   }
-  for(i <- 0 until 5){
+  for(i <- 0 until 6){
     //commit
     intBusyTable.io.wbPregs(i).valid        := io.in.exuCommit(i).valid
     intBusyTable.io.wbPregs(i).bits         := io.in.exuCommit(i).bits.pdest

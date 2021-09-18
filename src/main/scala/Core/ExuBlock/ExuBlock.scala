@@ -19,7 +19,7 @@ class ExuBlockIO extends Bundle with Config {
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
   val redirect  = ValidIO(new BRU_OUTIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
-  val exuCommit = Vec(5,ValidIO(new ExuCommit))
+  val exuCommit = Vec(6,ValidIO(new ExuCommit))
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
   val rs_can_allocate = Vec(ExuNum,Output(Bool()))
 
@@ -36,16 +36,17 @@ class ExuBlock extends Module with Config{
   val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS"))
-  val lsurs = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "LSURS"))
+  val lsq = Module(new LSQ)
   val csr = Module(new CSR)
   val bru = Module(new BRU)
   val alu1 = Module(new ALU)
   val alu2 = Module(new ALU)
-  val lsu = Module(new LSU)
-  val preg = Module(new Regfile(4,5,128))///新写
+  val lsu1 = Module(new LSU)
+  val lsu2 = Module(new LSU)
+  val preg = Module(new Regfile(4,6,128))///新写
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
-  private val ExuResult = Wire(Vec(5,ValidIO(new FuOutPut)))
+  private val ExuResult = Wire(Vec(6,ValidIO(new FuOutPut)))
   ////val ReservationStaions = Seq(alu1rs,alu2rs,brurs,csrrs,lsurs)
 
 
@@ -83,9 +84,10 @@ class ExuBlock extends Module with Config{
   alu2rs.io.in := DontCare
   alu2rs.io.in.valid := false.B
   alu2rs.io.SrcIn := DontCare
-  lsurs.io.in := DontCare
-  lsurs.io.in.valid := false.B
-  lsurs.io.SrcIn := DontCare
+  lsq.io.in := DontCare
+  lsq.io.in(0).valid := false.B
+  lsq.io.in(1).valid := false.B
+  lsq.io.SrcIn := DontCare
 
   //printf("ExuBlock io.in(0) %d %x %x, io.in(1) %d %x %x\n",io.in(0).valid,io.in(0).bits.cf.pc,io.in(0).bits.cf.instr,io.in(1).valid,io.in(1).bits.cf.pc,io.in(1).bits.cf.instr)
   for(i <- 0 until 2){
@@ -117,13 +119,33 @@ class ExuBlock extends Module with Config{
       //寄存器的输入
       alu2rs.io.SrcIn := src_in(i)
     }
-    when(io.rs_num_in(i)===4.U && io.in(i).valid){
-      lsurs.io.in := io.in(i) //in orderqueue rs  读寄存器
-      lsurs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
-      lsurs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
-      //寄存器的输入
-      lsurs.io.SrcIn := src_in(i)
-    }
+
+  }
+
+  when((io.rs_num_in(0)===4.U && io.in(0).valid) && !(io.rs_num_in(1)===4.U && io.in(1).valid)){
+    lsq.io.in(0) := io.in(0) //in orderqueue rs  读寄存器
+    lsq.io.in(0).bits.srcState(0) := io.busytablein(0) || (io.in(0).bits.ctrl.src1Type =/= SrcType1.reg)
+    lsq.io.in(0).bits.srcState(1) := io.busytablein(1) || (io.in(0).bits.ctrl.src2Type =/= SrcType2.reg)
+    //寄存器的输入
+    lsq.io.SrcIn(0) := src_in(0)
+  }.elsewhen(!(io.rs_num_in(0)===4.U && io.in(0).valid) && (io.rs_num_in(1)===4.U && io.in(1).valid)){
+    lsq.io.in(0) := io.in(1) //in orderqueue rs  读寄存器
+    lsq.io.in(0).bits.srcState(0) := io.busytablein(2) || (io.in(1).bits.ctrl.src1Type =/= SrcType1.reg)
+    lsq.io.in(0).bits.srcState(1) := io.busytablein(3) || (io.in(1).bits.ctrl.src2Type =/= SrcType2.reg)
+    //寄存器的输入
+    lsq.io.SrcIn(0) := src_in(1)
+  }.elsewhen((io.rs_num_in(0)===4.U && io.in(0).valid) && (io.rs_num_in(1)===4.U && io.in(1).valid)){
+    lsq.io.in(0) := io.in(0) //in orderqueue rs  读寄存器
+    lsq.io.in(0).bits.srcState(0) := io.busytablein(0) || (io.in(0).bits.ctrl.src1Type =/= SrcType1.reg)
+    lsq.io.in(0).bits.srcState(1) := io.busytablein(1) || (io.in(0).bits.ctrl.src2Type =/= SrcType2.reg)
+    //寄存器的输入
+    lsq.io.SrcIn(0) := src_in(0)
+
+    lsq.io.in(1) := io.in(1) //in orderqueue rs  读寄存器
+    lsq.io.in(1).bits.srcState(0) := io.busytablein(2) || (io.in(1).bits.ctrl.src1Type =/= SrcType1.reg)
+    lsq.io.in(1).bits.srcState(1) := io.busytablein(3) || (io.in(1).bits.ctrl.src2Type =/= SrcType2.reg)
+    //寄存器的输入
+    lsq.io.SrcIn(1) := src_in(1)
   }
 
   ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
@@ -134,7 +156,8 @@ class ExuBlock extends Module with Config{
   bru.io.in <> brurs.io.out
   alu1.io.in <> alu1rs.io.out
   alu2.io.in <> alu2rs.io.out
-  lsu.io.in <> lsurs.io.out
+  lsu1.io.in <> lsq.io.lsu_in(0)
+  lsu2.io.in <> lsq.io.lsu_in(1)
 
 
   //exu res write back
@@ -148,8 +171,11 @@ class ExuBlock extends Module with Config{
   ExuResult(1) := bru.io.out
   ExuResult(2) := alu1.io.out
   ExuResult(3) := alu2.io.out
-  ExuResult(4) := lsu.io.out
+  ExuResult(4) := lsu1.io.out
+  ExuResult(5) := lsu2.io.out
 
+  lsq.io.lsu_out(0) := lsu1.io.out
+  lsq.io.lsu_out(1) := lsu2.io.out
 
   io.redirect := DontCare
   io.redirect.valid := false.B
@@ -173,9 +199,12 @@ class ExuBlock extends Module with Config{
   brurs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult
   alu2rs.io.ExuResult := ExuResult
-  lsurs.io.ExuResult := ExuResult
+  for(i <- 0 until 4){
+    lsq.io.ExuResult(i) := ExuResult(i)
+  }
 
-  for(i <- 0 until 5){
+
+  for(i <- 0 until 6){
     preg.io.write(i).addr := ExuResult(i).bits.uop.pdest
     preg.io.write(i).ena := ExuResult(i).bits.uop.ctrl.rfWen && ExuResult(i).valid
     preg.io.write(i).data := ExuResult(i).bits.res
@@ -190,7 +219,7 @@ class ExuBlock extends Module with Config{
   io.rs_can_allocate(1) := !brurs.io.full
   io.rs_can_allocate(2) := !alu1rs.io.full
   io.rs_can_allocate(3) := !alu2rs.io.full
-  io.rs_can_allocate(4) := !lsurs.io.full
+  io.rs_can_allocate(4) := lsq.io.can_allocate
 
 
 

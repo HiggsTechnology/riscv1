@@ -17,14 +17,14 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
-    val ExuResult = Vec(5, Flipped(ValidIO(new FuOutPut)))
+    val ExuResult = Vec(6, Flipped(ValidIO(new FuOutPut)))
 
     val out = ValidIO(Flipped(new FuInPut))
 
     val full = Output(Bool())
   })
 
-  val decode  = Mem(rsSize, Flipped(new MicroOp))
+  val decode  = Mem(rsSize, new MicroOp)
   val valid   = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
@@ -42,12 +42,12 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   //侦听执行单元结果
   for (i <- 0 until rsSize){
-    for(j <- 0 until 5){
-      when(valid(i) && io.ExuResult(j).valid && (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)) && (srcState1(i)===false.B)){
+    for(j <- 0 until 6){
+      when(valid(i) && io.ExuResult(j).valid && io.ExuResult(j).bits.uop.ctrl.rfWen && (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)) && (srcState1(i)===false.B)){
         src1(i) := io.ExuResult(j).bits.res
         srcState1(i) := true.B
       }
-      when(valid(i) && io.ExuResult(j).valid && (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(1)) && (srcState2(i)===false.B)){
+      when(valid(i) && io.ExuResult(j).valid && io.ExuResult(j).bits.uop.ctrl.rfWen &&  (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(1)) && (srcState2(i)===false.B)){
         src2(i) := io.ExuResult(j).bits.res
         srcState2(i) := true.B
 
@@ -63,12 +63,12 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     src1(enqueueSelect) := io.SrcIn(0)
     src2(enqueueSelect) := io.SrcIn(1)
 
-    for(i <- 0 until 5){
-      when(io.ExuResult(i).valid && (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0))&&io.in.bits.srcState(0)===false.B){
+    for(i <- 0 until 6){
+      when(io.ExuResult(i).valid && io.ExuResult(i).bits.uop.ctrl.rfWen &&  (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0))&&io.in.bits.srcState(0)===false.B){
         src1(enqueueSelect) := io.ExuResult(i).bits.res
         srcState1(enqueueSelect) := true.B
       }
-      when(io.ExuResult(i).valid && (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1))&&io.in.bits.srcState(1)===false.B){
+      when(io.ExuResult(i).valid && io.ExuResult(i).bits.uop.ctrl.rfWen && (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1))&&io.in.bits.srcState(1)===false.B){
         src2(enqueueSelect) := io.ExuResult(i).bits.res
         srcState2(enqueueSelect) := true.B
       }

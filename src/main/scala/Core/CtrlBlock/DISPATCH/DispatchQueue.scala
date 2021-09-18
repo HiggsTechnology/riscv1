@@ -54,7 +54,7 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //dequeue 出队操作
   //出队是否有效
   io.out.microop_out(0).valid := io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value)
-  io.out.microop_out(1).valid := (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && (rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value))
+  io.out.microop_out(1).valid := (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===4.U)
   for (i <- 0 until 2) {
     io.out.microop_out(i).bits  := data(deq_vec(i).value)
     io.out.rs_num_out(i)        := rs_num(deq_vec(i).value)
