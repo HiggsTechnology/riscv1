@@ -81,6 +81,8 @@ trait Config {
   def DispatchQueueSize : Int = 8
 
   def robSize : Int = 16
+
+  def lsqSize : Int = 16
 }
 
 object SrcState {

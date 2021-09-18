@@ -3,12 +3,13 @@ package Core.ExuBlock
 
 import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU}
 import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
+import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
 import Core.ExuBlock.RS.RS
-import Core.{BRU_OUTIO, Config, FuOutPut, MicroOp, ExuCommit}
+import Core.{BRU_OUTIO, Config, ExuCommit, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
-import difftest.{DifftestArchIntRegState}
+import difftest.DifftestArchIntRegState
 import utils._
 
 
