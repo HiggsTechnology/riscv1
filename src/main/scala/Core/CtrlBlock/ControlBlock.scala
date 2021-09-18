@@ -57,16 +57,22 @@ class ControlBlock extends Module with Config{
   }
   rename.io.in.commit         := rob.io.commit
 
-  //ROB
-  rob.io.in := rename.io.out.microop
-  rob.io.exuCommit := io.in.exuCommit
-  //Rename To Dispatch
-  dispatch.io.in.microop_in      := rename.io.out.microop
-  for(i <- 0 until 2){
-    dispatch.io.in.microop_in(i).bits.ROBIdx := rob.io.enqPtr(i)
-  }
+  //ROB && Dispatch Ready
   rename.io.out.microop(0).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
   rename.io.out.microop(1).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
+  //Rename To ROB
+  for(i <- 0 until 2){
+    rob.io.in(i).valid := rename.io.out.microop(i).valid && disQueue.io.out.can_allocate
+    rob.io.in(i).bits := rename.io.out.microop(i).bits
+  }
+  rob.io.exuCommit := io.in.exuCommit
+  //Rename To Dispatch
+  for(i <- 0 until 2){
+    dispatch.io.in.microop_in(i).valid := rename.io.out.microop(i).valid && rob.io.can_allocate
+    dispatch.io.in.microop_in(i).bits      := rename.io.out.microop(i).bits
+    dispatch.io.in.microop_in(i).bits.ROBIdx := rob.io.enqPtr(i)
+  }
+
   //Dispatch To DispatchQueue
   dispatch.io.in.can_allocate    := disQueue.io.out.can_allocate
   disQueue.io.in.microop_in      := dispatch.io.out.microop_out
