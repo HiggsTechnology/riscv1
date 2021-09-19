@@ -61,12 +61,12 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
     valid    := VecInit(Seq.fill(IBufSize)(false.B))
   }
 
-  printf("IBF enqvalid %d %d, enq_vec %d %d\n", io.in(0).fire, io.in(1).fire, enq_vec(0).value, enq_vec(1).value)
-  printf("IBF deqvalid %d %d, deq_vec %d %d\n", io.out(0).fire, io.out(1).fire, deq_vec(0).value, deq_vec(1).value)
-  printf("IBF deqvalid %d %d\n",io.out(0).valid,io.out(1).valid)
-  for(i <- 0 until IBufSize){
-    printf("IBF %d: valid %d, pc %x, inst %x\n",i.U, valid(i),data(i).pc,data(i).instr)
-  }
+  // printf("IBF enqvalid %d %d, enq_vec %d %d\n", io.in(0).fire, io.in(1).fire, enq_vec(0).value, enq_vec(1).value)
+  // printf("IBF deqvalid %d %d, deq_vec %d %d\n", io.out(0).fire, io.out(1).fire, deq_vec(0).value, deq_vec(1).value)
+  // printf("IBF deqvalid %d %d\n",io.out(0).valid,io.out(1).valid)
+  // for(i <- 0 until IBufSize){
+  //   printf("IBF %d: valid %d, pc %x, inst %x\n",i.U, valid(i),data(i).pc,data(i).instr)
+  // }
 
 
 }

@@ -92,8 +92,8 @@ class IFU extends Module with Config {
       ifuState := IFUState.continue
     }
   }
-  printf("--------one inst--------\n")
-  printf("inst1: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,idx1,rdata1,io.out(0).bits.instr)
-  printf("inst2: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,idx2,rdata2,io.out(1).bits.instr)
+  // printf("--------one inst--------\n")
+  // printf("inst1: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,idx1,rdata1,io.out(0).bits.instr)
+  // printf("inst2: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,idx2,rdata2,io.out(1).bits.instr)
 
 }
