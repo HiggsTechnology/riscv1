@@ -80,6 +80,12 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   deq_vec := VecInit(deq_vec.map(_ + PopCount(commitReady)))
 
+  //difftest
+  val cycleCnt = RegInit(0.U(64.W))
+  cycleCnt := cycleCnt + 1.U
+  val instrCnt = RegInit(0.U(64.W))
+  instrCnt := instrCnt + PopCount(commitReady)
+
   for(i <- 0 until 2) {
     val instrCommit = Module(new DifftestInstrCommit)
     instrCommit.io.clock := clock
@@ -99,7 +105,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   val hitTrap = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
-    hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U
+    hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U && commitReady(i)
   }
 
   val trap = Module(new DifftestTrapEvent)
@@ -108,8 +114,8 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   trap.io.valid := hitTrap(0) || hitTrap(1)
   trap.io.code := 0.U
   trap.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
-  trap.io.cycleCnt := 0.U
-  trap.io.instrCnt := 0.U
+  trap.io.cycleCnt := cycleCnt
+  trap.io.instrCnt := instrCnt
 
   // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
