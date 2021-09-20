@@ -3,7 +3,8 @@ package Core.ExuBlock.Mem
 import chisel3._
 import chisel3.util._
 import Core.Config.lsqSize
-import Core.{Config, FuInPut, FuOutPut, MicroOp}
+import Core.CtrlBlock.ROB.ROBPtr
+import Core.{Config, FuInPut, FuOutPut, MicroOp, MisPredictIO}
 import chisel3.{Bool, Bundle, Flipped, Input, Output, UInt, Vec}
 import utils.{CircularQueuePtr, HasCircularQueuePtrHelper}
 
@@ -23,10 +24,14 @@ class LSQIO extends Bundle with Config {
   val lsu_out = Vec(2, Flipped(ValidIO(new FuOutPut)))
 
   val can_allocate = Output(Bool())
+
+  val predict_robPtr = Input(new ROBPtr)
+  val flush = Input(Bool())
+  val mispred_robPtr = Input(new ROBPtr)
 }
 
 class LSQ extends Module with Config with HasCircularQueuePtrHelper{
-  val io = IO(new LSQIO)
+  val io = IO(new LSQIO)//todo:小于isbranch的robIdx才能发射，ROB传来一个信号
 
   val decode  = Mem(lsqSize, new MicroOp)
   val valid   = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
@@ -125,6 +130,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
     io.lsu_in(i).bits.src(1) := data(deq_vec(i).value)
     when(io.lsu_in(i).valid){issued(deq_vec(i).value) := true.B}
   }
+
 
   //等待写回
   val needresp = Wire(Vec(2,Bool()))

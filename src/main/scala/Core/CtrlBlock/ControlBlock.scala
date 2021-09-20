@@ -1,12 +1,11 @@
 package Core.CtrlBlock
 
-import Core.Config
+import Core.{BRU_OUTIO, Config, ExuCommit, MicroOp, Pc_Instr}
 import Core.Config.{ExuNum, PhyRegIdxWidth}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
-import Core.CtrlBlock.ROB.{ROB}
+import Core.CtrlBlock.ROB.{ROB, ROBPtr}
 import Core.CtrlBlock.Rename.{BusyTable, Rename}
-import Core.{ MicroOp, Pc_Instr, ExuCommit}
 import chisel3._
 import chisel3.util._
 import utils._

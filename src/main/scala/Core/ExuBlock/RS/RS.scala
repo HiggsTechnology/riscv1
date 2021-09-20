@@ -1,6 +1,7 @@
 package Core.ExuBlock.RS
 
 import Core.Config.{OrderQueueSize, PhyRegIdxWidth, XLEN}
+import Core.CtrlBlock.ROB.ROBPtr
 import Core.{CommitIO, Config, FuInPut, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -10,7 +11,7 @@ import utils._
 
 
 
-class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config {
+class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
     val in = Flipped(ValidIO(new MicroOp))
@@ -71,6 +72,14 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
       when(io.ExuResult(i).valid && io.ExuResult(i).bits.uop.ctrl.rfWen && (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1))&&io.in.bits.srcState(1)===false.B){
         src2(enqueueSelect) := io.ExuResult(i).bits.res
         srcState2(enqueueSelect) := true.B
+      }
+    }
+  }
+
+  when(io.flush){
+    for(i <- 0 until rsSize) {
+      when(isBefore(io.mispred_robPtr,decode(i).ROBIdx)){
+        valid(i) := false.B
       }
     }
   }

@@ -1,6 +1,6 @@
 package Core.ExuBlock.FU
 
-import Core.{BRU_OUTIO, Config, FuInPut, FuOutPut}
+import Core.{BRU_OUTIO, Config, FuInPut, FuOutPut, MisPredictIO}
 import Core.CtrlBlock.IDU.FuncType
 import chisel3._
 import chisel3.util._

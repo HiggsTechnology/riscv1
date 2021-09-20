@@ -35,7 +35,7 @@ class SimTop extends Module {
     exublock.io.rs_num_in           <>  ctrlblock.io.out.rs_num_out
     exublock.io.busytablein         <>  ctrlblock.io.out.pregValid
     ctrlblock.io.in.rs_can_allocate <>  exublock.io.rs_can_allocate
-
+    //todo:ctrlblock里的信号传给exublock的lsq，分支robIdx
     ctrlblock.io.in.exuCommit          <>  exublock.io.exuCommit
 
     exublock.io.debug_int_rat := ctrlblock.io.out.debug_int_rat

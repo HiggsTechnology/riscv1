@@ -3,6 +3,7 @@ package Core.ExuBlock
 
 import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU}
 import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
+import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
 import Core.ExuBlock.RS.RS
@@ -48,6 +49,7 @@ class ExuBlock extends Module with Config{
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val ExuResult = Wire(Vec(6,ValidIO(new FuOutPut)))
+  //todo:bru信号传出mispredict
   ////val ReservationStaions = Seq(alu1rs,alu2rs,brurs,csrrs,lsurs)
 
 
@@ -180,20 +182,18 @@ class ExuBlock extends Module with Config{
 
   io.redirect := DontCare
   io.redirect.valid := false.B
-  //选择跳转信号
+
+  //选择跳转信号,暂时不考虑csr
   when(ExuResult(0).valid){
     when(csr.io.jmp.valid){
-      io.redirect.valid := true.B
-      io.redirect.bits.new_pc := csr.io.jmp.bits.new_pc///todo:外部连接IFU
-      io.redirect.bits.taken := csr.io.jmp.bits.taken
+      io.redirect := csr.io.jmp
     }
   }.elsewhen(ExuResult(1).valid){
     when(bru.io.jmp.valid){
-      io.redirect.valid := true.B
-      io.redirect.bits.new_pc := bru.io.jmp.bits.new_pc
-      io.redirect.bits.taken := bru.io.jmp.bits.taken
+      io.redirect := bru.io.jmp
     }
   }
+
 
 
   csrrs.io.ExuResult := ExuResult

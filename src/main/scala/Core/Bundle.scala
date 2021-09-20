@@ -9,6 +9,8 @@ import chisel3._
 class Pc_Instr extends Bundle with Config {
   val pc    = Output(UInt(XLEN.W))
   val instr = Output(UInt(INST_WIDTH))
+  val is_br = Output(Bool())
+  val br_taken = Output(Bool())//todo:bru里根据此判断是否mispredict
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -100,4 +102,8 @@ class CommitIO extends Bundle with Config {
   val old_pdest = Output(UInt(PhyRegIdxWidth.W))
   val ldest     = Output(UInt(5.W))//logic
   val rfWen     = Output(Bool())
+}
+
+class MisPredictIO extends Bundle with Config {
+  val misROBIdx = Output(new ROBPtr)
 }

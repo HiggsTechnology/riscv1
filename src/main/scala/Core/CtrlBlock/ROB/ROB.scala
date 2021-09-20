@@ -1,7 +1,7 @@
 package Core.CtrlBlock.ROB
 
 import Core.Config.robSize
-import Core.{CommitIO, Config, MicroOp, ExuCommit}
+import Core.{BRU_OUTIO, CommitIO, Config, ExuCommit, MicroOp, MisPredictIO}
 import difftest.{DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
@@ -14,7 +14,11 @@ class ROBIO extends Bundle {
 
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
   val commit = Vec(2,ValidIO(new CommitIO))
+  val flush_out = Output(Bool())
 
+  val predict = Output(new ROBPtr)//预测执行的分支指令位置
+  //todo:isbranch;br_taken用没用分支指令里的立即数；bru里面加判断是否mispredict;microop里有isbranch
+  //io.in(i).bits.ctrl.funcType===FuncType.bru
 }
 
 
@@ -23,10 +27,11 @@ class ROBPtr extends CircularQueuePtr[ROBPtr](robSize) with HasCircularQueuePtrH
 }
 
 class ROB extends Module with Config with HasCircularQueuePtrHelper {
-  val io = IO(new ROBIO)
+  val io = IO(new ROBIO)//todo:根据错误预测的分支指令是否提交给IBF信号能否输出
 
   val valid     = RegInit(VecInit(Seq.fill(robSize)(false.B)))
-  val wb        = RegInit(VecInit(Seq.fill(robSize)(false.B)))
+  val wb        = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:添加isbranch寄存器
+  val mispred   = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:等到分支指令robIdx走到第一个再冲刷
   val res       = Mem(robSize, UInt(XLEN.W))
   val data      = Mem(robSize, new MicroOp)
 

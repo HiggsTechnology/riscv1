@@ -22,6 +22,7 @@ class DispatchQueueOUT extends Bundle {
 class DispatchQueueIO extends Bundle {
   val in  = new DispatchQueueIN
   val out = new DispatchQueueOUT
+  val flush = Input(Bool())
 }
 //dispatchQueue 为dispatch发出信号的缓冲模块，接收由Dispach发出的指令，最多可存储 DispatchQueueSize=8条，发送至ExuBlock
 class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
@@ -51,7 +52,7 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))
   io.out.can_allocate := (DispatchQueueSize.U - validEntries) > 1.U
 
-  //dequeue 出队操作
+  //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效
   io.out.microop_out(0).valid := io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value)
   io.out.microop_out(1).valid := (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===4.U)
