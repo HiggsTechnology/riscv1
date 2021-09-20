@@ -20,6 +20,7 @@ class ExuBlockIO extends Bundle with Config {
   val rs_num_in = Vec(2, Input(UInt(log2Up(ExuNum).W)))///此模块里，给到rs的序号，OrderQueueBook
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
+  val predict_robPtr = Input(new ROBPtr)
   val redirect  = ValidIO(new BRU_OUTIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
   val exuCommit = Vec(6,ValidIO(new ExuCommit))
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
@@ -180,6 +181,7 @@ class ExuBlock extends Module with Config{
   lsq.io.lsu_out(0) := lsu1.io.out
   lsq.io.lsu_out(1) := lsu2.io.out
 
+  lsq.io.predict_robPtr := io.predict_robPtr
   io.redirect := DontCare
   io.redirect.valid := false.B
 
@@ -195,6 +197,16 @@ class ExuBlock extends Module with Config{
   }
 
 
+  csrrs.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  csrrs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+  brurs.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  brurs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+  alu1rs.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  alu1rs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+  alu2rs.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  alu2rs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+  lsq.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  lsq.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
   csrrs.io.ExuResult := ExuResult
   brurs.io.ExuResult := ExuResult

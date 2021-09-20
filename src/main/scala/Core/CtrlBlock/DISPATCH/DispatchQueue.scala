@@ -54,14 +54,20 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
 
   //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效
-  io.out.microop_out(0).valid := io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value)
-  io.out.microop_out(1).valid := (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===4.U)
+  io.out.microop_out(0).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value))
+  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===4.U)
   for (i <- 0 until 2) {
     io.out.microop_out(i).bits  := data(deq_vec(i).value)
     io.out.rs_num_out(i)        := rs_num(deq_vec(i).value)
     when(io.out.microop_out(i).valid){valid(deq_vec(i).value) := false.B}
   }
   deq_vec := VecInit(deq_vec.map(_ + io.out.microop_out(0).valid + io.out.microop_out(1).valid))
+
+  when (io.flush) {
+    enq_vec  := VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr)))
+    deq_vec  := VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr)))
+    valid    := VecInit(Seq.fill(DispatchQueueSize)(false.B))
+  }
 
   // printf("DQ enqvalid %d %d, enq_vec %d %d\n", enq_fire(0), enq_fire(1), enq_vec(0).value, enq_vec(1).value)
   // printf("DQ deqvalid %d %d, deq_vec %d %d\n", io.out.microop_out(0).valid, io.out.microop_out(1).valid, deq_vec(0).value, deq_vec(1).value)

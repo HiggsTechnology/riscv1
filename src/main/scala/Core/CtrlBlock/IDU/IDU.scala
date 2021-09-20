@@ -22,8 +22,7 @@ class IDU extends Module with Config{
   val uimm : UInt = instr(19, 15)
 
   io.out.valid                := io.in.valid
-  io.out.bits.cf.pc           := io.in.bits.pc
-  io.out.bits.cf.instr        := io.in.bits.instr
+  io.out.bits.cf              := io.in.bits
   io.out.bits.ctrl.rfSrc(0)   := Mux(src1Type === SrcType1.reg, src1Addr, 0.U)  //保证取到的地址均为有效寄存器地址，若无效则置0
   io.out.bits.ctrl.rfSrc(1)   := Mux(src2Type === SrcType2.reg, src2Addr, 0.U)
   io.out.bits.ctrl.rfrd       := Mux(isrfWen(instrType), rdAddr, 0.U)

@@ -28,7 +28,8 @@ class SimTop extends Module {
 
     ifu.io.in                       <>  exublock.io.redirect
     ibf.io.in                       <>  ifu.io.out
-    ibf.io.flush                    :=  false.B
+    ibf.io.flush                    :=  exublock.io.redirect.valid && exublock.io.redirect.bits.mispred
+    ibf.io.flush_commit             :=  ctrlblock.io.out.flush_commit
     ctrlblock.io.in.pcinstr         <>  ibf.io.out
 
     exublock.io.in                  <>  ctrlblock.io.out.microop
@@ -37,6 +38,8 @@ class SimTop extends Module {
     ctrlblock.io.in.rs_can_allocate <>  exublock.io.rs_can_allocate
     //todo:ctrlblock里的信号传给exublock的lsq，分支robIdx
     ctrlblock.io.in.exuCommit          <>  exublock.io.exuCommit
+    ctrlblock.io.in.redirect := exublock.io.redirect
+    exublock.io.predict_robPtr := ctrlblock.io.out.predict_robPtr
 
     exublock.io.debug_int_rat := ctrlblock.io.out.debug_int_rat
 

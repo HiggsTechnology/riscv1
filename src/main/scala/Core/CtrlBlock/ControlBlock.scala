@@ -22,12 +22,15 @@ class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val rs_can_allocate = Vec(ExuNum, Input(Bool()))
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
+  val redirect  = Flipped(ValidIO(new BRU_OUTIO))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
   val rs_num_out      = Vec(2, Output(UInt(log2Up(ExuNum).W)))
   val pregValid       = Vec(4, Output(Bool()))
   val debug_int_rat = Vec(32, Output(UInt(PhyRegIdxWidth.W)))
+  val predict_robPtr = Output(new ROBPtr)
+  val flush_commit = Output(Bool())
 }
 class ControlBlockIO extends Bundle{
   val in              = new ControlBlockIN
@@ -43,12 +46,12 @@ class ControlBlock extends Module with Config{
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
   val rob          = Module(new ROB)
-  val isFlush      = false.B
   //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
   //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
   //Decoder & Backend Commit To Rename
-  rename.io.in.flush             := isFlush
-  intBusyTable.io.flush          := isFlush
+  io.out.flush_commit := rob.io.flush_out
+  rename.io.in.flush             := rob.io.flush_out
+  intBusyTable.io.flush          := rob.io.flush_out
   for(i <- 0 until 2){
     decoders(i).io.in              <> io.in.pcinstr(i)
     rename.io.in.cfctrl(i)         <> decoders(i).io.out
@@ -65,6 +68,8 @@ class ControlBlock extends Module with Config{
     rob.io.in(i).bits := rename.io.out.microop(i).bits
   }
   rob.io.exuCommit := io.in.exuCommit
+  rob.io.redirect := io.in.redirect
+  io.out.predict_robPtr := rob.io.predict
   //Rename To Dispatch
   for(i <- 0 until 2){
     dispatch.io.in.microop_in(i).valid := rename.io.out.microop(i).valid && rob.io.can_allocate
@@ -76,6 +81,7 @@ class ControlBlock extends Module with Config{
   dispatch.io.in.can_allocate    := disQueue.io.out.can_allocate
   disQueue.io.in.microop_in      := dispatch.io.out.microop_out
   disQueue.io.in.rs_num_in       := dispatch.io.out.rs_num_out
+  disQueue.io.flush              := io.in.redirect.valid && io.in.redirect.bits.mispred
   //Dispatch Queue To Out
   disQueue.io.in.rs_can_allocate := io.in.rs_can_allocate
   io.out.microop                 := disQueue.io.out.microop_out

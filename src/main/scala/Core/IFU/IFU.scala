@@ -1,7 +1,7 @@
 package Core.IFU
 
 
-import Core.{BRU_OUTIO, Config, IFU2RW, Pc_Instr}
+import Core.{BRU_OUTIO, Config, Pc_Instr}
 import chisel3._
 import chisel3.util._
 
@@ -24,6 +24,8 @@ class IFUIO extends Bundle {
   //  val ifu2rw = new IFU2RW
 }
 
+
+
 class IFU extends Module with Config {
   val io = IO(new IFUIO)
   val pc = RegInit(PC_START.U(XLEN.W))
@@ -33,67 +35,95 @@ class IFU extends Module with Config {
   }
 
   val ifuState = RegInit(IFUState.continue)
-
+  // 不断取指，直到IBF满了 || jalr
+  val outFireCount = PopCount(io.out.map(_.fire))
+  // ifuState := Mux(outFireCount===0.U, IFUState.stall, IFUState.continue)
   //RAMHelper
-  val ram1 = Module(new RAMHelper)
-  ram1.io.clk := clock
-  ram1.io.en  := !reset.asBool
-  val idx1 = (pc - PC_START.U) >> 3
-  ram1.io.rIdx := idx1
-  val rdata1 = ram1.io.rdata
-  ram1.io.wIdx := DontCare
-  ram1.io.wen  := false.B
-  ram1.io.wdata := DontCare
-  ram1.io.wmask := DontCare
+  val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
+  val instrVec = Wire(Vec(FETCH_WIDTH, UInt(INST_WIDTH)))
+  val rdataVec = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
+  val ramVec   = Seq.fill(FETCH_WIDTH)(Module(new RAMHelper)) // 多个module还是一个module用多次？
+  val preDecVec= Seq.fill(FETCH_WIDTH)(Module(new PreDecode))
+  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred || io.in.bits.is_jalr), Mux(io.in.bits.taken, io.in.bits.new_pc, pc), pc)
+  // io.flush := io.in.valid
+  // 一旦进来的信号valid，则表明之前预测错了，则冲刷
+  for(i <- 1 until FETCH_WIDTH){
+    pcVec(i) := pcVec(i-1) + 4.U
+  }
 
-  io.out(0).bits.pc  := pc
-  io.out(0).bits.instr := Mux(pc(2),rdata1(63,32),rdata1(31,0))
+  for(i <- 0 until FETCH_WIDTH){
+    // 依次从pc处开始取指
+    ramVec(i).io.clk   := clock
+    ramVec(i).io.en    := true.B
+    ramVec(i).io.rIdx  := (pcVec(i) - PC_START.U) >> 3
+    rdataVec(i)        := ramVec(i).io.rdata
+    ramVec(i).io.wIdx  := DontCare
+    ramVec(i).io.wen   := false.B
+    ramVec(i).io.wdata := DontCare
+    ramVec(i).io.wmask := DontCare
+    instrVec(i)        := Mux(pcVec(i)(2),rdataVec(i)(63,32),rdataVec(i)(31,0))
 
-  val ram2 = Module(new RAMHelper)
-  ram2.io.clk := clock
-  ram2.io.en  := !reset.asBool
-  val idx2 = (pc + 4.U - PC_START.U) >> 3
-  ram2.io.rIdx := idx2
-  val rdata2 = ram2.io.rdata
-  ram2.io.wIdx := DontCare
-  ram2.io.wen  := false.B
-  ram2.io.wdata := DontCare
-  ram2.io.wmask := DontCare
+    preDecVec(i).io.instr:= instrVec(i)
 
-  io.out(1).bits.pc  := pc + 4.U
-  io.out(1).bits.instr := Mux((pc+4.U)(2),rdata2(63,32),rdata2(31,0))
+    // when(preDecVec(i).io.brtype===BRtype.B){
+    io.out(i).bits.br_taken := preDecVec(i).io.br_taken
+    // }
+    io.out(i).bits.pc    := pcVec(i)
+    io.out(i).bits.instr := instrVec(i)
+    io.out(i).bits.is_br := preDecVec(i).io.is_br
+    // io.out(i).valid      := true.B
+  }
 
   //状态机
-  def isJump(x: UInt) :Bool = {
-    val opcode = x(6,0)
-    opcode === "b1101111".U || opcode === "b1100111".U || opcode === "b1100011".U
-  }
+  // def isJump(x: UInt) :Bool = {
+  //   val opcode = x(6,0)
+  //   opcode === "b1101111".U || opcode === "b1100111".U || opcode === "b1100011".U
+  // }
   //取指令时
   when(ifuState === IFUState.continue){
-    when(isJump(io.out(0).bits.instr)){
+    // when(preDecVec(0).io.br_type===BRtype.R){
+    //   io.out(0).vaild := true.B
+    //   io.out(1).vaild := false.B
+    //   pc := pc + outFireCount * 4.U
+    //   ifuState := IFUState.stall
+    // }.elsewhen(preDecVec(1).io.br_type===BRtype.R){
+    //   io.out(0).vaild := true.B
+    //   io.out(1).vaild := true.B
+    //   pc := pc + outFireCount * 4.U
+    //   ifuState := IFUState.stall
+    // }
+    when(preDecVec(0).io.is_br){
       io.out(0).valid := true.B
       io.out(1).valid := false.B
-      ifuState := IFUState.stall
-    }.elsewhen(isJump(io.out(1).bits.instr)){
+      pc := pcVec(0) + preDecVec(0).io.offset
+      //     ifuState := IFUState.stall
+    }.elsewhen(preDecVec(1).io.is_br){
       io.out(0).valid := true.B
       io.out(1).valid := true.B
-      ifuState := IFUState.stall
+      pc := pcVec(1) + preDecVec(1).io.offset
+      //     ifuState := IFUState.stall
     }.otherwise{
       io.out(0).valid := true.B
       io.out(1).valid := true.B
+      pc := pcVec(0) + outFireCount * 4.U
     }
-    pc := pc + PopCount(io.out.map(_.fire)) * 4.U//指向下一条指令
+
+    when(preDecVec(0).io.br_type===BRtype.R || preDecVec(1).io.br_type===BRtype.R){
+      ifuState := IFUState.stall
+      pc := pcVec(0) + outFireCount * 4.U
+    }
+    // pc := pc + PopCount(io.out.map(_.fire)) * 4.U//指向下一条指令
     //等待分支结果时
-  }.otherwise{
+  }.elsewhen(ifuState === IFUState.stall){
     io.out(0).valid := false.B
     io.out(1).valid := false.B
-    when(io.in.valid){
+    when(io.in.valid && (io.in.bits.mispred || io.in.bits.is_jalr)){
       pc := Mux(io.in.bits.taken, io.in.bits.new_pc, pc)
       ifuState := IFUState.continue
     }
+  }.otherwise{
+    io.out(0).valid := false.B
+    io.out(1).valid := false.B
   }
-  // printf("--------one inst--------\n")
-  // printf("inst1: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,idx1,rdata1,io.out(0).bits.instr)
-  // printf("inst2: vaild %d, pc %x, idx %d, rdata %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,idx2,rdata2,io.out(1).bits.instr)
 
 }

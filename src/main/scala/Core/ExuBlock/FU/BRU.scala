@@ -48,4 +48,8 @@ class BRU extends Module with Config {
   io.out.bits.uop := io.in.bits.uop
   io.out.valid := io.in.valid
   io.jmp.valid := io.in.valid
+
+  io.jmp.bits.ROBIdx := io.in.bits.uop.ROBIdx
+  io.jmp.bits.mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.br_taken //todo:bru里判断，直接传给IBF、RS、LSQ
+  io.jmp.bits.is_jalr := io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr
 }

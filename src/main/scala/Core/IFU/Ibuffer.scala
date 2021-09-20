@@ -12,6 +12,7 @@ class IbufPtr extends CircularQueuePtr[IbufPtr](IBufSize){
 
 class IBufferIO extends Bundle with Config {
   val flush = Input(Bool())
+  val flush_commit = Input(Bool())
   val in    = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val out   = Vec(2, DecoupledIO(new Pc_Instr))
 }
@@ -26,6 +27,19 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
   val deq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new IbufPtr))))
 
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))
+
+  object IBFState {
+    val continue :: stall :: Nil = Enum(2)
+  }
+
+  val ibfState = RegInit(IBFState.continue)
+
+  when(io.flush){
+    ibfState := IBFState.stall
+  }
+  when(io.flush_commit){
+    ibfState := IBFState.continue
+  }
 
   //Enq
   val numEnq   = PopCount(io.in.map(_.valid))
@@ -46,7 +60,7 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
   //Deq
   for(i <- 0 until 2){
     io.out(i).bits  := data(deq_vec(i).value)
-    io.out(i).valid := valid(deq_vec(i).value)
+    io.out(i).valid := valid(deq_vec(i).value) && ibfState === IBFState.continue && !io.flush
     when(io.out(i).fire){valid(deq_vec(i).value) := false.B}
   }
 

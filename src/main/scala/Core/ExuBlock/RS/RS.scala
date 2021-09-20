@@ -23,6 +23,9 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     val out = ValidIO(Flipped(new FuInPut))
 
     val full = Output(Bool())
+
+    val flush = Input(Bool())
+    val mispred_robPtr = Input(new ROBPtr)
   })
 
   val decode  = Mem(rsSize, new MicroOp)

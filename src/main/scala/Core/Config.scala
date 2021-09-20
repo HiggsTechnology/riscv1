@@ -13,7 +13,7 @@ trait Config {
   def INST_WIDTH: Width = 32.W
   def ADDR_WIDTH : Width = XLEN.W
   def DATA_WIDTH : Width = XLEN.W
-
+  def FETCH_WIDTH : Int = 2
   def REG_NUM : Int = 32
 
   def REG_ADDR_WIDTH : Width = log2Up(REG_NUM).W

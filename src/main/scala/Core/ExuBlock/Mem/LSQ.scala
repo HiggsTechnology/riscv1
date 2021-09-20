@@ -81,6 +81,17 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
 
   }
 
+  val flushed = WireInit(VecInit(Seq.fill(lsqSize)(false.B)))
+  //flush
+  when(io.flush){
+    for(i <- 0 until lsqSize) {
+      when(isBefore(io.mispred_robPtr,decode(i).ROBIdx)){
+        valid(i) := false.B//todo:置到最后一个
+        flushed(i) := valid(i)//当拍的值赋给flushed
+      }
+    }
+  }
+
   //enq
   for(i <- 0 until 2){
     when(io.in(i).valid && allowEnq) {
@@ -119,11 +130,11 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   }
 
   val vaild_enq = VecInit(io.in.map(_.valid && allowEnq))
-  enq_vec := VecInit(enq_vec.map(_ + PopCount(vaild_enq)))
+  enq_vec := Mux(io.flush, VecInit(enq_vec.map(_ - PopCount(flushed))), VecInit(enq_vec.map(_ + PopCount(vaild_enq))))
 
   //发射
-  io.lsu_in(0).valid := !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && (dataState(deq_vec(0).value) || !is_store(deq_vec(0).value))
-  io.lsu_in(1).valid := !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && (dataState(deq_vec(1).value) || !is_store(deq_vec(1).value)) && io.lsu_in(0).valid && addr(deq_vec(1).value) =/= addr(deq_vec(0).value)
+  io.lsu_in(0).valid := !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && ((dataState(deq_vec(0).value) && isAfter(io.predict_robPtr,decode(deq_vec(0).value).ROBIdx)) || !is_store(deq_vec(0).value))
+  io.lsu_in(1).valid := !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && ((dataState(deq_vec(1).value) && isAfter(io.predict_robPtr,decode(deq_vec(1).value).ROBIdx)) || !is_store(deq_vec(1).value)) && io.lsu_in(0).valid && addr(deq_vec(1).value) =/= addr(deq_vec(0).value)
   for(i <- 0 until 2){
     io.lsu_in(i).bits.uop := decode(deq_vec(i).value)
     io.lsu_in(i).bits.src(0) := addr(deq_vec(i).value)
@@ -135,7 +146,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   //等待写回
   val needresp = Wire(Vec(2,Bool()))
   for(i <- 0 until 2){
-    needresp(i) := io.lsu_in(i).valid || issued(deq_vec(i).value)
+    needresp(i) := (io.lsu_in(i).valid || issued(deq_vec(i).value)) && valid(deq_vec(i).value)
   }
 
   for(i <- 0 until 2){
@@ -143,15 +154,20 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   }
 
   when(needresp(0)===true.B && (needresp(1)===false.B || valid(deq_vec(1).value) === false.B)){
-    when(io.lsu_out(0).valid){
+    when((io.lsu_out(0).valid && resp(deq_vec(0).value)) && (!io.flush || isBefore(decode(deq_vec(0).value).ROBIdx,io.mispred_robPtr))){
       valid(deq_vec(0).value) := false.B
       deq_vec := VecInit(deq_vec.map(_ + 1.U))
     }
   }.elsewhen(needresp(0)===true.B && needresp(1)===true.B){
     when((io.lsu_out(0).valid || resp(deq_vec(0).value)) && (io.lsu_out(1).valid || resp(deq_vec(1).value))){
-      valid(deq_vec(0).value) := false.B
-      valid(deq_vec(1).value) := false.B
-      deq_vec := VecInit(deq_vec.map(_ + 2.U))
+      when(!io.flush ||(isBefore(decode(deq_vec(0).value).ROBIdx,io.mispred_robPtr) && isBefore(decode(deq_vec(1).value).ROBIdx,io.mispred_robPtr))) {
+        valid(deq_vec(0).value) := false.B
+        valid(deq_vec(1).value) := false.B
+        deq_vec := VecInit(deq_vec.map(_ + 2.U))
+      }.elsewhen(isBefore(decode(deq_vec(0).value).ROBIdx,io.mispred_robPtr) && !isBefore(decode(deq_vec(1).value).ROBIdx,io.mispred_robPtr)){
+        valid(deq_vec(0).value) := false.B
+        deq_vec := VecInit(deq_vec.map(_ + 1.U))
+      }
     }
   }
 

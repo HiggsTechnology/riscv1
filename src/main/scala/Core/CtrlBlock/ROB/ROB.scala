@@ -13,6 +13,7 @@ class ROBIO extends Bundle {
   val can_allocate = Output(Bool())
 
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
+  val redirect = Flipped(ValidIO(new BRU_OUTIO))//BRU告诉ROB
   val commit = Vec(2,ValidIO(new CommitIO))
   val flush_out = Output(Bool())
 
@@ -25,6 +26,7 @@ class ROBIO extends Bundle {
 class ROBPtr extends CircularQueuePtr[ROBPtr](robSize) with HasCircularQueuePtrHelper{
   override def cloneType = (new ROBPtr).asInstanceOf[this.type]
 }
+
 
 class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new ROBIO)//todo:根据错误预测的分支指令是否提交给IBF信号能否输出
@@ -40,16 +42,51 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))
 
+  val bru_flush = io.redirect.valid && io.redirect.bits.mispred
+  when(bru_flush){
+    mispred(io.redirect.bits.ROBIdx.value) := true.B
+    for(i <- 0 until robSize) {
+      when(isBefore(io.redirect.bits.ROBIdx,data(i).ROBIdx)){
+        valid(i) := false.B
+      }
+    }
+  }
+
+  val br_pred = Wire(Vec(robSize,Bool()))
+  val br_pred_reorder = Wire(Vec(robSize,Bool()))
+  for(i <- 0 until robSize) {
+    br_pred(i) := valid(i) && data(i).cf.is_br && !wb(i)
+  }
+  when(enq_vec(0).value > deq_vec(0).value){
+    br_pred_reorder := DontCare
+    val pred_num = ParallelPriorityEncoder(br_pred)
+    io.predict := Mux(br_pred.asUInt.orR, data(pred_num).ROBIdx, enq_vec(0))
+  }.otherwise{
+    for(i <- 0 until robSize){
+      val k = Wire(UInt(log2Up(robSize).W))
+      when(i.U < robSize.U - enq_vec(0).value){
+        k := i.U + enq_vec(0).value
+      }.otherwise{
+        k := i.U + enq_vec(0).value - robSize.U
+      }
+      br_pred_reorder(i) := br_pred(k)
+    }
+    val pred_num = ParallelPriorityEncoder(br_pred_reorder)
+    io.predict := Mux(br_pred_reorder.asUInt.orR, data((enq_vec(0)+pred_num).value).ROBIdx, enq_vec(0))
+  }
+
+
   //enqueue
 
   val numEnq   = PopCount(io.in.map(_.valid))
   val allowEnq = RegInit(true.B)
-  allowEnq  := validEntries + numEnq + 2.U <= robSize.U
+  allowEnq  := validEntries + numEnq + 2.U <= robSize.U && !bru_flush
   io.can_allocate := allowEnq
 
   for (i <- 0 until 2) {
     valid(enq_vec(i).value) := io.in(i).valid && io.in(0).valid && allowEnq
     wb(enq_vec(i).value) := false.B
+    mispred(enq_vec(i).value) := false.B
     data(enq_vec(i).value) := io.in(i).bits
     data(enq_vec(i).value).ROBIdx := enq_vec(i)
   }
@@ -59,7 +96,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   }
 
   val vaild_enq = VecInit(io.in.map(_.valid && allowEnq))
-  enq_vec := VecInit(enq_vec.map(_ + PopCount(vaild_enq)))
+  enq_vec := Mux(bru_flush, VecInit((1 until 3).map(io.redirect.bits.ROBIdx + _.U)) ,VecInit(enq_vec.map(_ + PopCount(vaild_enq))))
 
   //writeback
   for(i <- 0 until 6){
@@ -69,10 +106,11 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     }
   }
 
+
   //dequeue
   val commitReady = Wire(Vec(2,Bool()))
-  commitReady(0) := valid(deq_vec(0).value) && wb(deq_vec(0).value)
-  commitReady(1) := valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
+  commitReady(0) := !bru_flush && valid(deq_vec(0).value) && wb(deq_vec(0).value)
+  commitReady(1) := !bru_flush && valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
 
   for(i <- 0 until 2){
     io.commit(i).valid := commitReady(i)
@@ -80,7 +118,15 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     io.commit(i).bits.old_pdest := data(deq_vec(i).value).old_pdest
     io.commit(i).bits.ldest := data(deq_vec(i).value).ctrl.rfrd
     io.commit(i).bits.rfWen := data(deq_vec(i).value).ctrl.rfWen
-    when(commitReady(i)){valid(deq_vec(i).value) := false.B}
+    when(commitReady(i)){
+      valid(deq_vec(i).value) := false.B
+      mispred(deq_vec(i).value) := false.B
+    }
+  }
+  when((commitReady(0) && mispred(deq_vec(0).value)) || (commitReady(1) && mispred(deq_vec(1).value))){
+    io.flush_out := true.B
+  }.otherwise{
+    io.flush_out := false.B
   }
 
   deq_vec := VecInit(deq_vec.map(_ + PopCount(commitReady)))

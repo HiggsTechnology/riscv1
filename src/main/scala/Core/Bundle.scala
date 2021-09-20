@@ -41,6 +41,9 @@ class ALU_OUTIO extends Bundle with Config {
 class BRU_OUTIO extends Bundle with Config {
   val new_pc = Output(UInt(XLEN.W))
   val taken  = Output(Bool())
+  val mispred = Output(Bool())
+  val ROBIdx = Output(new ROBPtr)
+  val is_jalr = Output(Bool())
 }
 
 class LSU_OUTIO extends Bundle with Config {
