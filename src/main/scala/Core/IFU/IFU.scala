@@ -44,7 +44,7 @@ class IFU extends Module with Config {
   val rdataVec = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
   val ramVec   = Seq.fill(FETCH_WIDTH)(Module(new RAMHelper)) // 多个module还是一个module用多次？
   val preDecVec= Seq.fill(FETCH_WIDTH)(Module(new PreDecode))
-  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred || io.in.bits.is_jalr), Mux(io.in.bits.taken, io.in.bits.new_pc, pc), pc)
+  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred || io.in.bits.is_jalr), io.in.bits.new_pc, pc)
   // io.flush := io.in.valid
   // 一旦进来的信号valid，则表明之前预测错了，则冲刷
   for(i <- 1 until FETCH_WIDTH){
@@ -54,7 +54,7 @@ class IFU extends Module with Config {
   for(i <- 0 until FETCH_WIDTH){
     // 依次从pc处开始取指
     ramVec(i).io.clk   := clock
-    ramVec(i).io.en    := true.B
+    ramVec(i).io.en    := !reset.asBool
     ramVec(i).io.rIdx  := (pcVec(i) - PC_START.U) >> 3
     rdataVec(i)        := ramVec(i).io.rdata
     ramVec(i).io.wIdx  := DontCare
@@ -95,12 +95,20 @@ class IFU extends Module with Config {
     when(preDecVec(0).io.is_br){
       io.out(0).valid := true.B
       io.out(1).valid := false.B
-      pc := pcVec(0) + preDecVec(0).io.offset
+      when(io.in.valid && io.in.bits.mispred){
+        pc := pcVec(0)
+      }.elsewhen(io.out(0).ready){
+        pc := pcVec(0) + preDecVec(0).io.offset
+      }
       //     ifuState := IFUState.stall
     }.elsewhen(preDecVec(1).io.is_br){
       io.out(0).valid := true.B
       io.out(1).valid := true.B
-      pc := pcVec(1) + preDecVec(1).io.offset
+      when(io.in.valid && io.in.bits.mispred){
+        pc := pcVec(0)
+      }.elsewhen(io.out(0).ready){
+        pc := pcVec(1) + preDecVec(1).io.offset
+      }
       //     ifuState := IFUState.stall
     }.otherwise{
       io.out(0).valid := true.B
@@ -108,9 +116,9 @@ class IFU extends Module with Config {
       pc := pcVec(0) + outFireCount * 4.U
     }
 
-    when(preDecVec(0).io.br_type===BRtype.R || preDecVec(1).io.br_type===BRtype.R){
+    when((preDecVec(0).io.is_br && preDecVec(0).io.br_type===BRtype.R && io.out(0).fire) || (preDecVec(1).io.is_br && preDecVec(1).io.br_type===BRtype.R && io.out(1).fire)){
       ifuState := IFUState.stall
-      pc := pcVec(0) + outFireCount * 4.U
+      //pc := pcVec(0) + outFireCount * 4.U
     }
     // pc := pc + PopCount(io.out.map(_.fire)) * 4.U//指向下一条指令
     //等待分支结果时
@@ -118,12 +126,21 @@ class IFU extends Module with Config {
     io.out(0).valid := false.B
     io.out(1).valid := false.B
     when(io.in.valid && (io.in.bits.mispred || io.in.bits.is_jalr)){
-      pc := Mux(io.in.bits.taken, io.in.bits.new_pc, pc)
+      pc := io.in.bits.new_pc
       ifuState := IFUState.continue
     }
   }.otherwise{
     io.out(0).valid := false.B
     io.out(1).valid := false.B
   }
+
+  // printf("--------one cycle--------\n")
+  // printf("IFU stall %d\n", ifuState === IFUState.stall)
+  // printf("preDecode1: inst %x, is_br %d, br_type %d, br_taken %d, offset %x\n",instrVec(0),preDecVec(0).io.is_br, preDecVec(0).io.br_type, preDecVec(0).io.br_taken, preDecVec(0).io.offset)
+  // printf("preDecode2: inst %x, is_br %d, br_type %d, br_taken %d, offset %x\n",instrVec(1),preDecVec(1).io.is_br, preDecVec(1).io.br_type, preDecVec(1).io.br_taken, preDecVec(1).io.offset)
+  // printf("inst1: vaild %d, pc %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,io.out(0).bits.instr)
+  // printf("inst2: vaild %d, pc %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,io.out(1).bits.instr)
+  // printf("IFU pcReg %x\n", pc)
+  // printf("IBF in.out.ready %d %d\n",io.out(0).ready,io.out(1).ready)
 
 }

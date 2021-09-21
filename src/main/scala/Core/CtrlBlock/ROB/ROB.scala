@@ -79,16 +79,20 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   //enqueue
 
   val numEnq   = PopCount(io.in.map(_.valid))
-  val allowEnq = RegInit(true.B)
-  allowEnq  := validEntries + numEnq + 2.U <= robSize.U && !bru_flush
+  val can_allocate = RegInit(true.B)
+  can_allocate  := validEntries + numEnq + 2.U <= robSize.U
+
+  val allowEnq = can_allocate && !bru_flush
   io.can_allocate := allowEnq
 
   for (i <- 0 until 2) {
-    valid(enq_vec(i).value) := io.in(i).valid && io.in(0).valid && allowEnq
-    wb(enq_vec(i).value) := false.B
-    mispred(enq_vec(i).value) := false.B
-    data(enq_vec(i).value) := io.in(i).bits
-    data(enq_vec(i).value).ROBIdx := enq_vec(i)
+    when(io.in(i).valid && io.in(0).valid && allowEnq){
+      valid(enq_vec(i).value) := io.in(i).valid && io.in(0).valid && allowEnq
+      wb(enq_vec(i).value) := false.B
+      mispred(enq_vec(i).value) := false.B
+      data(enq_vec(i).value) := io.in(i).bits
+      data(enq_vec(i).value).ROBIdx := enq_vec(i)
+    }
   }
 
   for (i <- 0 until 2){
@@ -170,8 +174,9 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
+  // printf("ROB predict idx %d\n", io.predict.value)
   // for(i <- 0 until robSize){
-  //   printf("ROB %d: valid %d, wb %d, pc %x, inst %x\n",i.U, valid(i), wb(i),data(i).cf.pc,data(i).cf.instr)
+  //   printf("ROB %d: valid %d, wb %d, pc %x, inst %x, nospec %d\n",i.U, valid(i), wb(i),data(i).cf.pc,data(i).cf.instr,isAfter(io.predict,data(i).ROBIdx))
   // }
 
 }

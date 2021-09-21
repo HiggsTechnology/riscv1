@@ -42,15 +42,17 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //enqueue 入队操作
   //存储输入数据
   for (i <- 0 until 2) {
-    valid(enq_vec(i).value)  := enq_fire(i)
-    rs_num(enq_vec(i).value) := io.in.rs_num_in(i)
-    data(enq_vec(i).value)   := io.in.microop_in(i).bits
+    when(enq_fire(i)){
+      valid(enq_vec(i).value)  := enq_fire(i)
+      rs_num(enq_vec(i).value) := io.in.rs_num_in(i)
+      data(enq_vec(i).value)   := io.in.microop_in(i).bits
+    }
   }
   //头指针前移，前移由MicroOp(i).valid决定
   enq_vec := VecInit(enq_vec.map(_ + PopCount(enq_fire)))
   //调用指针中的distanceBetween函数，判断头指针与尾指针的距离，距离为1代表队列满，故输出can allocate大与1代表可分配入队
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))
-  io.out.can_allocate := (DispatchQueueSize.U - validEntries) > 1.U
+  io.out.can_allocate := (DispatchQueueSize.U - validEntries) > 1.U && !io.flush
 
   //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效

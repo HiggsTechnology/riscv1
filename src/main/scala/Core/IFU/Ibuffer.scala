@@ -47,12 +47,14 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
   allowEnq  := validEntries + numEnq + 2.U <= IBufSize.U
 
   for(i <- 0 until 2){
-    io.in(i).ready := allowEnq
+    io.in(i).ready := allowEnq && !io.flush
   }
 
   for (i <- 0 until 2) {
-    data(enq_vec(i).value)  := io.in(i).bits
-    valid(enq_vec(i).value) := io.in(i).fire
+    when(io.in(i).fire){
+      data(enq_vec(i).value)  := io.in(i).bits
+      valid(enq_vec(i).value) := io.in(i).fire
+    }
   }
 
   enq_vec := VecInit(enq_vec.map(_ + PopCount(io.in.map(_.fire))))
@@ -78,8 +80,9 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
   // printf("IBF enqvalid %d %d, enq_vec %d %d\n", io.in(0).fire, io.in(1).fire, enq_vec(0).value, enq_vec(1).value)
   // printf("IBF deqvalid %d %d, deq_vec %d %d\n", io.out(0).fire, io.out(1).fire, deq_vec(0).value, deq_vec(1).value)
   // printf("IBF deqvalid %d %d\n",io.out(0).valid,io.out(1).valid)
+  // printf("IBF Bru flush %d, ROB flush %d, IBF stall %d\n", io.flush, io.flush_commit,ibfState === IBFState.stall)
   // for(i <- 0 until IBufSize){
-  //   printf("IBF %d: valid %d, pc %x, inst %x\n",i.U, valid(i),data(i).pc,data(i).instr)
+  //   printf("IBF %d: valid %d, pc %x, inst %x, is_br %d, br_taken %d\n",i.U, valid(i),data(i).pc,data(i).instr,data(i).is_br,data(i).br_taken)
   // }
 
 

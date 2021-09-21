@@ -43,8 +43,9 @@ class BRU extends Module with Config {
   ))
 
   io.out.bits.res := io.in.bits.uop.cf.pc + 4.U
-  io.jmp.bits.new_pc := Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
+  val jump_pc = Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
     Cat(io.in.bits.src(0)(XLEN - 1,1), 0.U(1.W)) + io.in.bits.uop.data.imm, io.in.bits.uop.cf.pc + io.in.bits.uop.data.imm)
+  io.jmp.bits.new_pc := Mux(io.jmp.bits.taken, jump_pc, io.in.bits.uop.cf.pc + 4.U)
   io.out.bits.uop := io.in.bits.uop
   io.out.valid := io.in.valid
   io.jmp.valid := io.in.valid
@@ -52,4 +53,6 @@ class BRU extends Module with Config {
   io.jmp.bits.ROBIdx := io.in.bits.uop.ROBIdx
   io.jmp.bits.mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.br_taken //todo:bru里判断，直接传给IBF、RS、LSQ
   io.jmp.bits.is_jalr := io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr
+
+  //printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.jmp.bits.taken, io.jmp.bits.mispred)
 }
