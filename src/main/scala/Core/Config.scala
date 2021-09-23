@@ -83,6 +83,11 @@ trait Config {
   def robSize : Int = 16
 
   def lsqSize : Int = 16
+
+  def RasSize = 32
+  def VAddrBits = 64
+  def GPHT_Size = 1024
+  def ghrBits = log2Up(GPHT_Size)
 }
 
 object SrcState {

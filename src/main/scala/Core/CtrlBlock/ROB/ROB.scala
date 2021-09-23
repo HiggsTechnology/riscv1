@@ -1,5 +1,6 @@
 package Core.CtrlBlock.ROB
 
+import Core.ExuBlock.FU.BRUOpType
 import Core.Config.robSize
 import Core.{BRU_OUTIO, CommitIO, Config, ExuCommit, MicroOp, MisPredictIO}
 import difftest.{DifftestInstrCommit, DifftestTrapEvent}
@@ -7,7 +8,7 @@ import chisel3._
 import chisel3.util._
 import utils._
 
-class ROBIO extends Bundle {
+class ROBIO extends Bundle {//todo:
   val in  = Vec(2, Flipped(ValidIO(new MicroOp)))
   val enqPtr = Vec(2, Output(new ROBPtr))
   val can_allocate = Output(Bool())
@@ -55,7 +56,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val br_pred = Wire(Vec(robSize,Bool()))
   val br_pred_reorder = Wire(Vec(robSize,Bool()))
   for(i <- 0 until robSize) {
-    br_pred(i) := valid(i) && data(i).cf.is_br && !wb(i)
+    br_pred(i) := valid(i) && (data(i).cf.is_br && data(i).ctrl.funcOpType =/= BRUOpType.jalr && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
   }
   when(enq_vec(0).value > deq_vec(0).value){
     br_pred_reorder := DontCare

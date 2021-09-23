@@ -44,17 +44,22 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
   val enqueueSelect = ParallelPriorityEncoder(valid.map(!_))
   val dequeueSelect = ParallelPriorityEncoder(instRdy)
 
+
+
   //侦听执行单元结果
   for (i <- 0 until rsSize){
     for(j <- 0 until 6){
-      when(valid(i) && io.ExuResult(j).valid && io.ExuResult(j).bits.uop.ctrl.rfWen && (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)) && (srcState1(i)===false.B)){
+      val monitorValid = valid(i) && io.ExuResult(j).valid
+      val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
+      val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
+      val psrc2Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(1)
+      when(monitorValid && exurfWen && psrc1Rdy && !srcState1(i)){
         src1(i) := io.ExuResult(j).bits.res
         srcState1(i) := true.B
       }
-      when(valid(i) && io.ExuResult(j).valid && io.ExuResult(j).bits.uop.ctrl.rfWen &&  (io.ExuResult(j).bits.uop.pdest === decode(i).psrc(1)) && (srcState2(i)===false.B)){
+      when(monitorValid && exurfWen &&  psrc2Rdy && !srcState2(i)){
         src2(i) := io.ExuResult(j).bits.res
         srcState2(i) := true.B
-
       }
     }
   }
@@ -67,12 +72,16 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     src1(enqueueSelect) := io.SrcIn(0)
     src2(enqueueSelect) := io.SrcIn(1)
 
+    //入列指令侦听当拍执行单元
     for(i <- 0 until 6){
-      when(io.ExuResult(i).valid && io.ExuResult(i).bits.uop.ctrl.rfWen &&  (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0))&&io.in.bits.srcState(0)===false.B){
+      val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
+      val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
+      val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)
+      when(io.ExuResult(i).valid && exurfWen &&  psrc1Rdy && !io.in.bits.srcState(0)){
         src1(enqueueSelect) := io.ExuResult(i).bits.res
         srcState1(enqueueSelect) := true.B
       }
-      when(io.ExuResult(i).valid && io.ExuResult(i).bits.uop.ctrl.rfWen && (io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1))&&io.in.bits.srcState(1)===false.B){
+      when(io.ExuResult(i).valid && exurfWen && psrc2Rdy && !io.in.bits.srcState(1)){
         src2(enqueueSelect) := io.ExuResult(i).bits.res
         srcState2(enqueueSelect) := true.B
       }
@@ -110,12 +119,13 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
   //   printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, OQ %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).OQIdx.value)
   //   printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
   // }
-//  if(rsNum==1){
-//    for(i <- 0 until size){
-//      printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, OQ %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).OQIdx.value)
-//      printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
-//    }
-//  }
+  // printf("BRU RS deqselect %d\n",dequeueSelect)
+  //  if(rsNum==1){
+  //    for(i <- 0 until size){
+  //      printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, ROB %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).ROBIdx.value)
+  //      printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
+  //    }
+  //  }
 
 }
 

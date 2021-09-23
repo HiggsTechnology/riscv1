@@ -6,7 +6,7 @@ import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
-import Core.ExuBlock.RS.RS
+import Core.ExuBlock.RS.{RS, RS_inorder}
 import Core.{BRU_OUTIO, Config, ExuCommit, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -36,7 +36,7 @@ class ExuBlock extends Module with Config{
   val io  = IO(new ExuBlockIO)
   //k i
   val csrrs = Module(new RS(size = rsSize, rsNum = 0, nFu = ExuNum, name = "CSRRS"))
-  val brurs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
+  val brurs = Module(new RS_inorder(size = rsSize, rsNum = 1, nFu = ExuNum, name = "BRURS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "ALU2RS"))
   val lsq = Module(new LSQ)
