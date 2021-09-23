@@ -2,13 +2,14 @@ package Core.EXU
 
 import Core.Config.Config
 import Core.Define.Traps
+import Core.Difftest.DifftestTrapIO
 import Core.IDU.FuncOpType
 import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
 import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, is, log2Ceil, switch}
-import difftest.DifftestCSRState
-import utils.{BRU_OUTIO, CfCtrl}
+import difftest.{DifftestCSRState, DifftestTrapEvent}
+import utils.{BRU_OUTIO, CfCtrl, InstInc}
 
 object CsrOpType {
   def RW    : UInt = "b00001".U(FuncOpType.width)
@@ -27,8 +28,12 @@ object CsrOpType {
   def isCsri(op: UInt)  : Bool = op(2).asBool()
 }
 
-class CSR extends Module with CsrRegDefine {
-  class CSRIO extends Bundle {
+class CSR(
+  need_difftest: Boolean = false
+) extends Module with CsrRegDefine {
+  class CSRIO(
+    need_difftest: Boolean = false
+  ) extends Bundle {
 //    class CSRInPort extends Bundle {
 //      val ena     : Bool = Input(Bool())
 //      val addr    : UInt = Input(UInt(CsrAddr.ADDR_W))
@@ -40,10 +45,13 @@ class CSR extends Module with CsrRegDefine {
       val rdata : UInt          = Output(UInt(DATA_WIDTH))
       val jmp   : BRU_OUTIO     = new BRU_OUTIO
     }
+
     val in : Valid[CfCtrl] = Flipped(Valid(new CfCtrl))
     val out : Valid[CSROutPort] = Valid(new CSROutPort)
+    val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
+    val difftest_trapcode : Valid[DifftestTrapIO] = Flipped(Valid(new DifftestTrapIO))
   }
-  val io : CSRIO = IO(new CSRIO)
+  val io : CSRIO = IO(new CSRIO(need_difftest))
   private val op = io.in.bits.ctrl.funcOpType
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
   private val src = io.in.bits.data.src1
@@ -66,9 +74,9 @@ class CSR extends Module with CsrRegDefine {
   ))
   mcycle := mcycle + 1.U
   // todo: add inst_valid in io, minstret increase only when an instruction return.
-  private val inst_valid = true.B
+  private val inst_valid = io.inst_inc.valid
   when (inst_valid) {
-    minstret := minstret + 1.U
+    minstret := minstret + io.inst_inc.bits.value
   }
   private val is_mret = CsrOpType.MRET === op
 //  private val is_sret = CsrOpType.SRET === op
@@ -167,6 +175,15 @@ class CSR extends Module with CsrRegDefine {
   csrCommit.io.mideleg        := RegNext(mideleg)
   csrCommit.io.medeleg        := RegNext(medeleg)
 
+  val trap : DifftestTrapEvent = Module(new DifftestTrapEvent)
+  trap.io.clock    := clock
+  trap.io.coreid   := 0.U
+  trap.io.valid    := RegNext(io.difftest_trapcode.valid)
+  trap.io.code     := RegNext(io.difftest_trapcode.bits.code)
+  trap.io.pc       := RegNext(io.in.bits.cf.pc)
+  trap.io.cycleCnt := RegNext(mcycle)
+  trap.io.instrCnt := RegNext(minstret)
+
   def legalizePrivilege(priv: UInt): UInt =
     if (supportUser)
       Fill(2, priv(0))
@@ -174,7 +191,7 @@ class CSR extends Module with CsrRegDefine {
       Privilege.Level.M
 
   when (io.in.valid) {
-    printf("csr enable\n");
+    printf("csr enable\n")
   }
 }
 

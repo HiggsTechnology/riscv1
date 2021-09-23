@@ -1,27 +1,36 @@
 package Core.EXU
 
 import Core.Config.Config
+import Core.Difftest.DifftestTrapIO
 import Core.IDU.FuncType
 import Core.MemReg.RegWriteIO
 import chisel3._
 import chisel3.util._
-import utils.{BRU_OUTIO, CfCtrl, LSU2RW}
+import utils.{BRU_OUTIO, CfCtrl, InstInc, LSU2RW}
 
-class EXUIO(use_axi:Boolean = true) extends Bundle {
+class EXUIO(
+  use_axi: Boolean = true,
+  need_difftest: Boolean = false
+           ) extends Bundle {
   val in : ValidIO[CfCtrl] = Flipped(Valid(new CfCtrl))
   val reg_write_back : ValidIO[RegWriteIO] = Valid(new RegWriteIO)
   val branch : ValidIO[BRU_OUTIO] = Valid(new BRU_OUTIO)
   val lsu2rw : LSU2RW = if(use_axi) new LSU2RW else null
+  val difftest_trapcode : ValidIO[DifftestTrapIO] = if(need_difftest) Flipped(Valid(new DifftestTrapIO)) else null
+  val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
 }
 
-class EXU(use_axi:Boolean = true) extends Module with Config {
-  val io : EXUIO = IO(new EXUIO(use_axi))
+class EXU(
+  use_axi:Boolean = true,
+  need_difftest: Boolean = false
+) extends Module with Config {
+  val io : EXUIO = IO(new EXUIO(use_axi = use_axi, need_difftest = need_difftest))
   private val func = io.in.bits.ctrl.funcType
   private val op = io.in.bits.ctrl.funcOpType
   val alu : ALU = Module(new ALU)
   val lsu : LSU = Module(new LSU(use_axi))
   val bru : BRU = Module(new BRU)
-  val csr : CSR = Module(new CSR)
+  val csr : CSR = Module(new CSR(need_difftest))
   private val alu_ena = func === FuncType.alu
   private val lsu_ena = func === FuncType.lsu
   private val bru_ena = func === FuncType.bru
@@ -35,6 +44,8 @@ class EXU(use_axi:Boolean = true) extends Module with Config {
   lsu.io.in.bits <> io.in.bits
   bru.io.in.bits <> io.in.bits
   csr.io.in.bits <> io.in.bits
+  csr.io.difftest_trapcode <> io.difftest_trapcode
+  csr.io.inst_inc <> io.inst_inc
 
   private val wb_ena = Wire(Bool())
   private val wdata = Wire(UInt(XLEN.W))

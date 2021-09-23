@@ -5,6 +5,7 @@ import Core.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.MemReg.RegWriteIO
 import chisel3._
 import chisel3.util._
+import utils.BasicIOType.OutUInt
 
 class Pc_Instr extends Bundle with Config {
   val pc    = Output(UInt(XLEN.W))
@@ -71,4 +72,10 @@ class IFU2RW extends  Bundle with Config{
   val ready     = Input(Bool())
   val pc        = Output(UInt(XLEN.W))
   val rdata     = Input(UInt((XLEN * 4).W))
+}
+
+// 指令提交计数器，指示当前提交指令的数量
+class InstInc extends Bundle {
+  val instIncWidth : Int = 3
+  val value : UInt = OutUInt(instIncWidth)
 }

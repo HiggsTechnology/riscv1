@@ -10,35 +10,37 @@ import Core.WBU.WBU
 import Core.MemReg.{RegWriteIO, Regfile}
 import Core.AXI4.{AXI4IO, CROSSBAR_Nto1, IFURW, LSURW}
 import utils.{Pc_Instr, bool2int}
-
 import chisel3._
 
 class TOPIO(use_axi: Boolean = true) extends Bundle {
   val out   = new Pc_Instr
   val valid = Output(Bool())
-  val diffreg = new RegWriteIO
+  val diff_reg = new RegWriteIO
   val axi4 = if(use_axi) new AXI4IO else null
   //axi4 bundle out
 }
 
 class Top(
    ifu_use_axi: Boolean = false,
-   lsu_use_axi: Boolean = false
+   lsu_use_axi: Boolean = false,
+   need_difftest: Boolean = false,
   ) extends Module {
 
   val num_axi4_master: Int = bool2int(ifu_use_axi) + bool2int(lsu_use_axi)
 
   val use_axi = ifu_use_axi || lsu_use_axi
+
+
   val io  = IO(new TOPIO(use_axi))
   val ifu = Module(new IFU(ifu_use_axi))
   val idu = Module(new IDU)
   val dis = Module(new IDUtoEXU)
-  val exu = Module(new EXU(lsu_use_axi))
+  val exu = Module(new EXU(use_axi = lsu_use_axi, need_difftest = need_difftest))
   val wbu = Module(new WBU)
-  val reg = Module(new Regfile)
-  val ifuaxi = if(ifu_use_axi) Module(new IFURW) else null
-  val lsuaxi = if(lsu_use_axi) Module(new LSURW) else null
-  val crossbar_xto1 = if(num_axi4_master > 1) Module(new CROSSBAR_Nto1(1,1)) else null
+  val reg = Module(new Regfile(need_difftest))
+  val ifuaxi : IFURW = if(ifu_use_axi) Module(new IFURW) else null
+  val lsuaxi : LSURW = if(lsu_use_axi) Module(new LSURW) else null
+  val crossbar_xto1 : CROSSBAR_Nto1 = if(num_axi4_master > 1) Module(new CROSSBAR_Nto1(1,1)) else null
 
   if (ifu_use_axi && num_axi4_master == 1) {
     io.axi4                 <>  ifuaxi.io.to_crossbar
@@ -69,7 +71,11 @@ class Top(
   dis.io.src1             := reg.io.src1.data
   dis.io.src2             := reg.io.src2.data
 
-  io.diffreg              <>  wbu.io.out.bits
+  exu.io.inst_inc.valid   := wbu.io.out.valid
+  exu.io.inst_inc.bits.value := 1.U   // 暂时每个周期提交一个指令
+  exu.io.difftest_trapcode <>  idu.io.trapcode
+
+  io.diff_reg              <>  wbu.io.out.bits
 
   io.out.pc    := ifu.io.out.bits.pc
   io.out.instr := ifu.io.out.bits.instr

@@ -6,11 +6,12 @@ import chisel3._
 import chisel3.util._
 import utils.RVIInstr._
 import utils.{CfCtrl, LookupTree, Pc_Instr, RVIInstr, SignExt, ZeroExt}
-
+import Core.Difftest.DifftestTrapIO
 
 class IDUIO extends Bundle {
   val in  = Flipped(Valid(new Pc_Instr))
   val out = Valid(new CfCtrl)
+  val trapcode : ValidIO[DifftestTrapIO] = Valid(Flipped(new DifftestTrapIO))
 }
 
 class IDU extends Module with Config{
@@ -51,4 +52,7 @@ class IDU extends Module with Config{
   io.out.bits.data.uimm_ext := uimm_ext
   io.out.bits.data.src1 := DontCare
   io.out.bits.data.src2 := DontCare
+
+  io.trapcode.valid     := instr === BigInt("0000006b", 16).U
+  io.trapcode.bits.code := DontCare
 }
