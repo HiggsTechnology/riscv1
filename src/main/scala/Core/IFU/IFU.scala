@@ -78,6 +78,8 @@ class IFU extends Module with Config {
     // when(preDecVec(i).io.brtype===BRtype.B){
     io.out(i).bits.br_taken := bpu.io.br_taken(i)
     io.out(i).bits.gshare_idx := bpu.io.gshare_idx(i)
+    io.out(i).bits.gshare_pred := bpu.io.gshare_pred(i)
+    io.out(i).bits.pc_pred := bpu.io.pc_pred(i)
     // }
     io.out(i).bits.pc    := pcVec(i)
     io.out(i).bits.instr := instrVec(i)
@@ -145,9 +147,13 @@ class IFU extends Module with Config {
     io.out(1).valid := false.B
   }
 
-  bpu.io.gshare_update.valid := io.in.valid && io.in.bits.is_B
-  bpu.io.gshare_update.bits.taken := io.in.bits.taken
-  bpu.io.gshare_update.bits.idx := io.in.bits.gshare_idx
+  bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B
+  bpu.io.pred_update.bits.taken := io.in.bits.taken
+  bpu.io.pred_update.bits.gshare_idx := io.in.bits.gshare_idx
+  bpu.io.pred_update.bits.pc_idx := io.in.bits.pc(ghrBits+1,2)
+  bpu.io.pred_update.bits.gshare_mispred := io.in.bits.gshare_mispred
+  bpu.io.pred_update.bits.pc_mispred := io.in.bits.pc_mispred
+
 
   bpu.io.ras_update.target := io.in.bits.pc + 4.U
   bpu.io.ras_update.is_ret := io.in.valid && io.in.bits.is_ret

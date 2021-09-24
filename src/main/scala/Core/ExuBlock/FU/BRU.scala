@@ -59,6 +59,9 @@ class BRU extends Module with Config {
   io.jmp.bits.is_B := io.in.bits.uop.ctrl.funcOpType =/= BRUOpType.jalr && io.in.bits.uop.ctrl.funcOpType =/= BRUOpType.jal
   io.jmp.bits.gshare_idx := io.in.bits.uop.cf.gshare_idx
 
+  io.jmp.bits.gshare_mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.gshare_pred
+  io.jmp.bits.pc_mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.pc_pred
+
   // when(io.in.valid){
   //   printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.jmp.bits.taken, io.jmp.bits.mispred)
   //   printf("BRU pc %x, iscall %d, is ret %d\n",io.jmp.bits.pc,io.jmp.bits.is_call,io.jmp.bits.is_ret)

@@ -12,6 +12,8 @@ class Pc_Instr extends Bundle with Config {
   val is_br = Output(Bool())
   val br_taken = Output(Bool())//todo:bru里根据此判断是否mispredict
   val gshare_idx = Output(UInt(ghrBits.W))
+  val gshare_pred = Output(Bool())
+  val pc_pred = Output(Bool())
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -50,6 +52,8 @@ class BRU_OUTIO extends Bundle with Config {
   val is_call = Output(Bool())
   val is_B = Output(Bool())
   val gshare_idx = Output(UInt(ghrBits.W))
+  val gshare_mispred = Output(Bool())
+  val pc_mispred = Output(Bool())
 }
 
 class BPU_update extends Bundle with Config {
