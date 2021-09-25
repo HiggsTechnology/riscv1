@@ -1,6 +1,6 @@
 package Core.IFU
 
-import Core.AXI4.AXI4Parameters
+import Bus.AXI4.AXI4Parameters
 import Core.Config.Config
 import Core.MemReg.RAMHelper
 import chisel3._
@@ -52,7 +52,6 @@ class IFU(use_axi:Boolean=false) extends Module with Config {
       reg_inst := inst
     }
     io.out.bits.pc    := Mux(!io.stall, npc, pc)
-    // Todo: hold住且当前周期可使用的更优雅的写法
     io.out.bits.instr := Mux(io.ifu2rw.ready, inst, reg_inst)
     // 告知下一个模块，数据可用
     io.out.valid      := io.ifu2rw.ready

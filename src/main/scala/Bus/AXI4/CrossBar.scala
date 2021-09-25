@@ -1,4 +1,5 @@
-package Core.AXI4
+package Bus.AXI4
+
 import Core.Config.Config
 import chisel3._
 import chisel3.util.{Arbiter, Enum, is, switch}
@@ -90,21 +91,21 @@ class CROSSBAR_Nto1(ro_num: Int, rw_num: Int) extends Module with Config {
     is(State.resp) { when(io.out.b.fire())      { wState := State.idle } }
   }
 
-  printf("---------crossbar------------------\n")
-  printf("crossbarWState: %d ", wState)
-  when(curAReadReq.valid) { printf("chosenRead: %d", chosenRead) }
-  when(curAWriteReq.valid) { printf("chosenWrite: %d", chosenWrite) }
-  printf("aw_valid: %d, aw_ready: %d, w_valid: %d, w_ready: %d, b_valid: %d, b_ready: %d\n",
-    io.out.aw.valid, io.out.aw.ready, io.out.w.valid, io.out.w.ready, io.out.b.valid, io.out.b.ready
-  )
-
-  when(io.out.ar.fire())  { printf("ar.fire ") }
-  when(io.out.aw.fire())  { printf("aw.fire ") }
-  when(io.out.r.fire())   { printf("r.fire ") }
-  when(io.out.w.fire())   { printf("w.fire ") }
-  when(io.out.b.fire())   { printf("b.fire ") }
-  when(io.out.r.valid)    { printf("r.id: %d", io.out.r.bits.id) }
-  when(io.out.b.valid)    { printf("b.id: %d", io.out.b.bits.id) }
-  printf("\n")
+//  printf("---------crossbar------------------\n")
+//  printf("crossbarWState: %d ", wState)
+//  when(curAReadReq.valid) { printf("chosenRead: %d", chosenRead) }
+//  when(curAWriteReq.valid) { printf("chosenWrite: %d", chosenWrite) }
+//  printf("aw_valid: %d, aw_ready: %d, w_valid: %d, w_ready: %d, b_valid: %d, b_ready: %d\n",
+//    io.out.aw.valid, io.out.aw.ready, io.out.w.valid, io.out.w.ready, io.out.b.valid, io.out.b.ready
+//  )
+//
+//  when(io.out.ar.fire())  { printf("ar.fire ") }
+//  when(io.out.aw.fire())  { printf("aw.fire ") }
+//  when(io.out.r.fire())   { printf("r.fire ") }
+//  when(io.out.w.fire())   { printf("w.fire ") }
+//  when(io.out.b.fire())   { printf("b.fire ") }
+//  when(io.out.r.valid)    { printf("r.id: %d", io.out.r.bits.id) }
+//  when(io.out.b.valid)    { printf("b.id: %d", io.out.b.bits.id) }
+//  printf("\n")
 
 }

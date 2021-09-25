@@ -1,7 +1,8 @@
 package Core.MemReg
 
-import Core.AXI4.AXI4Parameters.dataBits
-import Core.AXI4.{AXI4IO, AXIParameter}
+import Bus.AXI4.{AXI4IO, AXIParameter}
+import Bus.AXI4.AXI4Parameters.dataBits
+
 import Core.Config.Config
 import chisel3._
 import chisel3.util._

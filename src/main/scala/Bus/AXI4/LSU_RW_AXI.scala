@@ -1,12 +1,14 @@
-package Core.AXI4
-import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
+package Bus.AXI4
+
+import AXI4Parameters.{AXI_PROT, AXI_SIZE}
+import AXI4Parameters.AXI_PROT
 import Core.Config.Config
 import chisel3._
 import utils._
 import chisel3.util._
 
 class LSURWIO extends Bundle with Config {
-  val lsuin : LSU2RW = Flipped(new LSU2RW)
+  val lsuin : SimpleSyncBus = Flipped(new SimpleSyncBus)
   val to_crossbar : AXI4IO = new AXI4IO
 }
 
@@ -203,28 +205,12 @@ class LSURW extends Module with Config {
     lsu_addr(XLEN-1, 3),
     0.U(3.W)
   )
-//  val aw_addr_new = Cat(
-//    io.lsuin.addr(XLEN-1, AXI4Parameters.addrAlignedBits),
-//    0.U(AXI4Parameters.addrAlignedBits.W)
-//  )
   private val aw_len_new  = 0.U
   private val aw_prot_new = AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
 //  val aw_size_new = io.lsuin.size   //
   private val aw_size_new = AXI4Parameters.AXI_SIZE.bytes8   //
   private val w_data_new  = lsu_wdata(63,0)
-//  val w_data_new  = MuxLookup(lsu_addr(AXI4Parameters.addrAlignedBits-1,3), 0.U, Array(
-//    0.U -> Cat(0.U(192.W), lsu_wdata(63,0)            ),
-//    1.U -> Cat(0.U(128.W), lsu_wdata(63,0), 0.U( 64.W)),
-//    2.U -> Cat(0.U( 64.W), lsu_wdata(63,0), 0.U(128.W)),
-//    3.U -> Cat(            lsu_wdata(63,0), 0.U(192.W)),
-//  ))
   private val w_strb_new  = lsu_wstrb(7,0)
-//  val w_strb_new  = MuxLookup(lsu_addr(AXI4Parameters.addrAlignedBits-1,3), 0.U, Array(
-//    0.U -> Cat(0.U(24.W), lsu_wstrb(7,0)            ),
-//    1.U -> Cat(0.U(16.W), lsu_wstrb(7,0), 0.U( 8.W) ),
-//    2.U -> Cat(0.U( 8.W), lsu_wstrb(7,0), 0.U(16.W) ),
-//    3.U -> Cat(           lsu_wstrb(7,0), 0.U(24.W) ),
-//  ))
   private val w_last_new  = true.B            // Todo: Support burst
 
   //----------------------------写过程响应-----------------------------------
@@ -333,24 +319,24 @@ class LSURW extends Module with Config {
   axi4.ar.bits.region   := ar_region
   axi4.r.ready          := r_ready
 
-  when(rState =/= RState.idle) {
-    printf("----------------------lsu axi-------------------------\n")
-    printf("lsu_r_valid:%d, lsu_r_ready:%d, ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n",
-      lsu_r_valid, lsu_r_ready, axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
-    printf("read_addr: %x%x, raddr: %x%x, rdata: %x%x%x%x, read_data: %x%x\n",
-      lsu_addr(63,32), lsu_addr(31, 0), axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0),
-      axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0),
-      io.lsuin.rdata(63,32), io.lsuin.rdata(31,0)
-    )
-    printf("rState: %d\n", rState)
-  }.elsewhen(wState =/= WState.idle){
-    printf("----------------------lsu axi-------------------------\n")
-    printf("lsu_w_valid:%d, aw_valid: %d, aw_ready: %d, w_valid: %d, w_ready: %d, b_valid: %d, b_ready: %d\n",lsu_w_valid, axi4.aw.valid, axi4.aw.ready, axi4.w.valid, axi4.w.ready, axi4.b.valid, axi4.b.ready)
-    printf("waddr: %x%x, wstrb:%x, wdata: %x%x%x%x\n", axi4.aw.bits.addr(63,32), axi4.aw.bits.addr(31,0), axi4.w.bits.strb, axi4.w.bits.data(255, 192), axi4.w.bits.data(191, 128), axi4.w.bits.data(127,64), axi4.w.bits.data(63,0))
-    printf("wState: %d\n", wState)
-  }
-
-  when (b_valid) {
-    printf("axi4.b.bits.resp: %x\n", axi4.b.bits.resp)
-  }
+//  when(rState =/= RState.idle) {
+//    printf("----------------------lsu axi-------------------------\n")
+//    printf("lsu_r_valid:%d, lsu_r_ready:%d, ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n",
+//      lsu_r_valid, lsu_r_ready, axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
+//    printf("read_addr: %x%x, raddr: %x%x, rdata: %x%x%x%x, read_data: %x%x\n",
+//      lsu_addr(63,32), lsu_addr(31, 0), axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0),
+//      axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0),
+//      io.lsuin.rdata(63,32), io.lsuin.rdata(31,0)
+//    )
+//    printf("rState: %d\n", rState)
+//  }.elsewhen(wState =/= WState.idle){
+//    printf("----------------------lsu axi-------------------------\n")
+//    printf("lsu_w_valid:%d, aw_valid: %d, aw_ready: %d, w_valid: %d, w_ready: %d, b_valid: %d, b_ready: %d\n",lsu_w_valid, axi4.aw.valid, axi4.aw.ready, axi4.w.valid, axi4.w.ready, axi4.b.valid, axi4.b.ready)
+//    printf("waddr: %x%x, wstrb:%x, wdata: %x%x%x%x\n", axi4.aw.bits.addr(63,32), axi4.aw.bits.addr(31,0), axi4.w.bits.strb, axi4.w.bits.data(255, 192), axi4.w.bits.data(191, 128), axi4.w.bits.data(127,64), axi4.w.bits.data(63,0))
+//    printf("wState: %d\n", wState)
+//  }
+//
+//  when (b_valid) {
+//    printf("axi4.b.bits.resp: %x\n", axi4.b.bits.resp)
+//  }
 }

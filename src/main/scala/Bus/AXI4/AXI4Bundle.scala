@@ -1,4 +1,5 @@
-package Core.AXI4
+package Bus.AXI4
+
 import Core.Config.Config
 import Core.Config.Config.REG_NUM
 import chisel3._

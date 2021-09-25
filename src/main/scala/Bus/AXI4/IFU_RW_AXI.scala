@@ -1,5 +1,7 @@
-package Core.AXI4
-import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
+package Bus.AXI4
+
+import AXI4Parameters.{AXI_PROT, AXI_SIZE}
+import AXI4Parameters.{AXI_PROT, AXI_SIZE}
 import Core.Config.Config
 import chisel3._
 import chisel3.util._
@@ -149,12 +151,10 @@ class IFURW extends Module with Config{
   io.ifuin.ready      := ifu_ready
   io.ifuin.rdata      := ifu_rdata
 
-  when (rState =/= RState.idle){
-    printf("----------------------ifu axi----------------------\n")
-    printf("ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n", axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
-    printf("read_addr: %x, raddr: %x%x, rdata: %x%x%x%x\n", io.ifuin.pc(31,0), axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0), axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0))
-    printf("rState: %d\n", rState)
-  }
-
-
+//  when (rState =/= RState.idle){
+//    printf("----------------------ifu axi----------------------\n")
+//    printf("ar_valid: %d, ar_ready: %d, r_valid: %d, r_ready: %d\n", axi4.ar.valid, axi4.ar.ready, axi4.r.valid, axi4.r.ready)
+//    printf("read_addr: %x, raddr: %x%x, rdata: %x%x%x%x\n", io.ifuin.pc(31,0), axi4.ar.bits.addr(63,32), axi4.ar.bits.addr(31,0), axi4.r.bits.data(255, 192), axi4.r.bits.data(191, 128), axi4.r.bits.data(127,64), axi4.r.bits.data(63,0))
+//    printf("rState: %d\n", rState)
+//  }
 }

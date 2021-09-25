@@ -55,7 +55,8 @@ class EXU_OUTIO extends Bundle with Config {
   val reg_write_io = new RegWriteIO
 }
 
-class LSU2RW extends  Bundle with Config{
+// 简单的同步总线，valid表明Output数据有效，ready表明Input数据有效
+class SimpleSyncBus extends  Bundle with Config{
   /** r:0, w:1 */
   val valid     = Output(Bool())
   val ready     = Input(Bool())

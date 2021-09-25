@@ -1,4 +1,4 @@
-package Core.AXI4
+package Bus.AXI4
 
 import Core.Config.Config
 import chisel3._

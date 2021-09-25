@@ -1,12 +1,14 @@
 package Core.EXU
 
+import Bus.MMIOSimpleBus
 import Core.Config.Config
 import Core.Difftest.DifftestTrapIO
 import Core.IDU.FuncType
 import Core.MemReg.RegWriteIO
+import Devices.Clint.ClintOutPort
 import chisel3._
 import chisel3.util._
-import utils.{BRU_OUTIO, CfCtrl, InstInc, LSU2RW}
+import utils.{BRU_OUTIO, CfCtrl, InstInc, SimpleSyncBus}
 
 class EXUIO(
   use_axi: Boolean = true,
@@ -15,9 +17,10 @@ class EXUIO(
   val in : ValidIO[CfCtrl] = Flipped(Valid(new CfCtrl))
   val reg_write_back : ValidIO[RegWriteIO] = Valid(new RegWriteIO)
   val branch : ValidIO[BRU_OUTIO] = Valid(new BRU_OUTIO)
-  val lsu2rw : LSU2RW = if(use_axi) new LSU2RW else null
+  val lsu2rw : SimpleSyncBus = if(use_axi) new SimpleSyncBus else null
   val difftest_trapcode : ValidIO[DifftestTrapIO] = if(need_difftest) Flipped(Valid(new DifftestTrapIO)) else null
   val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
+  val clint = Flipped(new ClintOutPort)
 }
 
 class EXU(
@@ -44,8 +47,10 @@ class EXU(
   lsu.io.in.bits <> io.in.bits
   bru.io.in.bits <> io.in.bits
   csr.io.in.bits <> io.in.bits
+
   csr.io.difftest_trapcode <> io.difftest_trapcode
   csr.io.inst_inc <> io.inst_inc
+  csr.io.clint    <> io.clint
 
   private val wb_ena = Wire(Bool())
   private val wdata = Wire(UInt(XLEN.W))

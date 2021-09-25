@@ -4,8 +4,8 @@ import Core.Config.Config
 import Core.IDU.FuncType
 import Core.MemReg.RAMHelper
 import chisel3._
-import chisel3.util.Valid
-import utils.{CfCtrl, LSU2RW, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
+import chisel3.util.{RegEnable, Valid}
+import utils.{CfCtrl, SimpleSyncBus, LSU_OUTIO, LookupTree, SignExt, ZeroExt}
 
 object LSUOpType { 
   def lb   = "b0000000".U
@@ -32,9 +32,9 @@ object LSUOpType {
 }
 
 class LSUIO(use_axi: Boolean = false) extends Bundle with Config {
-  val in      : Valid[CfCtrl]     = Flipped(Valid(new CfCtrl))
-  val out     : Valid[LSU_OUTIO]  = Valid(new LSU_OUTIO)
-  val lsu2rw  : LSU2RW            = if (use_axi) new LSU2RW else null
+  val in        : Valid[CfCtrl]     = Flipped(Valid(new CfCtrl))
+  val out       : Valid[LSU_OUTIO]  = Valid(new LSU_OUTIO)
+  val lsu2rw    : SimpleSyncBus     = if (use_axi) new SimpleSyncBus else null
 }
 
 class LSU(use_axi: Boolean) extends Module with Config {
@@ -94,11 +94,10 @@ class LSU(use_axi: Boolean) extends Module with Config {
     io.lsu2rw.wstrb := strb_out << addr(2, 0)
     io.lsu2rw.wdata := data_out << (addr(2,0) << 3.U)
     io.lsu2rw.size  := size
-//    when (io.in.valid && isStore)
-    when (io.in.valid && !isStore) {
-      printf("lsu: addr: %x, data.src1: %x, data.imm: %x\n", addr, io.in.bits.data.src1, io.in.bits.data.imm);
-    }
-    printf("lsu: addr: %x, data.src1: %x, data.imm: %x\n", addr, io.in.bits.data.src1, io.in.bits.data.imm);
+//    when (io.in.valid && !isStore) {
+//      printf("lsu: addr: %x, data.src1: %x, data.imm: %x\n", addr, io.in.bits.data.src1, io.in.bits.data.imm);
+//    }
+//    printf("lsu: addr: %x, data.src1: %x, data.imm: %x\n", addr, io.in.bits.data.src1, io.in.bits.data.imm);
 
   }
   else {

@@ -4,6 +4,7 @@ import Core.Config.Config
 import Core.Define.Traps
 import Core.Difftest.DifftestTrapIO
 import Core.IDU.FuncOpType
+import Devices.Clint.ClintOutPort
 import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
@@ -11,6 +12,9 @@ import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, is, log2Ceil, switch}
 import difftest.{DifftestCSRState, DifftestTrapEvent}
 import utils.{BRU_OUTIO, CfCtrl, InstInc}
 
+/**
+ * CSR 操作码
+ */
 object CsrOpType {
   def RW    : UInt = "b00001".U(FuncOpType.width)
   def RS    : UInt = "b00010".U(FuncOpType.width)
@@ -28,19 +32,16 @@ object CsrOpType {
   def isCsri(op: UInt)  : Bool = op(2).asBool()
 }
 
+/**
+ * CSR 模块
+ * @param need_difftest: 是否需要提交difftest Trap
+ */
 class CSR(
   need_difftest: Boolean = false
 ) extends Module with CsrRegDefine {
   class CSRIO(
     need_difftest: Boolean = false
   ) extends Bundle {
-//    class CSRInPort extends Bundle {
-//      val ena     : Bool = Input(Bool())
-//      val addr    : UInt = Input(UInt(CsrAddr.ADDR_W))
-//      val src     : UInt = Input(UInt(DATA_WIDTH))
-//      val pc      : UInt = Input(UInt(ADDR_WIDTH))
-//      val op_type : UInt = Input(UInt(FuncOpType.width))
-//    }
     class CSROutPort extends Bundle {
       val rdata : UInt          = Output(UInt(DATA_WIDTH))
       val jmp   : BRU_OUTIO     = new BRU_OUTIO
@@ -50,6 +51,7 @@ class CSR(
     val out : Valid[CSROutPort] = Valid(new CSROutPort)
     val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
     val difftest_trapcode : Valid[DifftestTrapIO] = Flipped(Valid(new DifftestTrapIO))
+    val clint : ClintOutPort = Flipped(new ClintOutPort)
   }
   val io : CSRIO = IO(new CSRIO(need_difftest))
   private val op = io.in.bits.ctrl.funcOpType
@@ -63,7 +65,10 @@ class CSR(
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
 
-  private val rdata = MuxLookup(addr, 0.U(MXLEN.W), readOnlyMap++readWriteMap)
+//  ip.t.M := io.clint.out.mtip
+//  mtime := io.clint.out.mtime
+
+  private val rdata = MuxLookup(addr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
   private val wdata = MuxLookup(op, 0.U, Array(
     CsrOpType.RW  ->  src,
     CsrOpType.RWI ->  src,
@@ -109,7 +114,6 @@ class CSR(
       is(CsrAddr.mepc)      { mepc      := wdata  }
       is(CsrAddr.mcause)    { mcause    := wdata  }
       is(CsrAddr.mtval)     { mtval     := wdata  }
-      is(CsrAddr.mip)       { mip       := wdata  }
       // todo map pmpcfg[0~15]
       is(CsrAddr.mcycle)    { mcycle    := wdata  }
       is(CsrAddr.minstret)  { minstret  := wdata  }
@@ -152,6 +156,9 @@ class CSR(
   io.out.bits.jmp.new_pc := new_pc
   io.out.bits.jmp.ena := trap_valid
   io.out.bits.rdata := rdata
+
+  io.clint <> DontCare
+
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock
@@ -267,7 +274,7 @@ private object CsrAddr {
 }
 
 trait CsrRegDefine extends Config {
-  class InterruptEnable extends Bundle {
+  class PrivilegeMode extends Bundle {
     val M : Bool = Output(Bool())
     val H : Bool = Output(Bool())
     val S : Bool = Output(Bool())
@@ -292,10 +299,16 @@ trait CsrRegDefine extends Config {
     val MPP   : UInt = Output(UInt(2.W))
     val HPP   : UInt = Output(UInt(2.W))
     val SPP   : UInt = Output(UInt(1.W))
-    val PIE   = new InterruptEnable
-    val IE    = new InterruptEnable
+    val PIE   = new PrivilegeMode
+    val IE    = new PrivilegeMode
   }
 
+  // 参考NutShell的实现
+  class InterruptPending extends Bundle {
+    val e = new PrivilegeMode
+    val t = new PrivilegeMode
+    val s = new PrivilegeMode
+  }
   protected val CSR_DATA_W : Width = MXLEN.W
   // Machine Information Registers
   // 0xF11~0xF14
@@ -320,8 +333,8 @@ trait CsrRegDefine extends Config {
   val mepc          : UInt = RegInit(0.U(CSR_DATA_W))
   val mcause        : UInt = RegInit(0.U(CSR_DATA_W))
   val mtval         : UInt = RegInit(0.U(CSR_DATA_W))
-  val mip           : UInt = RegInit(0.U(CSR_DATA_W))
-
+  val ip            = WireInit(0.U.asTypeOf(new InterruptPending))
+  val mip           : UInt = WireInit(ip.asUInt())
   // Machine Memory Protection
   // 0x3A0~0x3A3, 0x3B0~0x3BF
   val pmpcfg        : Vec[UInt] = RegInit(VecInit(Seq.fill( 4)(0.U(CSR_DATA_W))))
@@ -331,7 +344,7 @@ trait CsrRegDefine extends Config {
   // 0xB00~0xB1F
   val mhpmcounter   : Vec[UInt] = RegInit(VecInit(Seq.fill(32)(0.U(CSR_DATA_W))))
   val mcycle        : UInt = mhpmcounter(0)
-  val mtime         : UInt = WireInit(mcycle)
+  val mtime         : UInt = WireInit(0.U)
   val minstret      : UInt = mhpmcounter(2)
 
   // Machine Counter Setup
@@ -368,6 +381,7 @@ trait CsrRegDefine extends Config {
     CsrAddr.marchid     ->  marchid     ,
     CsrAddr.mimpid      ->  mimpid      ,
     CsrAddr.mhartid     ->  mhartid     ,
+    CsrAddr.mip         ->  mip         ,
   )
 
   val mstatus = WireInit(status)
@@ -392,7 +406,6 @@ trait CsrRegDefine extends Config {
     CsrAddr.mepc        ->  mepc        ,
     CsrAddr.mcause      ->  mcause      ,
     CsrAddr.mtval       ->  mtval       ,
-    CsrAddr.mip         ->  mip         ,
     // todo map pmpcfg[0~15]
     CsrAddr.mcycle      ->  mcycle      ,
     CsrAddr.minstret    ->  minstret    ,
