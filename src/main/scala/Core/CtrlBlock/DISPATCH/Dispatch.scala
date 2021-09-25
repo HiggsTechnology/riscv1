@@ -24,15 +24,15 @@ class ALUPtr extends CircularQueuePtr[ALUPtr](2) with HasCircularQueuePtrHelper{
 // 1csr 1jump 2alu 1lsu
 class Dispatch extends Module with Config {
   val io = IO(new DispatchIO)
-  val rs_num  = Wire(Vec(2, Output(UInt(log2Up(ExuNum).W))))
+  val rs_num  = Wire(Vec(2, Output(UInt(log2Up(ExuNum-1).W))))
   val is_alu: Vec[Bool] = VecInit(io.in.microop_in.map(item => {item.valid && item.bits.ctrl.funcType === FuncType.alu}))
   val alu_ptr = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ALUPtr))))
   for(i <- 0 until 2){
     rs_num(i) := LookupTree(io.in.microop_in(i).bits.ctrl.funcType, List(
       FuncType.csr -> 0.U,
-      FuncType.bru -> 1.U,
-      FuncType.alu -> 2.U,
-      FuncType.lsu -> 4.U
+      FuncType.bru -> 0.U,
+      FuncType.alu -> 1.U,
+      FuncType.lsu -> 3.U
     ))
   }
   when(io.in.can_allocate){

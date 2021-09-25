@@ -38,7 +38,7 @@ class RS_inorder(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int 
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
-  
+
   val enq_vec = RegInit(0.U.asTypeOf(new RSPtr))
   val deq_vec = RegInit(0.U.asTypeOf(new RSPtr))
 
@@ -113,12 +113,12 @@ class RS_inorder(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int 
 
   io.full := rsFull
 
-    // printf("RS inorder enq %d, enqvalid %d, deq %d, deqvalid %d\n",enq_vec.value, io.in.valid && !io.full, deq_vec.value, dispatchReady)
+  //     printf("RS inorder enq %d, enqvalid %d, deq %d, deqvalid %d\n",enq_vec.value, io.in.valid && !io.full, deq_vec.value, dispatchReady)
 
-    // for(i <- 0 until size){
-    //    printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, ROB %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).ROBIdx.value)
-    //    printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
-    // }
+  //     for(i <- 0 until size){
+  //        printf("rsNum:%d, %d: valid %d, src1 %d %x, src2 %d %x, ROB %d\n",rsNum.U,i.U,valid(i),srcState1(i),src1(i),srcState2(i),src2(i),decode(i).ROBIdx.value)
+  //        printf("pc %x, inst %x \n",decode(i).cf.pc,decode(i).cf.instr)
+  //     }
 
 
 

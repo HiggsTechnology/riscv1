@@ -11,13 +11,13 @@ class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueS
 }
 class DispatchQueueIN extends Bundle {
   val microop_in      = Vec(2, Flipped(ValidIO(new MicroOp)))
-  val rs_num_in       = Vec(2, Input(UInt(log2Up(ExuNum).W)))
-  val rs_can_allocate = Vec(ExuNum, Input(Bool()))
+  val rs_num_in       = Vec(2, Input(UInt(log2Up(ExuNum-1).W)))
+  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
 }
 class DispatchQueueOUT extends Bundle {
   val can_allocate = Output(Bool())
   val microop_out  = Vec(2, ValidIO(new MicroOp))
-  val rs_num_out   = Vec(2, Output(UInt(log2Up(ExuNum).W)))
+  val rs_num_out   = Vec(2, Output(UInt(log2Up(ExuNum-1).W)))
 }
 class DispatchQueueIO extends Bundle {
   val in  = new DispatchQueueIN
@@ -57,7 +57,7 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效
   io.out.microop_out(0).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value))
-  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===4.U)
+  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===3.U)//rs_num===3.U can allow in 2 instr
   for (i <- 0 until 2) {
     io.out.microop_out(i).bits  := data(deq_vec(i).value)
     io.out.rs_num_out(i)        := rs_num(deq_vec(i).value)
@@ -71,10 +71,11 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
     valid    := VecInit(Seq.fill(DispatchQueueSize)(false.B))
   }
 
-  // printf("DQ enqvalid %d %d, enq_vec %d %d\n", enq_fire(0), enq_fire(1), enq_vec(0).value, enq_vec(1).value)
-  // printf("DQ deqvalid %d %d, deq_vec %d %d\n", io.out.microop_out(0).valid, io.out.microop_out(1).valid, deq_vec(0).value, deq_vec(1).value)
-  // for(i <- 0 until DispatchQueueSize){
-  //   printf("DQ %d: valid %d, pc %x, inst %x, rs_num %d\n",i.U, valid(i),data(i).cf.pc,data(i).cf.instr, rs_num(i))
-  // }
+  //   printf("DQ dq(0).functype %d %d, dq(1).functype %d %d\n", io.out.microop_out(0).bits.ctrl.funcType, io.out.microop_out(0).valid, io.out.microop_out(1).bits.ctrl.funcType,io.out.microop_out(1).valid)
+  //   printf("DQ enqvalid %d %d, enq_vec %d %d\n", enq_fire(0), enq_fire(1), enq_vec(0).value, enq_vec(1).value)
+  //   printf("DQ deqvalid %d %d, deq_vec %d %d\n", io.out.microop_out(0).valid, io.out.microop_out(1).valid, deq_vec(0).value, deq_vec(1).value)
+  //   for(i <- 0 until DispatchQueueSize){
+  //     printf("DQ %d: valid %d, pc %x, inst %x, rs_num %d\n",i.U, valid(i),data(i).cf.pc,data(i).cf.instr, rs_num(i))
+  //   }
 
 }

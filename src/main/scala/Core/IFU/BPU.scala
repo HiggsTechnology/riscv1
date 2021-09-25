@@ -21,7 +21,7 @@ class BPUIO extends Bundle with Config{
   val br_type = Vec(2,Input(BRtype()))
   val is_ret = Vec(2,Input(Bool()))
   val iscall = Vec(2,Input(Bool()))
-  
+
   val outfire = Vec(2,Input(Bool()))
 
   val br_taken = Vec(2,Output(Bool()))
@@ -55,8 +55,8 @@ class BPU extends Module with Config{
 
   val GPHT_Idx = Wire(Vec(FETCH_WIDTH, UInt(ghrBits.W)))
   for(i <- 0 until FETCH_WIDTH){
-    GPHT_Idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr
-    io.gshare_idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr
+    GPHT_Idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr_commit
+    io.gshare_idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr_commit
   }
 
   val GPHT = Mem(GPHT_Size, UInt(2.W))

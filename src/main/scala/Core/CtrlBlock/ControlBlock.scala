@@ -20,7 +20,7 @@ import utils._
 
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
-  val rs_can_allocate = Vec(ExuNum, Input(Bool()))
+  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
   val redirect  = Flipped(ValidIO(new BRU_OUTIO))
 }
