@@ -1,25 +1,28 @@
 package Core.Define
 
+import Core.Config.Config.MXLEN
 import chisel3.{Bool, UInt, fromStringToLiteral}
 
 object Interrupts {
-  def UserSoft = 0
+  private def interruptField : BigInt = BigInt(1) << (MXLEN - 1)
 
-  def SupervisorSoft = 1
+  def UserSoft : BigInt = 0 | interruptField
 
-  def MachineSoft = 3
+  def SupervisorSoft : BigInt = 1 | interruptField
 
-  def UserTime = 4
+  def MachineSoft : BigInt = 3 | interruptField
 
-  def SupervisorTime = 5
+  def UserTime : BigInt = 4 | interruptField
 
-  def MachineTime = 7
+  def SupervisorTime : BigInt = 5 | interruptField
 
-  def UserExtern = 8
+  def MachineTime : BigInt = 7 | interruptField
 
-  def SupervisorExtern = 9
+  def UserExtern : BigInt = 8 | interruptField
 
-  def MachineExtern = 11
+  def SupervisorExtern : BigInt = 9 | interruptField
+
+  def MachineExtern : BigInt = 11 | interruptField
 
   def isUser(cause : UInt) : Bool = cause(1, 0) === "b00".U
 

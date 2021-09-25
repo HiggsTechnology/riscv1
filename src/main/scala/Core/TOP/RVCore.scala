@@ -13,7 +13,6 @@ import Bus.MMIO
 import Devices.Clint.ClintIO
 import utils.{Pc_Instr, SimpleSyncBus, bool2int}
 import chisel3._
-import difftest.UARTIO
 import utils.BasicIOType.OutBool
 
 class RVCoreIO(use_axi: Boolean = true) extends Bundle {
@@ -42,9 +41,9 @@ class RVCore(
   val ifu = Module(new IFU(ifu_use_axi))
   val idu = Module(new IDU)
   val dis = Module(new IDUtoEXU)
-  val exu = Module(new EXU(use_axi = lsu_use_axi, need_difftest = need_difftest))
+  val exu = Module(new EXU(use_axi = lsu_use_axi))
   val wbu = Module(new WBU)
-  val reg = Module(new Regfile(need_difftest))
+  val reg = Module(new Regfile())
   val ifuaxi : IFURW = if(ifu_use_axi) Module(new IFURW) else null
   val lsuaxi : LSURW = if(lsu_use_axi) Module(new LSURW) else null
   val crossbar_xto1 : CROSSBAR_Nto1 = if(num_axi4_master > 1) Module(new CROSSBAR_Nto1(1,1)) else null
@@ -67,15 +66,19 @@ class RVCore(
     ifuaxi.io.ifuin         <>  ifu.io.ifu2rw
 
     crossbar_xto1.io.in(1)  <>  lsuaxi.io.to_crossbar
+
+    // mem
     lsuaxi.io.lsuin         <>  mmio.io.slave(0)
     mmio.io.master          <>  exu.io.lsu2rw
 
+    // clint
     io.clint.in             <>  mmio.io.slave(1)
     io.clint.out            <>  exu.io.clint
 
-    io.difftest_skip        := mmio.io.difftest_skip
-
+    // uart
     io.to_uart              <>  mmio.io.slave(2)
+
+    io.difftest_skip        := mmio.io.difftest_skip
   }
 
   ifu.io.out              <>  idu.io.in
@@ -91,7 +94,6 @@ class RVCore(
 
   exu.io.inst_inc.valid   := wbu.io.out.valid
   exu.io.inst_inc.bits.value := 1.U   // 暂时每个周期提交一个指令
-  exu.io.difftest_trapcode  <>  idu.io.trapcode
 
   io.diff_reg               <>  wbu.io.out.bits
 

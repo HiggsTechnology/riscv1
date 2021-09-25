@@ -1,15 +1,16 @@
 package Core.EXU
 
 import Core.Config.Config
-import Core.Define.Traps
+import Core.Define.{Exception, Interrupts}
 import Core.Difftest.DifftestTrapIO
 import Core.IDU.FuncOpType
 import Devices.Clint.ClintOutPort
 import chisel3._
 import chisel3.internal.firrtl.Width
 import Privilege.{supportSupervisor, supportUser}
-import chisel3.util.{Cat, Enum, Fill, MuxLookup, Valid, is, log2Ceil, switch}
-import difftest.{DifftestCSRState, DifftestTrapEvent}
+import chisel3.util.experimental.BoringUtils.addSource
+import chisel3.util.{Cat, Enum, Fill, MuxLookup, PriorityEncoder, Valid, is, log2Ceil, switch}
+import difftest.{DifftestArchEvent, DifftestCSRState, DifftestTrapEvent}
 import utils.{BRU_OUTIO, CfCtrl, InstInc}
 
 /**
@@ -37,23 +38,24 @@ object CsrOpType {
  * @param need_difftest: 是否需要提交difftest Trap
  */
 class CSR(
-  need_difftest: Boolean = false
+
 ) extends Module with CsrRegDefine {
   class CSRIO(
-    need_difftest: Boolean = false
   ) extends Bundle {
     class CSROutPort extends Bundle {
-      val rdata : UInt          = Output(UInt(DATA_WIDTH))
-      val jmp   : BRU_OUTIO     = new BRU_OUTIO
+      val rdata     : UInt          = Output(UInt(DATA_WIDTH))
+      val jmp       : BRU_OUTIO     = new BRU_OUTIO
     }
-
     val in : Valid[CfCtrl] = Flipped(Valid(new CfCtrl))
     val out : Valid[CSROutPort] = Valid(new CSROutPort)
     val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
-    val difftest_trapcode : Valid[DifftestTrapIO] = Flipped(Valid(new DifftestTrapIO))
     val clint : ClintOutPort = Flipped(new ClintOutPort)
   }
-  val io : CSRIO = IO(new CSRIO(need_difftest))
+
+  val io : CSRIO = IO(new CSRIO())
+
+  // --------------------------- 准备数据 -------------------------
+
   private val op = io.in.bits.ctrl.funcOpType
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
   private val src = io.in.bits.data.src1
@@ -65,9 +67,6 @@ class CSR(
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
 
-//  ip.t.M := io.clint.out.mtip
-//  mtime := io.clint.out.mtime
-
   private val rdata = MuxLookup(addr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
   private val wdata = MuxLookup(op, 0.U, Array(
     CsrOpType.RW  ->  src,
@@ -78,7 +77,7 @@ class CSR(
     CsrOpType.RCI ->  (rdata & (~src).asUInt())
   ))
   mcycle := mcycle + 1.U
-  // todo: add inst_valid in io, minstret increase only when an instruction return.
+
   private val inst_valid = io.inst_inc.valid
   when (inst_valid) {
     minstret := minstret + io.inst_inc.bits.value
@@ -91,6 +90,7 @@ class CSR(
   private val new_pc = WireInit(0.U(ADDR_WIDTH))
   dontTouch(new_pc)
   private val trap_valid = WireInit(false.B)
+  private val exception_valid = io.in.valid && op === CsrOpType.ECALL
   when(ena && !is_jmp) {
     new_pc := 0.U
     trap_valid := false.B
@@ -107,7 +107,7 @@ class CSR(
       }
       is(CsrAddr.medeleg)   { medeleg   := wdata  }
       is(CsrAddr.mideleg)   { mideleg   := wdata  }
-      is(CsrAddr.mie)       { mie       := wdata  }
+      is(CsrAddr.mie)       {  ie       := wdata.asTypeOf(new InterruptField) }
       is(CsrAddr.mtvec)     { mtvec     := wdata  }
       is(CsrAddr.mcounteren){ mcounteren:= wdata  }
       is(CsrAddr.mscratch)  { mscratch  := wdata  }
@@ -138,7 +138,7 @@ class CSR(
     when (op === CsrOpType.ECALL) {
       when (currentPriv === mode_m) {
         mepc := pc
-        mcause := Traps.MECall.U
+        mcause := Exception.MECall.U
       }
       status.IE.M := false.B        // xIE设为0
       status.PIE.M := status.IE.M   // xPIE设为xIE的值
@@ -147,17 +147,18 @@ class CSR(
       currentPriv := mstatus.MPP    // 特权模式修改为y模式
       status.PIE.M := true.B        // xPIE设为1
       status.IE.M := mstatus.PIE.M  // xIE设为xPIE
-      // todo: 给CSR加上U模式，这里为了和NEMU的行为同步，即使不支持U模式，MPP也设定为mode_u
+      // todo: 给CSR加上U模式，这里为了和NEMU的行为同步，将NEMU中改成了mode_m
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
   // 非流水线状态，立即完成
-  io.out.valid := io.in.valid
-  io.out.bits.jmp.new_pc := new_pc
-  io.out.bits.jmp.ena := trap_valid
-  io.out.bits.rdata := rdata
+  io.out.valid            := io.in.valid
+  io.out.bits.jmp.new_pc  := new_pc
+  io.out.bits.jmp.ena     := trap_valid
+  io.out.bits.rdata       := rdata
 
-  io.clint <> DontCare
+  io.intr_jmp.new_pc := interruptPc
+  io.intr_jmp.ena := interruptValid
 
 
   private val csrCommit = Module(new DifftestCSRState)
@@ -182,20 +183,34 @@ class CSR(
   csrCommit.io.mideleg        := RegNext(mideleg)
   csrCommit.io.medeleg        := RegNext(medeleg)
 
-  val trap : DifftestTrapEvent = Module(new DifftestTrapEvent)
-  trap.io.clock    := clock
-  trap.io.coreid   := 0.U
-  trap.io.valid    := RegNext(io.difftest_trapcode.valid)
-  trap.io.code     := RegNext(io.difftest_trapcode.bits.code)
-  trap.io.pc       := RegNext(io.in.bits.cf.pc)
-  trap.io.cycleCnt := RegNext(mcycle)
-  trap.io.instrCnt := RegNext(minstret)
+  addSource(RegNext(io.in.bits.cf.pc),  "difftest_trapEvent_pc")
+  addSource(RegNext(mcycle),            "difftest_trapEvent_cycleCnt")
+  addSource(RegNext(minstret),          "difftest_trapEvent_instrCnt")
+
+  addSource(RegNext(Mux(interruptValid, interruptNo, 0.U)), "difftest_intrNO")
+  addSource(RegNext(Mux(exception_valid, mcause, 0.U)), "difftest_cause")
+  addSource(RegNext(io.in.bits.cf.pc), "difftest_exceptionPC")
+  addSource(RegNext(io.in.bits.cf.instr), "difftest_exceptionInst")
 
   def legalizePrivilege(priv: UInt): UInt =
     if (supportUser)
       Fill(2, priv(0))
     else
       Privilege.Level.M
+
+  def real_epc () : UInt = {
+    MuxLookup(currentPriv, 0.U, Array(
+    mode_m -> mepc,
+    // todo: add mode s&u
+    ))
+  }
+
+  def real_mtvec () : UInt = {
+    MuxLookup(mtvec_mode, 0.U, Array(
+      MtvecMode.Direct -> Cat(mtvec_base(61,0), 0.U(2.W)),
+      MtvecMode.Vectored -> Cat(mtvec_base + mcause, 0.U(2.W))
+    ))
+  }
 
   when (io.in.valid) {
     printf("csr enable\n")
@@ -304,7 +319,7 @@ trait CsrRegDefine extends Config {
   }
 
   // 参考NutShell的实现
-  class InterruptPending extends Bundle {
+  class InterruptField extends Bundle {
     val e = new PrivilegeMode
     val t = new PrivilegeMode
     val s = new PrivilegeMode
@@ -323,7 +338,8 @@ trait CsrRegDefine extends Config {
   val misa          : UInt = RegInit(MISA.U(CSR_DATA_W))
   val medeleg       : UInt = RegInit(0.U(CSR_DATA_W))
   val mideleg       : UInt = RegInit(0.U(CSR_DATA_W))
-  val mie           : UInt = RegInit(0.U(CSR_DATA_W))
+  val ie            = RegInit(0.U.asTypeOf(new InterruptField))
+  val mie           : UInt = WireInit(ie.asUInt())
   val mtvec         : UInt = RegInit(0.U(CSR_DATA_W))
   val mcounteren    : UInt = RegInit(0.U(CSR_DATA_W))
 
@@ -333,7 +349,7 @@ trait CsrRegDefine extends Config {
   val mepc          : UInt = RegInit(0.U(CSR_DATA_W))
   val mcause        : UInt = RegInit(0.U(CSR_DATA_W))
   val mtval         : UInt = RegInit(0.U(CSR_DATA_W))
-  val ip            = WireInit(0.U.asTypeOf(new InterruptPending))
+  val ip            = WireInit(0.U.asTypeOf(new InterruptField))
   val mip           : UInt = WireInit(ip.asUInt())
   // Machine Memory Protection
   // 0x3A0~0x3A3, 0x3B0~0x3BF

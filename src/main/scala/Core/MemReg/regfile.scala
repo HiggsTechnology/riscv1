@@ -3,6 +3,7 @@ package Core.MemReg
 import Core.Config.Config
 import chisel3._
 import chisel3.util.Valid
+import chisel3.util.experimental.BoringUtils.addSource
 
 class RegfileFunc extends Config {
   val regs = RegInit(VecInit(Seq.fill(32)(0.U(XLEN.W))))
@@ -30,15 +31,14 @@ class RegWriteIO extends Bundle with Config {
   val ena  = Output(Bool())
 }
 
-class RegfileIO(need_difftest: Boolean = false) extends Bundle with Config {
+class RegfileIO() extends Bundle with Config {
   val src1      = new RegReadIO
   val src2      = new RegReadIO
   val rd : Valid[RegWriteIO] = Flipped(Valid(new RegWriteIO))
-  val trap_code : UInt = if (need_difftest) Output(UInt(3.W)) else null
 }
 
-class Regfile(need_difftest: Boolean = false) extends Module {
-  val io = IO(new RegfileIO(need_difftest))
+class Regfile() extends Module {
+  val io = IO(new RegfileIO())
   val regfile = new RegfileFunc
 
   // io.src1.addr := regfile.read(io.src1.addr)
@@ -52,9 +52,7 @@ class Regfile(need_difftest: Boolean = false) extends Module {
   io.src1.data := regfile.read(io.src1.addr)
   io.src2.data := regfile.read(io.src2.addr)
   // printf("Print during simulation: io.src1.data is %x\n", io.src1.data)
-  if (need_difftest) {
-    io.trap_code := regfile.read(10.U)(2,0)
-  }
+  addSource(RegNext(regfile.read(10.U)(2,0)), "difftest_trapEvent_code")
 
   val mod = Module(new difftest.DifftestArchIntRegState)
   mod.io.clock := clock

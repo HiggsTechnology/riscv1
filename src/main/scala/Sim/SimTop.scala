@@ -1,6 +1,7 @@
 package Sim
 
 import Bus.AXI4.AXI4IO
+import Core.Difftest.{DifftestCommitArch, DifftestCommitTrapEvent}
 import Core.TOP.{RVCore, Top}
 import chisel3._
 import difftest._
@@ -56,7 +57,8 @@ class SimTop extends MultiIOModule {
   instrCommit.io.wdata := RegNext(RegNext(top.io.diff_reg.data))
   instrCommit.io.wdest := RegNext(RegNext(top.io.diff_reg.addr))
 
-
+  val difftestCommitArch = Module(new DifftestCommitArch)
+  val difftestCommitTrapEvent = Module(new DifftestCommitTrapEvent)
 }
 
 
