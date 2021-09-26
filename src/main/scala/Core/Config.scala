@@ -88,6 +88,10 @@ trait Config {
   def VAddrBits = 64
   def GPHT_Size = 1024
   def ghrBits = log2Up(GPHT_Size)
+  def BtbSize = 512
+  def BtbWays = 4
+  def btbRows = BtbSize/BtbWays
+
 }
 
 object SrcState {

@@ -14,56 +14,70 @@ class pred_update extends Bundle with Config{
 }
 
 class BPUIO extends Bundle with Config{
+  //input
+  //stage1
   val pc = Vec(2,Input(UInt(XLEN.W)))
 
-  val is_br = Vec(2,Input(Bool()))
-  val offset = Vec(2,Input(UInt(XLEN.W)))
-  val br_type = Vec(2,Input(BRtype()))
-  val is_ret = Vec(2,Input(Bool()))
-  val iscall = Vec(2,Input(Bool()))
+  //stage3
+  val predecode = Vec(2, ValidIO(new preDecode))
 
   val outfire = Vec(2,Input(Bool()))
 
+  //output
+  //stage2
   val br_taken = Vec(2,Output(Bool()))
-  val jump_pc = Output(UInt(XLEN.W))
+  val jump_pc = Output(UInt(XLEN.W))  //btb & pht
+
+  //stage3
+  val br_taken3 = Vec(2,Output(Bool()))
+  val jump_pc3 = Output(UInt(XLEN.W))  //btb & pht
+
   val gshare_idx = Vec(2,Output(UInt(ghrBits.W)))
   val gshare_pred = Vec(2,Output(Bool()))
   val pc_pred = Vec(2,Output(Bool()))
 
+  //update
   val pred_update = Flipped(ValidIO(new pred_update))
   val ras_update = Input(new RASupdate)
+  val btb_update = Flipped(ValidIO(new btbupdate))
   val flush = Input(Bool())
 }
 
 class BPU extends Module with Config{
   val io = IO(new BPUIO)
 
+  val btb = Module(new BTB)
   val ras = Module(new RAS)
-
-  val pred_select = RegInit(0.U(3.W))
-
-  //pc
-  val PHT = Mem(GPHT_Size, UInt(2.W))
-  val PHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
-  for(i <- 0 until FETCH_WIDTH){
-    PHT_taken(i) := PHT.read(io.pc(i)(ghrBits+1,2))(1)
-  }
+  //stage1
 
   //gshare
   val ghr = RegInit(0.U(ghrBits.W))
-  val ghr_commit = RegInit(0.U(ghrBits.W))
 
-  val GPHT_Idx = Wire(Vec(FETCH_WIDTH, UInt(ghrBits.W)))
+  val GPHT_Idx1 = Wire(Vec(FETCH_WIDTH, UInt(ghrBits.W)))
+  val pc1 = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
+
+  for(i <- 0 until FETCH_WIDTH) {
+    GPHT_Idx1(i) := io.pc(i)(ghrBits + 1, 2) ^ ghr
+    pc1(i) := io.pc(i)
+  }
+
+
+  //stage2
+  val GPHT_Idx2 = RegNext(GPHT_Idx1)
+  val pc2 = RegNext(pc1)
+
+  val pred_select = RegInit(0.U(3.W))
+
+  val PHT = Mem(GPHT_Size, UInt(2.W))
+  val PHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    GPHT_Idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr_commit
-    io.gshare_idx(i) := io.pc(i)(ghrBits+1,2) ^ ghr_commit
+    PHT_taken(i) := PHT.read(pc2(i)(ghrBits+1,2))(1)
   }
 
   val GPHT = Mem(GPHT_Size, UInt(2.W))
   val GPHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
-
   for(i <- 0 until FETCH_WIDTH){
-    GPHT_taken(i) := GPHT.read(GPHT_Idx(i))(1)
+    GPHT_taken(i) := GPHT.read(GPHT_Idx2(i))(1)
   }
 
   val bimPred = Wire(Vec(FETCH_WIDTH, Bool()))
@@ -73,27 +87,39 @@ class BPU extends Module with Config{
 
   val br_taken2 = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    is_B(i) := io.is_br(i) && io.br_type(i) === BRtype.B
+    bimPred(i) := Mux(pred_select(2), GPHT_taken(i), PHT_taken(i))  //直接定义用GPHT来看
+    br_taken2(i) := btb.io.resp.hits(i) && (btb.io.resp.br_type(i) =/= BTBtype.B || (btb.io.resp.br_type(i) === BTBtype.B && bimPred(i)))  //要么是绝对转跳，要么是分支转跳，但是预测地址相同
   }
+  io.jump_pc := Mux(br_taken2(0), btb.io.resp.targets(0), btb.io.resp.targets(1))
+  io.br_taken := br_taken2
 
-  when((is_B(0) && !is_B(1)) || (!is_B(0) && is_B(1))){
-    val taken = Mux(is_B(0), GPHT_taken(0), GPHT_taken(1))
-    ghr := Cat(ghr(ghrBits-2,0), taken)
-  }.elsewhen(is_B(0) && is_B(1)){
-    ghr := Cat(ghr(ghrBits-2,1), GPHT_taken(0), GPHT_taken(1))
-  }
-
-  io.pc_pred := PHT_taken
-  io.gshare_pred := GPHT_taken
-
-  //branch taken
+  val btb_hit2 = Wire(Vec(FETCH_WIDTH, Bool()))
+  val btbtarget2 = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
+  val br_type2 = Wire(Vec(FETCH_WIDTH, UInt(2.W)))
   for(i <- 0 until FETCH_WIDTH){
-    io.br_taken(i) := io.is_br(i) && (io.br_type(i) === BRtype.R || io.br_type(i) === BRtype.J || (io.br_type(i) === BRtype.B && Mux(pred_select(2), GPHT_taken(i), PHT_taken(i))))
+    btb_hit2(i) := btb.io.resp.hits(i)
+    btbtarget2(i) := btb.io.resp.targets(i)
+    br_type2(i) := btb.io.resp.br_type(i)
   }
 
+  //stage3
+  val GPHT_taken3 = RegNext(GPHT_taken)
+  val PHT_taken3 = RegNext(PHT_taken)
+  val GPHT_Idx3 = RegNext(GPHT_Idx2)
+  val pc3 = RegNext(pc2) //跳转指令的pc
+  val bimPred3 = RegNext(bimPred)
+  val br_taken3 = RegNext(br_taken2)
+  val jump3 = RegNext(io.jump_pc)
+  val btb_hit3 = RegNext(btb_hit2)
+  val btbtarget3 = RegNext(btbtarget2)   //跳转到的pc
+  val br_type3 = RegNext(br_type2)
+
+  //根据predecode，以及stage2的GPHT、PHT，计算分支预测结果
+  val br_taken_predecode = Wire(Vec(FETCH_WIDTH, Bool()))
   val is_call = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    is_call(i) := (io.br_type(i) === BRtype.J && io.iscall(i)) || (io.br_type(i) === BRtype.R && io.iscall(i))
+    is_call(i) := (io.predecode(i).bits.br_type(i) === BRtype.J && io.predecode(i).bits.iscall(i)) || (io.predecode(i).bits.br_type(i) === BRtype.R && io.predecode(i).bits.iscall(i))
+    br_taken_predecode(i) := io.predecode(i).bits.is_br && (io.predecode(i).bits.br_type =/= BRtype.B || (io.predecode(i).bits.br_type === BRtype.B && bimPred3(i)))
   }
 
   //传入RAS
@@ -148,7 +174,7 @@ class BPU extends Module with Config{
       GPHT(idx) := newCnt
     }
 
-    ghr_commit := Cat(ghr_commit(ghrBits-2,0), taken)
+    ghr := Cat(ghr(ghrBits-2,0), taken)
 
     val pc_idx = io.pred_update.bits.pc_idx
     val pc_cnt = PHT(pc_idx)
@@ -163,12 +189,6 @@ class BPU extends Module with Config{
     }.elsewhen(!io.pred_update.bits.pc_mispred && io.pred_update.bits.gshare_mispred && pred_select =/= "b000".U){
       pred_select := pred_select - 1.U
     }
-
-
-  }
-
-  when(io.flush){
-    ghr := ghr_commit
   }
 
 }
