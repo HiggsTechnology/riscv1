@@ -18,7 +18,7 @@ SimTop包含的输入：
 将Top模块的输入输出与DifftestInstrCommit以及DifftestTrapEvent两个模块相连接，用于测试。
 其中，DifftestInstrCommit以及DifftestTrapEvent两个模块由/ThirdParty/difftest/src的difftest包定义。
 
-执行模块：Top  ### 实际的顶级模块，与模拟模块相对接
+执行模块：Top  ### 实际的顶级模块，与测试模块相对接
 Top包含的输入：
 [1] clock
 [2] reset
@@ -63,91 +63,147 @@ Regfile包含的输入：
 IFU包含的输入：
 [1] clock
 [2] reset
-[3] in_new_pc
-[4] in_valid
+[3] bru_bits_new_pc[64]
+[4] bru_bits_ena
+[5] stall
+[6*] ifu2rw_ready //AXI 开启时用到
+[7*] ifu2rw_rdata[256] //AXI 开启时用到
 包含的输出：
-[1] out_pc
-[2] out_instr
+[1] out_valid
+[2] out_bits_pc[64]
+[3] out_bits_instr[32]
+[4*] ifu2rw_valid //AXI 开启时用到
+[5*] ifu2rw_pc[64] //AXI 开启时用到
 该模块的功能简介：
 该模块从内存中取出指令。
 详细介绍：
-(a) 先确定pc的值。 in_valid? yes -> pc = in_new_pc : no -> pc = pc + 4 (这里的4代表4 bytes = 32 bits，即每条指令的长度)
+不使用AXI
+(a) 先确定pc的值。
+    若stall，则pc保持不变，不提取新的指令。
+    否则看bru_bits_ena是否为真，若是则 pc = out_bits_pc，若否，则 pc = pc + 4 (这里的4代表4 bytes = 32 bits，即每条指令的长度)。
 (b) 将ram.io.wen设成false从而读取在idx处的内存，指令默认从idx=0处储存，由于内存宽度为64位，故每个idx对应两条指令，需要pc(2)进行辅助判断
-(c) 取出内存后，通过pc(2)判断该取出哪条指令，然后传给out_instr
-(d) 可能的问题：内存读取与写入可能存在竞争，其它位置ram.io.wen可能需要设成true写入内存。
+(c) 取出内存后，通过pc(2)判断该取出哪条指令，然后传给out_bits_instr。
+(d) out_valid会设为true，告知下一个模块，数据可用。
+(e) 可能的问题：内存读取与写入可能存在竞争，其它位置ram.io.wen可能需要设成true写入内存。
+使用AXI
+(a) 无论是否stall，模块总是按照(a.3)的规则将下一条赋值给npc。
+    模块错开半个周期将输入bru_bits_new_pc和bru_bits_ena保存在寄存器中。
+    若stall，则pc保持不变，不提取新的指令。
+    否则看bru_bits_ena是否为真，若是则 pc = out_bits_pc，若否，则 pc = pc + 4 (这里的4代表4 bytes = 32 bits，即每条指令的长度)。
+(b) 指令从ifu2rw_rdata中读出，模块通过pc(4,2)判断该截取的指令，然后传给instr。
+(c) ifu2rw_ready为false时，模块会输出前一条指令(储存在reg_inst寄存器中)，否则输出正常指令inst，并存入reg_inst寄存器中。
+(d) out_valid = ifu2rw_ready。
+(e) ifu2rw_valid 会被设置为与上个周期stall相反的值。
+(f) 若stall，ifu2rw_pc取值pc，否则取值npc。
+
+
+取指写回模块：IFURW 
+IFURW包含的输入：
+[1] clock
+[2] reset
+[3] ifuin_valid
+[4] ifuin_pc[64]
+[5] to_crossbar_ar_ready
+[6] to_crossbar_r_valid
+[7] to_crossbar_r_bits_data[256]
+[8] to_crossbar_r_bits_last
+包含的输出：
+[1] ifuin_ready
+[2] ifuin_rdata[256]
+[3] to_crossbar_ar_valid
+[4] to_crossbar_ar_bits_addr[64]
+[5] to_crossbar_ar_bits_prot[3]
+[6] to_crossbar_ar_bits_size[3]
+[7] to_crossbar_r_ready
+该模块的功能简介：
+该模块负责处理取值模块的写回操作。
 
 
 译码模块：IDU 
 IDU包含的输入：
-[1]  in_pc
-[2]  in_instr
+[1]  in_valid
+[2]  in_bits_pc[64]
+[3]  in_bits_instr[32]
 包含的输出：
-[1]  out_cf_pc
-[2]  out_ctrl_src1Type
-[3]  out_ctrl_src2Type
-[4]  out_ctrl_funcType
-[5]  out_ctrl_funcOpType
-[6]  out_ctrl_rfSrc1
-[7]  out_ctrl_rfSrc2
-[8]  out_ctrl_rfrd
-[9]  out_data_imm
-[10] out_data_uimm_ext //建议命名为zimm，用于存储CSR指令所需数据
+[1]  out_valid
+[2]  out_bits_cf_pc[64]
+[3]  out_bits_ctrl_src1Type[2]
+[4]  out_bits_ctrl_src2Type
+[5]  out_bits_ctrl_funcType[3]
+[6]  out_bits_ctrl_funcOpType[7]
+[7]  out_bits_ctrl_rfSrc1[5]
+[8]  out_bits_ctrl_rfSrc2[5]
+[9]  out_bits_ctrl_rfrd[5]
+[10] out_bits_data_imm[64]
+[11] out_bits_data_uimm_ext[64] //建议命名为zimm，用于存储CSR指令所需数据
 该模块的功能简介：
 对指令进行解码操作，输出相关信息供后续使用。
 详细介绍：
-(a) 指令通过BitPat匹配对应的三种类型：逻辑运算单元ALU、分支处理单元BRU、内存读写单元LSU，与CSR的匹配似乎尚未完成。
-    这些类型将传入到out_ctrl_funcType中，对应的子类型则存储于out_ctrl_funcOpType中。
-(b) 指令中的rs1，rs2以及rd字段的数据被提取出来并命名。
-(c) 译码模块会根据instrType指定out_ctrl_src1Type以及out_ctrl_src2Type，共包括三种组合：reg+imm，reg+reg以及pc+imm。
-(d) 当src1Type(src2Type)为reg类型时，out_ctrl_rfSrc1(out_ctrl_rfSrc2)会赋予对应的寄存器地址，否则置0。
-(e) 对于I/R/U/J-Type四种指令，out_ctrl_rfrd赋值rdAddr，否则置0。
-(f) 译码模块会根据instrType提取指令中立即数的信息，包括I/S/B/U/J-Type五种情况。（均作了符号位扩展）
-(g) 译码模块会根据funcType与funcOpType判断该指令是否为CSR指令: out_data_uimm_ext = yes -> ZeroExt(instr(19, 15), 64) : no -> 0
+(a) out_valid = in_valid。
+(b) 指令通过BitPat匹配对应的四种类型：逻辑运算单元ALU、分支处理单元BRU、内存读写单元LSU，控制状态寄存器CSR。
+    这些类型将传入到funcType中，对应的子类型则存储于funcOpType中。
+	同时SrcType1与SrcType2也会确定，包含reg,imm,pc,uimm四种类型。
+	这些值最后都会接到out_bits_ctrl_xxx的输出上。
+(c) 当src1Type(src2Type)为reg类型时，out_bits_ctrl_rfSrc1(out_bits_ctrl_rfSrc2)会赋予对应的寄存器地址，否则置0。
+(d) 对于I/R/U/J-Type四种指令，out_ctrl_rfrd赋值rdAddr，否则置0。
+(e) 译码模块会根据instrType提取指令中立即数的信息，包括I/S/B/U/J-Type五种情况。（均作了符号位扩展）
+(f) 译码模块会根据funcType与funcOpType判断该指令是否为CSR指令: out_bits_data_uimm_ext = yes -> ZeroExt(instr(19, 15), 64) : no -> 0
 
 
 译码后处理模块：IDUtoEXU 
 IDUtoEXU包含的输入：
-[1]  in_cf_pc
-[2]  in_ctrl_src1Type
-[3]  in_ctrl_src2Type
-[4]  in_ctrl_funcType
-[5]  in_ctrl_funcOpType
-[6]  in_ctrl_rfrd
-[7]  in_data_imm
-[8]  in_data_uimm_ext
-[9]  src1
-[10] src2
+[1]  in_valid
+[2]  in_bits_cf_pc[64]
+[3]  in_bits_ctrl_src1Type[2]
+[4]  in_bits_ctrl_src2Type
+[5]  in_bits_ctrl_funcType[3]
+[6]  in_bits_ctrl_funcOpType[7]
+[7]  in_bits_ctrl_rfrd[5]
+[8]  in_bits_data_imm[64]
+[9]  in_bits_data_uimm_ext[64]
+[10] src1[64]
+[11] src2[64]
 包含的输出：
-[1] out_cf_pc
-[2] out_ctrl_funcType
-[3] out_ctrl_funcOpType
-[4] out_ctrl_rfrd
-[5] out_data_src1
-[6] out_data_src2
-[7] out_data_imm
+[1] out_valid
+[2] out_bits_cf_pc[64]
+[3] out_bits_ctrl_funcType[3]
+[4] out_bits_ctrl_funcOpType[7]
+[5] out_bits_ctrl_rfrd[5]
+[6] out_bits_data_src1[64]
+[7] out_bits_data_src2[64]
+[8] out_bits_data_imm[64]
 该模块的功能简介：
-该模块根据in_ctrl_src1Type(in_ctrl_src2Type)将可能处于in_data_imm, in_data_uimm_ext, src1(src2)的数据集中到out_data_src1(out_data_src2)作为输出。
+该模块根据ctrl_src1Type(ctrl_src2Type)将可能处于data_imm, data_uimm_ext, src1(src2)的数据集中到out_data_src1(out_data_src2)作为输出。
 备注：
-src1(src2)的输入是由Regfile提供的，已经是寄存器中的数据而非地址了。
-
+(a) src1(src2)的输入是由Regfile提供的，已经是寄存器中的数据而非地址了。
+(b) out_valid = in_valid
 
 执行模块：EXU 
 EXU包含的输入：
-[1] clock
-[2] reset
-[3] in_cf_pc
-[4] in_ctrl_funcType
-[5] in_ctrl_funcOpType
-[6] in_ctrl_rfrd
-[7] in_data_src1
-[8] in_data_src2
-[9] in_data_imm
+[1]  clock
+[2]  reset
+[3]  in_valid
+[4]  in_bits_cf_pc[64]
+[5]  in_bits_ctrl_funcType[3]
+[6]  in_bits_ctrl_funcOpType[7]
+[7]  in_bits_ctrl_rfrd[5]
+[8]  in_bits_data_src1[64]
+[9]  in_bits_data_src2[64]
+[10] in_bits_data_imm[64]
+[11] lsu2rw_ready
+[12] lsu2rw_rdata[64]
 包含的输出：
-[1] reg_write_back_addr
-[2] reg_write_back_data
-[3] reg_write_back_ena
-[4] branch_new_pc
-[5] branch_valid
+[1]  reg_write_back_valid
+[2]  reg_write_back_bits_addr[5]
+[3]  reg_write_back_bits_data[64]
+[4]  reg_write_back_bits_ena
+[5]  branch_bits_new_pc[64]
+[6]  branch_bits_ena
+[7]  lsu2rw_valid
+[8]  lsu2rw_is_write
+[9]  lsu2rw_addr[64]
+[10] lsu2rw_wdata[64]
+[11] lsu2rw_wstrb[8]
 该模块的功能简介：
 将模块的输入于ALU, BRU, LSU与CSR相连，输出则根据in_ctrl_funcType选择与何者子模块相连。
 备注：
@@ -158,13 +214,17 @@ EXU包含的输入：
 
 逻辑运算单元：ALU
 ALU包含的输入：
-[1] in_ctrl_funcOpType
-[2] in_data_src1
-[3] in_data_src2
+[1] clock
+[2] reset
+[3] in_valid
+[4] in_bits_ctrl_funcOpType[7]
+[5] in_bits_data_src1[64]
+[6] in_bits_data_src2[64]
 包含的输出：
-[1] out_aluRes
+[1] out_valid
+[2] out_bits_aluRes[64]
 该模块的功能简介：
-该模块根据in_ctrl_funcOpType计算in_data_src1以及in_data_src2并输出到out_aluRes。
+该模块根据in_bits_ctrl_funcOpType计算in_bits_data_src1以及in_bits_data_src2并输出到out_bits_aluRes。
 详细介绍：
 模块实现了以下RV32I+RV64I指令：
 [Shifts]
@@ -186,21 +246,26 @@ slt(i)u   Set < (Imm) Unsigned
 备注：
 (a) 对于[Shifts]中的指令，移动的位数会截取in_data_src2中的低5位（RV64I则为低6位）。
 (b) 对于RV64I指令，输出结果会进行符号位扩展。
+(c) out_valid = in_valid（非流水线状态，立即完成）。
 
 
 分支处理单元：BRU
 BRU包含的输入：
-[1] in_cf_pc
-[2] in_ctrl_funcType
-[3] in_ctrl_funcOpType
-[4] in_data_src1
-[5] in_data_src2
-[6] in_data_imm
+[1] clock
+[2] reset
+[3] in_valid
+[4] in_bits_cf_pc[64]
+[5] in_bits_ctrl_funcType[3]
+[6] in_bits_ctrl_funcOpType[7]
+[7] in_bits_data_src1[64]
+[8] in_bits_data_src2[64]
+[9] in_bits_data_imm[64]
 包含的输出：
-[1] out_new_pc
-[2] out_valid
+[1] out_valid
+[2] out_bits_new_pc[64]
+[3] out_bits_ena
 该模块的功能简介：
-对于[Branches]指令，模块会比较in_data_src1和in_data_src2后决定pc是否跳转，对于[Jump & Link]模块会执行对应的跳转操作。
+对于[Branches]指令，模块会比较in_data_src1和in_data_src2后决定pc是否跳转，对于[Jump & Link]模块会直接执行对应的跳转操作。
 详细介绍：
 模块实现了以下RV32I指令：
 [Branches]
@@ -215,20 +280,30 @@ jal       J&L
 jalr      Jump & Link Register
 备注：
 (a) [Jump & Link]指令中对rd寄存器的写入放在在EXU模块处理。
-(d) jalr指令需要把x[rs1]+offset的最低位设成0，模块尚未做对应处理。
+(b) out_bits_new_pc在模块中会被设置为in_bits_cf_pc+offset
+(c) 对于jalr指令，需要把x[rs1]+offset的最低位设成0，然后赋值给out_bits_new_pc，模块似乎搞错了先后顺序。
+(d) out_valid = in_valid（非流水线状态，立即完成）。
 
 
 内存读写单元：LSU
 LSU包含的输入：
 [1] clock
 [2] reset
-[3] in_ctrl_funcType
-[4] in_ctrl_funcOpType
-[5] in_data_src1
-[6] in_data_src2
-[7] in_data_imm
+[3] in_valid
+[4] in_bits_ctrl_funcOpType[7]
+[5] in_bits_data_src1[64]
+[6] in_bits_data_src2[64]
+[7] in_bits_data_imm[64]
+[8] lsu2rw_ready
+[9] lsu2rw_rdata[64]
 包含的输出：
-[1] out_rdata
+[1] out_valid
+[2] out_bits_rdata[64]
+[3] lsu2rw_valid
+[4] lsu2rw_is_write
+[5] lsu2rw_addr[64]
+[6] lsu2rw_wdata[64]
+[7] lsu2rw_wstrb[8]
 该模块的功能简介：
 模块对内存进行了相应的读写操作。
 详细介绍：
@@ -249,6 +324,42 @@ sd        Store Double
 备注：
 (a) 模块中lr与sc指令作用不明。
 (b) 针对日后不同的内存的接口该模块需要进行改写。
+
+
+取指写回模块：LSURW 
+LSURW包含的输入：
+[1]  clock
+[2]  reset
+[3]  lsuin_valid
+[4]  lsuin_is_write
+[5]  lsuin_addr[64]
+[6]  lsuin_wdata[64]
+[7]  lsuin_wstrb[8]
+[8]  to_crossbar_aw_ready
+[9]  to_crossbar_w_ready
+[10] to_crossbar_b_valid
+[11] to_crossbar_b_bits_resp[2]
+[12] to_crossbar_ar_ready
+[13] to_crossbar_r_valid
+[14] to_crossbar_r_bits_data[256]
+[15] to_crossbar_r_bits_last
+包含的输出：
+[1]  lsuin_ready
+[2]  lsuin_rdata[64]
+[3]  to_crossbar_aw_valid
+[4]  to_crossbar_aw_bits_addr[64]
+[5]  to_crossbar_aw_bits_size[3]
+[6]  to_crossbar_w_valid
+[7]  to_crossbar_w_bits_data[256]
+[8]  to_crossbar_w_bits_last
+[9]  to_crossbar_w_bits_strb[32]
+[10] to_crossbar_b_ready
+[11] to_crossbar_ar_valid
+[12] to_crossbar_ar_bits_addr[64]
+[13] to_crossbar_ar_bits_size[3]
+[14] to_crossbar_r_ready
+该模块的功能简介：
+该模块负责处理内存模块的写回操作。
 
 
 控制状态寄存器模块：CSR
@@ -280,10 +391,94 @@ ecall     CALL
 ebreak    BREAK
 
 
+Nto1模块：CROSSBAR_Nto1 
+CROSSBAR_Nto1包含的输入：
+[1]  clock
+[2]  reset
+[3]  in_0_ar_valid
+[4]  in_0_ar_bits_addr
+[5]  in_0_ar_bits_prot
+[6]  in_0_ar_bits_size
+[7]  in_0_r_ready
+[8]  in_1_aw_valid
+[9]  in_1_aw_bits_addr
+[10] in_1_aw_bits_size
+[11] in_1_w_valid
+[12] in_1_w_bits_data
+[13] in_1_w_bits_last
+[14] in_1_w_bits_strb
+[15] in_1_b_ready
+[16] in_1_ar_valid
+[17] in_1_ar_bits_addr
+[18] in_1_ar_bits_size
+[19] in_1_r_ready
+[20] out_aw_ready
+[21] out_w_ready
+[22] out_b_valid
+[23] out_b_bits_resp
+[24] out_b_bits_id
+[25] out_ar_ready
+[26] out_r_valid
+[27] out_r_bits_data
+[28] out_r_bits_last
+[29] out_r_bits_id
+包含的输出：
+[1]  in_0_ar_ready
+[2]  in_0_r_valid
+[3]  in_0_r_bits_data
+[4]  in_0_r_bits_last
+[5]  in_1_aw_ready
+[6]  in_1_w_ready
+[7]  in_1_b_valid
+[8]  in_1_b_bits_resp
+[9]  in_1_ar_ready
+[10] in_1_r_valid
+[11] in_1_r_bits_data
+[12] in_1_r_bits_last
+[13] out_aw_valid
+[14] out_aw_bits_addr
+[15] out_aw_bits_prot
+[16] out_aw_bits_id
+[17] out_aw_bits_size
+[18] out_aw_bits_burst
+[19] out_aw_bits_cache
+[20] out_w_valid
+[21] out_w_bits_data
+[22] out_w_bits_last
+[23] out_w_bits_strb
+[24] out_b_ready
+[25] out_ar_valid
+[26] out_ar_bits_addr
+[27] out_ar_bits_prot
+[28] out_ar_bits_id
+[29] out_ar_bits_size
+[30] out_ar_bits_burst
+[31] out_ar_bits_cache
+[32] out_r_ready
+
+
+
+写回模块：WBU 
+WBU包含的输入：
+[1]  in_valid
+[2]  in_bits_addr[5]
+[3]  in_bits_data[64]
+[4]  in_bits_ena
+包含的输出：
+[1]  out_valid
+[2]  out_bits_addr[5]
+[3]  out_bits_data[64]
+[4]  out_bits_ena
+
+该模块的功能简介：
+该模块目前未作任何事情，只是简单地把输入与输出相连接。
+
+
 
 附录A：scala中插入的黑盒模块定义：
 RAMHelper: 内存模块
 请参考/ThirdParty/difftest下文档的相关说明。
 
-
+附录B：chisel内建模块Arbiter：
+仲裁器，当数据接收者与数据生产者都准备好时(ready && vaild)，会根据优先级选择某路数据输出。
 
