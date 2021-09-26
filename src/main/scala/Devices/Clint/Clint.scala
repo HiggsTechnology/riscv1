@@ -36,6 +36,10 @@ class Clint extends Module {
     val mtimecmp  = 0x02004000L.U
   }
 
+  val clk = 1000
+  val tick = Counter(true.B, clk)._2
+  when (tick) { mtime := mtime + 1.U }
+
   object State {
     val idle :: trans :: Nil = Enum(2)
   }
@@ -56,8 +60,6 @@ class Clint extends Module {
       ready := true.B
     }
   }
-
-  mtime := mtime + 1.U
 
   when(io.in.valid && io.in.is_write) {
     switch(io.in.addr) {

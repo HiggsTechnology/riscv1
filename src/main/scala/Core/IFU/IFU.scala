@@ -33,8 +33,7 @@ class IFU(use_axi:Boolean=false) extends Module with Config {
     when(!io.stall) {
       pc      := npc
     }
-    // pc不会被立即使用，而是在rw中延迟一个周期
-    // Todo: 在IFU_RW_AXI把这个延迟的周期删去，取指减少一个周期
+
     io.ifu2rw.valid   := RegNext(!io.stall)
     io.ifu2rw.pc      := Mux(!io.stall, npc, pc)
     val rdata         = io.ifu2rw.rdata

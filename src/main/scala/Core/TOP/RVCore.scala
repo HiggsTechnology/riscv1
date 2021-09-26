@@ -47,7 +47,7 @@ class RVCore(
   val ifuaxi : IFURW = if(ifu_use_axi) Module(new IFURW) else null
   val lsuaxi : LSURW = if(lsu_use_axi) Module(new LSURW) else null
   val crossbar_xto1 : CROSSBAR_Nto1 = if(num_axi4_master > 1) Module(new CROSSBAR_Nto1(1,1)) else null
-  val mmio : MMIO = if(num_axi4_master > 1) Module(new MMIO(3)) else null
+  val mmio : MMIO = if(lsu_use_axi) Module(new MMIO(3)) else null
 
   if (ifu_use_axi && num_axi4_master == 1) {
     io.axi4                 <>  ifuaxi.io.to_crossbar
@@ -56,7 +56,18 @@ class RVCore(
 
   if (lsu_use_axi && num_axi4_master == 1) {
     io.axi4               <>  lsuaxi.io.to_crossbar
-    lsuaxi.io.lsuin       <>  exu.io.lsu2rw
+    // mem
+    lsuaxi.io.lsuin         <>  mmio.io.slave(0)
+    mmio.io.master          <>  exu.io.lsu2rw
+
+    // clint
+    io.clint.in             <>  mmio.io.slave(1)
+    io.clint.out            <>  exu.io.clint
+
+    // uart
+    io.to_uart              <>  mmio.io.slave(2)
+
+    io.difftest_skip        := mmio.io.difftest_skip
   }
 
   if (num_axi4_master > 1) {
@@ -80,6 +91,8 @@ class RVCore(
 
     io.difftest_skip        := mmio.io.difftest_skip
   }
+
+
 
   ifu.io.out              <>  idu.io.in
   idu.io.out              <>  dis.io.in

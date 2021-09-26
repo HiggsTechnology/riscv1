@@ -57,6 +57,11 @@ trait Config {
   def MISA : BigInt = {
     BigInt(MXL) << (MXLEN - 2) | BigInt(ISAEXT.toInt)
   }
+
+  // TrapVec
+  def ExceptionVecLen = 16
+  def InterruptVecLen = 12
+
 }
 
 /** 可以import *.Config._ 在文件的全局导入 */

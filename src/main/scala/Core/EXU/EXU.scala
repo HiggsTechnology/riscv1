@@ -76,8 +76,8 @@ class EXU(
   io.reg_write_back.bits.data := wdata
 
   // lsu和csr都会影响pc的值
-  io.branch.valid := bru.io.out.valid || csr.io.out.valid
-  io.branch.bits <> MuxLookup(func, 0.U.asTypeOf(new BRU_OUTIO), Array(
+  io.branch.valid := bru.io.out.valid || csr.io.out.valid || csr.io.intr_jmp.ena
+  io.branch.bits <> MuxLookup(func, csr.io.intr_jmp, Array(
     FuncType.bru -> bru.io.out.bits,
     FuncType.csr -> csr.io.out.bits.jmp
   ))

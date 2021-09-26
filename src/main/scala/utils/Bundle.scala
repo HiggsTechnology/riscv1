@@ -30,9 +30,17 @@ class DataSrcIO extends Bundle with Config {
   val uimm_ext = Output(UInt(XLEN.W))
 }
 
+class TrapVec(len: Int) extends Bundle {
+  val vec = OutUInt(len)
+}
+
 class CfCtrl extends Bundle with Config {
   val cf   = new Pc_Instr
   val ctrl = new CtrlSignalIO
+//  val redirectIO = new BRU_OUTIO
+//  // for Exception
+//  val exceptVec = new TrapVec(ExceptionVecLen)
+//  val interrVec = new TrapVec(InterruptVecLen)
   val data = new DataSrcIO
 }
 

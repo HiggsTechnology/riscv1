@@ -50,6 +50,7 @@ class CSR(
     val out : Valid[CSROutPort] = Valid(new CSROutPort)
     val inst_inc : Valid[InstInc] = Flipped(Valid(new InstInc))
     val clint : ClintOutPort = Flipped(new ClintOutPort)
+    val intr_jmp  : BRU_OUTIO     = new BRU_OUTIO
   }
 
   val io : CSRIO = IO(new CSRIO())
@@ -102,8 +103,10 @@ class CSR(
           status.MPRV  :=  mstatus_new.MPRV
           status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
         }
-        status.IE.M := mstatus_new.IE.M
-        status.PIE.M := mstatus_new.PIE.M
+        status.IE     := mstatus_new.IE
+        status.PIE    := mstatus_new.PIE
+        status.FS     := mstatus_new.FS
+
       }
       is(CsrAddr.medeleg)   { medeleg   := wdata  }
       is(CsrAddr.mideleg)   { mideleg   := wdata  }
@@ -124,15 +127,8 @@ class CSR(
     // handle output
     trap_valid := true.B
     new_pc := Mux(is_ret,
-      MuxLookup(currentPriv, 0.U, Array(
-        mode_m -> mepc,
-        // todo: add mode s&u
-      )),
-      // is except
-      MuxLookup(mtvec_mode, 0.U, Array(
-        MtvecMode.Direct -> Cat(mtvec_base(61,0), 0.U(2.W)),
-        MtvecMode.Vectored -> Cat(mtvec_base + mcause, 0.U(2.W))
-      ))
+      real_epc(),
+      real_mtvec()
     )
     // handle internal
     when (op === CsrOpType.ECALL) {
@@ -151,6 +147,33 @@ class CSR(
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
+
+  // 中断相关定义
+  private val interruptPc = real_mtvec()
+  private val interruptVec = mie(11, 0) & mip.asUInt()(11,0) & Fill(12, mstatus.IE.M)
+  private val interruptValid = interruptVec.asUInt.orR()
+  private val interruptNo = Mux(interruptValid, PriorityEncoder(interruptVec), 0.U)
+  private val interruptCause = (interruptValid.asUInt << (XLEN - 1).U).asUInt | interruptNo
+  // --------------------------- 时钟中断 --------------------------
+  // todo: 使用BoringUtil.addSink/addSource在CSR和clint之间添加飞线解决
+//  ip.t.M := io.clint.mtip
+  mtime := io.clint.mtime
+
+  when (currentPriv === mode_m) {
+    // ip.t.M:      mtip: M mode出现时钟中断
+    // ie.t.M:      mtie: M mode允许时钟中断
+    // status.IE.M: mie:  M mode允许中断
+    when(interruptValid) {
+      // 暂定实时响应中断
+      // todo: 以流水线运行时，记录未提交的最早pc值
+      mepc    := pc
+      mcause  := interruptCause
+      status.IE.M := false.B         // xIE设为0
+      status.PIE.M := status.IE.M
+      status.MPP  := currentPriv
+    }
+  }
+
   // 非流水线状态，立即完成
   io.out.valid            := io.in.valid
   io.out.bits.jmp.new_pc  := new_pc
@@ -166,7 +189,7 @@ class CSR(
   csrCommit.io.coreid         := 0.U
   csrCommit.io.priviledgeMode := RegNext(currentPriv)
   csrCommit.io.mstatus        := RegNext(mstatus.asUInt())
-  csrCommit.io.sstatus        := RegNext(0.U)
+  csrCommit.io.sstatus        := RegNext(sstatus.asUInt())
   csrCommit.io.mepc           := RegNext(mepc)
   csrCommit.io.sepc           := RegNext(0.U)
   csrCommit.io.mtval          := RegNext(mtval)
@@ -176,7 +199,7 @@ class CSR(
   csrCommit.io.mcause         := RegNext(mcause)
   csrCommit.io.scause         := RegNext(0.U)
   csrCommit.io.satp           := RegNext(0.U)
-  csrCommit.io.mip            := RegNext(mip)
+  csrCommit.io.mip            := RegNext(0.U)
   csrCommit.io.mie            := RegNext(mie)
   csrCommit.io.mscratch       := RegNext(mscratch)
   csrCommit.io.sscratch       := RegNext(0.U)
@@ -188,7 +211,7 @@ class CSR(
   addSource(RegNext(minstret),          "difftest_trapEvent_instrCnt")
 
   addSource(RegNext(Mux(interruptValid, interruptNo, 0.U)), "difftest_intrNO")
-  addSource(RegNext(Mux(exception_valid, mcause, 0.U)), "difftest_cause")
+  addSource(RegNext(Mux(exception_valid, 0.U, 0.U)), "difftest_cause")
   addSource(RegNext(io.in.bits.cf.pc), "difftest_exceptionPC")
   addSource(RegNext(io.in.bits.cf.instr), "difftest_exceptionInst")
 
@@ -318,6 +341,18 @@ trait CsrRegDefine extends Config {
     val IE    = new PrivilegeMode
   }
 
+  object FloatDirtyStatus {
+    val off :: initial :: clean :: dirty :: Nil = Enum(4)
+    def isOff(FS: UInt)   : Bool = FS === off
+    def isDirty(FS: UInt) : Bool = FS === dirty
+  }
+
+  object ExtensionDirtyStatus {
+    val all_off :: some_on :: some_clean :: some_dirty :: Nil = Enum(4)
+    def isOff(XS: UInt)   : Bool = XS === all_off
+    def isDirty(XS: UInt) : Bool = XS === some_dirty
+  }
+
   // 参考NutShell的实现
   class InterruptField extends Bundle {
     val e = new PrivilegeMode
@@ -400,15 +435,23 @@ trait CsrRegDefine extends Config {
     CsrAddr.mip         ->  mip         ,
   )
 
-  val mstatus = WireInit(status)
+  val mstatus = WireInit(0.U.asTypeOf(new Status))
   mstatus.UXL := (if(supportUser)  (log2Ceil(UXLEN)-4).U else 0.U)
   mstatus.SXL := (if(supportSupervisor) (log2Ceil(SXLEN)-4).U else 0.U)
   mstatus.SPP := (if(!supportSupervisor) 0.U else status.SPP)
   mstatus.MPP := (if(!supportUser) Privilege.Level.M else status.MPP)
   mstatus.IE.U := (if(!supportUser) 0.U else status.IE.U)
   mstatus.IE.S := (if(!supportSupervisor) 0.U else status.IE.S)
+  mstatus.IE.M := status.IE.M
   mstatus.PIE.U := (if(!supportUser) 0.U else status.PIE.U)
   mstatus.PIE.S := (if(!supportSupervisor) 0.U else status.PIE.S)
+  mstatus.PIE.M := status.PIE.M
+  mstatus.FS  := status.FS
+  mstatus.SD  := FloatDirtyStatus.isDirty(status.FS) || ExtensionDirtyStatus.isDirty(status.XS)
+
+  val sstatus = WireInit(0.U.asTypeOf(new Status))
+  sstatus.FS := status.FS
+  sstatus.SD := FloatDirtyStatus.isDirty(status.FS) || ExtensionDirtyStatus.isDirty(status.XS)
 
   val readWriteMap = List (
     CsrAddr.mstatus     ->  mstatus.asUInt(),
