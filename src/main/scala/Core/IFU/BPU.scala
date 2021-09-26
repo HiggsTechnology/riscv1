@@ -66,7 +66,12 @@ class BPU extends Module with Config{
     GPHT_taken(i) := GPHT.read(GPHT_Idx(i))(1)
   }
 
-  val is_B = Wire(Vec(FETCH_WIDTH, Bool()))
+  val bimPred = Wire(Vec(FETCH_WIDTH, Bool()))
+
+  btb.io.in.pc := pc2
+
+
+  val br_taken2 = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
     is_B(i) := io.is_br(i) && io.br_type(i) === BRtype.B
   }
@@ -91,14 +96,48 @@ class BPU extends Module with Config{
     is_call(i) := (io.br_type(i) === BRtype.J && io.iscall(i)) || (io.br_type(i) === BRtype.R && io.iscall(i))
   }
 
-  ras.io.push.iscall := Mux(io.br_taken(0), io.outfire(0) && io.is_br(0) && is_call(0), io.outfire(1) && io.is_br(1) && is_call(1))
-  ras.io.push.target := Mux(is_call(0), io.pc(0), io.pc(1)) + 4.U
-  ras.io.is_ret := Mux(io.br_taken(0), io.outfire(0) && io.is_br(0) && io.is_ret(0), io.outfire(1) && io.is_br(1) && io.is_ret(1))
+  //传入RAS
+  ras.io.push.iscall := Mux(br_taken_predecode(0), io.outfire(0) && io.predecode(0).bits.is_br && is_call(0), io.outfire(1) && io.predecode(1).bits.is_br && is_call(1))
+  ras.io.push.target := Mux(is_call(0), io.predecode(0).bits.pc3, io.predecode(1).bits.pc3) + 4.U
+  ras.io.is_ret := Mux(br_taken_predecode(0), io.outfire(0) && io.predecode(0).bits.is_br && io.predecode(0).bits.is_ret, io.outfire(1) && io.predecode(1).bits.is_br && io.predecode(1).bits.is_ret)
   ras.io.update := io.ras_update
   ras.io.flush := io.flush
 
-  io.jump_pc := Mux(io.br_taken(0), Mux(io.is_ret(0), ras.io.target, io.pc(0)+io.offset(0)), Mux(io.is_ret(1), ras.io.target, io.pc(1)+io.offset(1)))
+  //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
+  io.jump_pc3 := Mux(bimPred3(0), Mux(io.predecode(0).bits.is_ret, ras.io.target, io.predecode(0).bits.pc3 + io.predecode(0).bits.offset), Mux(io.predecode(1).bits.is_ret, ras.io.target, io.predecode(1).bits.pc3 + io.predecode(1).bits.offset))
+  io.br_taken3 := br_taken_predecode
 
+  io.gshare_idx := GPHT_Idx3
+  io.gshare_pred := GPHT_taken3
+  io.pc_pred := PHT_taken3
+  io.btbtarget := btbtarget3
+
+  //btb update
+  val pre_br_type = Wire(Vec(2,UInt(2.W)))
+  for(i <- 0 until FETCH_WIDTH){
+    pre_br_type(i) := Mux(io.predecode(0).bits.is_ret(i), "b10".U, io.predecode(0).bits.br_type(i))
+  }
+
+  val btb_needUpdate = Wire(Vec(2,Bool()))
+  val btb_needUpdate_part = Wire(Vec(2,Bool()))
+  for(i <- 0 until FETCH_WIDTH) {
+    btb_needUpdate_part(i) := (io.predecode(i).bits.is_br && io.predecode(i).bits.br_type =/= BRtype.R) && (!btb_hit3(i) || br_type3(i) =/= pre_br_type(i) || btbtarget3(i) =/= io.predecode(i).bits.pc3 + io.predecode(i).bits.offset) //跳转的类型相同，地址相同，并且命中
+    btb_needUpdate(i) := (io.predecode(i).bits.is_ret && (!btb_hit3(i) || br_type3(i) =/= pre_br_type(i) || btbtarget3(i) =/= ras.io.target)) || btb_needUpdate_part(i)    //返回的
+  }
+
+  for(i <- 0 until FETCH_WIDTH){
+    btb.io.update.br_type(i) := pre_br_type(i)
+    btb.io.update.needUpdate(i) := btb_needUpdate(i)
+    btb.io.update.targets(i) := Mux(io.predecode(i).bits.is_ret, ras.io.target, io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)
+    btb.io.update.br_pc(i) := io.predecode(i).bits.pc3
+  }
+  btb.io.update.br_type(2) := io.btb_update.bits.br_type
+  btb.io.update.needUpdate(2) := io.btb_update.valid
+  btb.io.update.targets(2) := io.btb_update.bits.targets
+  btb.io.update.br_pc(2) := io.btb_update.bits.br_pc
+
+
+  //GPHT, PHT, RAS update
   when(io.pred_update.valid){
     val idx = io.pred_update.bits.gshare_idx
     val taken = io.pred_update.bits.taken
