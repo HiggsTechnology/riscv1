@@ -5,12 +5,27 @@ import chisel3._
 import chisel3.util._
 import utils._
 
+class btbupdate extends Bundle with Config{
+  val br_pc = Output(UInt(VAddrBits.W))
+  val targets = Output(UInt(VAddrBits.W))
+  val br_type = Output(UInt(2.W))
+}
+
 class pred_update extends Bundle with Config{
   val taken = Output(Bool())
   val gshare_idx = Output(UInt(ghrBits.W))
   val pc_idx = Output(UInt(ghrBits.W))
   val gshare_mispred = Output(Bool())
   val pc_mispred = Output(Bool())
+}
+
+class preDecode extends Bundle with Config{
+  val pc3 = Output(UInt(XLEN.W))
+  val is_br = Output(Bool())
+  val offset = Output(UInt(XLEN.W))
+  val br_type = Output(BRtype())
+  val is_ret = Output(Bool())
+  val iscall = Output(Bool())
 }
 
 class BPUIO extends Bundle with Config{
@@ -35,6 +50,7 @@ class BPUIO extends Bundle with Config{
   val gshare_idx = Vec(2,Output(UInt(ghrBits.W)))
   val gshare_pred = Vec(2,Output(Bool()))
   val pc_pred = Vec(2,Output(Bool()))
+  val btbtarget = Vec(2,Output(UInt(XLEN.W)))
 
   //update
   val pred_update = Flipped(ValidIO(new pred_update))
@@ -66,7 +82,7 @@ class BPU extends Module with Config{
   val GPHT_Idx2 = RegNext(GPHT_Idx1)
   val pc2 = RegNext(pc1)
 
-  val pred_select = RegInit(0.U(3.W))
+  val pred_select = RegInit(0.U(3.W))//第2位为高则选GPHT
 
   val PHT = Mem(GPHT_Size, UInt(2.W))
   val PHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))

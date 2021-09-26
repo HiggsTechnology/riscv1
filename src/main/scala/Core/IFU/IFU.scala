@@ -68,11 +68,13 @@ class IFU extends Module with Config {
     preDecVec(i).io.instr:= instrVec(i)
 
     bpu.io.pc(i) := pcVec(i)
-    bpu.io.is_br(i) := preDecVec(i).io.is_br
-    bpu.io.offset(i) := preDecVec(i).io.offset
-    bpu.io.br_type(i) := preDecVec(i).io.br_type
-    bpu.io.is_ret(i) := preDecVec(i).io.is_ret
-    bpu.io.iscall(i) := preDecVec(i).io.iscall
+    bpu.io.predecode(i).valid := true.B
+    bpu.io.predecode(i).bits.pc3 := pcVec(i)
+    bpu.io.predecode(i).bits.is_br := preDecVec(i).io.is_br
+    bpu.io.predecode(i).bits.offset := preDecVec(i).io.offset
+    bpu.io.predecode(i).bits.br_type := preDecVec(i).io.br_type
+    bpu.io.predecode(i).bits.is_ret := preDecVec(i).io.is_ret
+    bpu.io.predecode(i).bits.iscall := preDecVec(i).io.iscall
     bpu.io.outfire(i) := io.out(i).fire
 
     // when(preDecVec(i).io.brtype===BRtype.B){
