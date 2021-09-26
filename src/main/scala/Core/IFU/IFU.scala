@@ -24,8 +24,6 @@ class IFUIO extends Bundle {
   //  val ifu2rw = new IFU2RW
 }
 
-
-
 class IFU extends Module with Config {
   val io = IO(new IFUIO)
   val pc = RegInit(PC_START.U(XLEN.W))
@@ -35,24 +33,27 @@ class IFU extends Module with Config {
   object IFUState {
     val continue :: stall :: Nil = Enum(2)
   }
-
   val ifuState = RegInit(IFUState.continue)
-  // 不断取指，直到IBF满了 || jalr
-  val outFireCount = PopCount(io.out.map(_.fire))
-  // ifuState := Mux(outFireCount===0.U, IFUState.stall, IFUState.continue)
-  //RAMHelper
+
+  //stage1
+  val ifu_redirect3 = Wire(Bool())
+  
   val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
-  val instrVec = Wire(Vec(FETCH_WIDTH, UInt(INST_WIDTH)))
-  val rdataVec = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
-  val ramVec   = Seq.fill(FETCH_WIDTH)(Module(new RAMHelper)) // 多个module还是一个module用多次？
-  val preDecVec= Seq.fill(FETCH_WIDTH)(Module(new PreDecode))
-  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred || (io.in.bits.is_jalr && !io.in.bits.is_ret)), io.in.bits.new_pc, pc)
-  // io.flush := io.in.valid
-  // 一旦进来的信号valid，则表明之前预测错了，则冲刷
+
+  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred), io.in.bits.new_pc, Mux(ifu_redirect3, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc)))
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U
   }
+  bpu.io.pc := pcVec
+  pc := pcVec(0) + 8.U
 
+
+  //stage2
+  val pcVec2 = RegNext(pcVec)
+
+  val instrVec = Wire(Vec(FETCH_WIDTH, UInt(INST_WIDTH)))
+  val rdataVec = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
+  val ramVec   = Seq.fill(FETCH_WIDTH)(Module(new RAMHelper))
   for(i <- 0 until FETCH_WIDTH){
     // 依次从pc处开始取指
     ramVec(i).io.clk   := clock
@@ -63,13 +64,22 @@ class IFU extends Module with Config {
     ramVec(i).io.wen   := false.B
     ramVec(i).io.wdata := DontCare
     ramVec(i).io.wmask := DontCare
-    instrVec(i)        := Mux(pcVec(i)(2),rdataVec(i)(63,32),rdataVec(i)(31,0))
+    instrVec(i)        := Mux(pcVec2(i)(2),rdataVec(i)(63,32),rdataVec(i)(31,0))
+  }
 
-    preDecVec(i).io.instr:= instrVec(i)
+  //stage3
+  val pcVec3 = RegNext(pcVec2)
+  val instrVec3 = RegNext(instrVec)
+  val br_taken2 = RegNext(bpu.io.br_taken)
+  val jump_pc2 = RegNext(bpu.io.jump_pc)
 
-    bpu.io.pc(i) := pcVec(i)
+
+  val preDecVec= Seq.fill(FETCH_WIDTH)(Module(new PreDecode))
+  for(i <- 0 until FETCH_WIDTH){
+    preDecVec(i).io.instr:= instrVec3(i)
+
     bpu.io.predecode(i).valid := true.B
-    bpu.io.predecode(i).bits.pc3 := pcVec(i)
+    bpu.io.predecode(i).bits.pc3 := pcVec3(i)
     bpu.io.predecode(i).bits.is_br := preDecVec(i).io.is_br
     bpu.io.predecode(i).bits.offset := preDecVec(i).io.offset
     bpu.io.predecode(i).bits.br_type := preDecVec(i).io.br_type
@@ -77,77 +87,27 @@ class IFU extends Module with Config {
     bpu.io.predecode(i).bits.iscall := preDecVec(i).io.iscall
     bpu.io.outfire(i) := io.out(i).fire
 
-    // when(preDecVec(i).io.brtype===BRtype.B){
-    io.out(i).bits.br_taken := bpu.io.br_taken(i)
+    io.out(i).bits.br_taken := bpu.io.br_taken3(i)
     io.out(i).bits.gshare_idx := bpu.io.gshare_idx(i)
     io.out(i).bits.gshare_pred := bpu.io.gshare_pred(i)
     io.out(i).bits.pc_pred := bpu.io.pc_pred(i)
-    // }
-    io.out(i).bits.pc    := pcVec(i)
-    io.out(i).bits.instr := instrVec(i)
+    io.out(i).bits.btbtarget := bpu.io.btbtarget(i)
+
+    io.out(i).bits.pc    := pcVec3(i)
+    io.out(i).bits.instr := instrVec3(i)
     io.out(i).bits.is_br := preDecVec(i).io.is_br
-    // io.out(i).valid      := true.B
+
   }
 
-  //状态机
-  // def isJump(x: UInt) :Bool = {
-  //   val opcode = x(6,0)
-  //   opcode === "b1101111".U || opcode === "b1100111".U || opcode === "b1100011".U
-  // }
-  //取指令时
-  when(ifuState === IFUState.continue){
-    // when(preDecVec(0).io.br_type===BRtype.R){
-    //   io.out(0).vaild := true.B
-    //   io.out(1).vaild := false.B
-    //   pc := pc + outFireCount * 4.U
-    //   ifuState := IFUState.stall
-    // }.elsewhen(preDecVec(1).io.br_type===BRtype.R){
-    //   io.out(0).vaild := true.B
-    //   io.out(1).vaild := true.B
-    //   pc := pc + outFireCount * 4.U
-    //   ifuState := IFUState.stall
-    // }
-    when(preDecVec(0).io.is_br && bpu.io.br_taken(0)){
-      io.out(0).valid := true.B
-      io.out(1).valid := false.B
-      when(io.in.valid && io.in.bits.mispred){
-        pc := pcVec(0)
-      }.elsewhen(io.out(0).ready){
-        pc := Mux(bpu.io.br_taken(0), bpu.io.jump_pc, pcVec(0) + 4.U)
-      }
-      //     ifuState := IFUState.stall
-    }.elsewhen(preDecVec(1).io.is_br && bpu.io.br_taken(1)){
-      io.out(0).valid := true.B
-      io.out(1).valid := true.B
-      when(io.in.valid && io.in.bits.mispred){
-        pc := pcVec(0)
-      }.elsewhen(io.out(0).ready){
-        pc := Mux(bpu.io.br_taken(1), bpu.io.jump_pc, pcVec(1) + 4.U)
-      }
-      //     ifuState := IFUState.stall
-    }.otherwise{
-      io.out(0).valid := true.B
-      io.out(1).valid := true.B
-      pc := pcVec(0) + outFireCount * 4.U
-    }
+  val ifu_redirect = (jump_pc2 =/= bpu.io.jump_pc3) && (bpu.io.br_taken3.asUInt.orR)
+  ifu_redirect3 := RegNext(ifu_redirect)
 
-    when((preDecVec(0).io.is_br && preDecVec(0).io.br_type===BRtype.R && !preDecVec(0).io.is_ret && io.out(0).fire) || (preDecVec(1).io.is_br && preDecVec(1).io.br_type===BRtype.R && !preDecVec(1).io.is_ret && io.out(1).fire)){
-      ifuState := IFUState.stall
-      //pc := pcVec(0) + outFireCount * 4.U
-    }
-    // pc := pc + PopCount(io.out.map(_.fire)) * 4.U//指向下一条指令
-    //等待分支结果时
-  }.elsewhen(ifuState === IFUState.stall){
-    io.out(0).valid := false.B
-    io.out(1).valid := false.B
-    when(io.in.valid && (io.in.bits.mispred || (io.in.bits.is_jalr && !io.in.bits.is_ret))){
-      pc := io.in.bits.new_pc
-      ifuState := IFUState.continue
-    }
-  }.otherwise{
-    io.out(0).valid := false.B
-    io.out(1).valid := false.B
-  }
+  val flush = io.in.valid && io.in.bits.mispred
+  val flush3 = flush || RegNext(flush) || RegNext(RegNext(flush))
+
+  io.out(0).valid := !flush3 && !ifu_redirect3
+  io.out(1).valid := !flush3 && !ifu_redirect3 && !bpu.io.br_taken3(0)
+
 
   bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B
   bpu.io.pred_update.bits.taken := io.in.bits.taken
@@ -155,7 +115,6 @@ class IFU extends Module with Config {
   bpu.io.pred_update.bits.pc_idx := io.in.bits.pc(ghrBits+1,2)
   bpu.io.pred_update.bits.gshare_mispred := io.in.bits.gshare_mispred
   bpu.io.pred_update.bits.pc_mispred := io.in.bits.pc_mispred
-
 
   bpu.io.ras_update.target := io.in.bits.pc + 4.U
   bpu.io.ras_update.is_ret := io.in.valid && io.in.bits.is_ret

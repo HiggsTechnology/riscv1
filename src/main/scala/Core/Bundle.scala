@@ -14,7 +14,7 @@ class Pc_Instr extends Bundle with Config {
   val gshare_idx = Output(UInt(ghrBits.W))
   val gshare_pred = Output(Bool())
   val pc_pred = Output(Bool())
-  val Btbtarget = Output(UInt(XLEN.W))
+  val btbtarget = Output(UInt(XLEN.W))
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -55,6 +55,7 @@ class BRU_OUTIO extends Bundle with Config {
   val gshare_idx = Output(UInt(ghrBits.W))
   val gshare_mispred = Output(Bool())
   val pc_mispred = Output(Bool())
+  val btb_update = Output(Bool())
 }
 
 class BPU_update extends Bundle with Config {

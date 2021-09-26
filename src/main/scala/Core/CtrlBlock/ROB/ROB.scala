@@ -56,7 +56,8 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val br_pred = Wire(Vec(robSize,Bool()))
   val br_pred_reorder = Wire(Vec(robSize,Bool()))
   for(i <- 0 until robSize) {
-    br_pred(i) := valid(i) && (data(i).cf.is_br && data(i).ctrl.funcOpType =/= BRUOpType.jalr && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
+    val ret = data(i).ctrl.funcOpType === BRUOpType.jalr && data(i).cf.instr(11,7) === 0.U && (data(i).cf.instr(19,15) === 1.U || data(i).cf.instr(19,15) === 5.U)
+    br_pred(i) := valid(i) && (data(i).cf.is_br && !ret && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
   }
   when(enq_vec(0).value > deq_vec(0).value){
     br_pred_reorder := DontCare

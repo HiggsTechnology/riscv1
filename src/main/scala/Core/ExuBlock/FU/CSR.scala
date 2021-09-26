@@ -153,6 +153,7 @@ class CSR extends Module with CsrRegDefine {
   io.jmp.bits.gshare_idx := io.in.bits.uop.cf.gshare_idx
   io.jmp.bits.gshare_mispred := false.B
   io.jmp.bits.pc_mispred := false.B
+  io.jmp.bits.btb_update := false.B
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock

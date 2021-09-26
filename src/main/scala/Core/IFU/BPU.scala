@@ -152,8 +152,9 @@ class BPU extends Module with Config{
   io.gshare_idx := GPHT_Idx3
   io.gshare_pred := GPHT_taken3
   io.pc_pred := PHT_taken3
-  io.btbtarget := btbtarget3
-
+  for(i <- 0 until FETCH_WIDTH){
+    io.btbtarget(i) := Mux(btb_hit3(i), btbtarget3(i), io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)
+  }
   //btb update
   val pre_br_type = Wire(Vec(2,UInt(2.W)))
   for(i <- 0 until FETCH_WIDTH){

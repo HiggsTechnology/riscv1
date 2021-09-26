@@ -52,7 +52,7 @@ class BRU extends Module with Config {
 
   io.jmp.bits.pc := io.in.bits.uop.cf.pc
   io.jmp.bits.ROBIdx := io.in.bits.uop.ROBIdx
-  io.jmp.bits.mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.br_taken //todo:bru里判断，直接传给IBF、RS、LSQ
+  io.jmp.bits.mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.br_taken || io.jmp.bits.btb_update
   io.jmp.bits.is_jalr := io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr
   io.jmp.bits.is_ret := io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr && io.in.bits.uop.cf.instr(11,7) === 0.U && (io.in.bits.uop.cf.instr(19,15) === 1.U || io.in.bits.uop.cf.instr(19,15) === 5.U)
   io.jmp.bits.is_call := (io.in.bits.uop.ctrl.funcOpType === BRUOpType.jal || io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr) && (io.in.bits.uop.cf.instr(11,7) === 1.U || io.in.bits.uop.cf.instr(11,7) === 5.U)
@@ -61,6 +61,7 @@ class BRU extends Module with Config {
 
   io.jmp.bits.gshare_mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.gshare_pred
   io.jmp.bits.pc_mispred := io.jmp.bits.taken ^ io.in.bits.uop.cf.pc_pred
+  io.jmp.bits.btb_update := io.jmp.bits.is_jalr && !io.jmp.bits.is_ret && io.in.bits.uop.cf.btbtarget =/= io.jmp.bits.new_pc
 
   // when(io.in.valid){
   //   printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.jmp.bits.taken, io.jmp.bits.mispred)
