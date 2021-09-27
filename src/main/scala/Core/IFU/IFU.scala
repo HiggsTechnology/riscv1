@@ -30,17 +30,17 @@ class IFU extends Module with Config {
 
   val bpu = Module(new BPU)
 
-  object IFUState {
-    val continue :: stall :: Nil = Enum(2)
-  }
-  val ifuState = RegInit(IFUState.continue)
+  // object IFUState {
+  //   val continue :: stall :: Nil = Enum(2)
+  // }
+  // val ifuState = RegInit(IFUState.continue)
 
   //stage1
-  val ifu_redirect3 = Wire(Bool())
+  val ifu_redirect = Wire(Bool())
   
   val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
 
-  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred), io.in.bits.new_pc, Mux(ifu_redirect3, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc)))
+  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred), io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U
   }
@@ -58,7 +58,7 @@ class IFU extends Module with Config {
     // 依次从pc处开始取指
     ramVec(i).io.clk   := clock
     ramVec(i).io.en    := !reset.asBool
-    ramVec(i).io.rIdx  := (pcVec(i) - PC_START.U) >> 3
+    ramVec(i).io.rIdx  := (pcVec2(i) - PC_START.U) >> 3
     rdataVec(i)        := ramVec(i).io.rdata
     ramVec(i).io.wIdx  := DontCare
     ramVec(i).io.wen   := false.B
@@ -70,6 +70,7 @@ class IFU extends Module with Config {
   //stage3
   val pcVec3 = RegNext(pcVec2)
   val instrVec3 = RegNext(instrVec)
+  val instrValid = RegNext(!reset.asBool) && RegNext(RegNext(!reset.asBool))
   val br_taken2 = RegNext(bpu.io.br_taken)
   val jump_pc2 = RegNext(bpu.io.jump_pc)
 
@@ -78,7 +79,7 @@ class IFU extends Module with Config {
   for(i <- 0 until FETCH_WIDTH){
     preDecVec(i).io.instr:= instrVec3(i)
 
-    bpu.io.predecode(i).valid := true.B
+    bpu.io.predecode(i).valid := instrValid
     bpu.io.predecode(i).bits.pc3 := pcVec3(i)
     bpu.io.predecode(i).bits.is_br := preDecVec(i).io.is_br
     bpu.io.predecode(i).bits.offset := preDecVec(i).io.offset
@@ -99,14 +100,14 @@ class IFU extends Module with Config {
 
   }
 
-  val ifu_redirect = (jump_pc2 =/= bpu.io.jump_pc3) && (bpu.io.br_taken3.asUInt.orR)
-  ifu_redirect3 := RegNext(ifu_redirect)
+  ifu_redirect := ((jump_pc2 =/= bpu.io.jump_pc3) || !br_taken2.asUInt.orR) && (bpu.io.br_taken3.asUInt.orR) && io.out(0).valid
+  val ifu_redirect3 = RegNext(ifu_redirect)
 
   val flush = io.in.valid && io.in.bits.mispred
-  val flush3 = flush || RegNext(flush) || RegNext(RegNext(flush))
+  val flush2 = flush || RegNext(flush)
 
-  io.out(0).valid := !flush3 && !ifu_redirect3
-  io.out(1).valid := !flush3 && !ifu_redirect3 && !bpu.io.br_taken3(0)
+  io.out(0).valid := instrValid && !flush2 && !ifu_redirect3
+  io.out(1).valid := instrValid && !flush2 && !ifu_redirect3 && !bpu.io.br_taken3(0)
 
 
   bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B
@@ -120,17 +121,32 @@ class IFU extends Module with Config {
   bpu.io.ras_update.is_ret := io.in.valid && io.in.bits.is_ret
   bpu.io.ras_update.iscall := io.in.valid && io.in.bits.is_call
 
+  bpu.io.btb_update.valid := io.in.bits.btb_update
+  bpu.io.btb_update.bits.br_type := "b01".U
+  bpu.io.btb_update.bits.targets := io.in.bits.new_pc
+  bpu.io.btb_update.bits.br_pc := io.in.bits.pc
+
   bpu.io.flush := io.in.valid && io.in.bits.mispred
 
-  
-  // printf("IFU stall %d\n", ifuState === IFUState.stall)
-  // printf("preDecode1: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec(0),preDecVec(0).io.is_br, preDecVec(0).io.br_type, preDecVec(0).io.is_ret, preDecVec(0).io.offset)
-  // printf("preDecode2: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec(1),preDecVec(1).io.is_br, preDecVec(1).io.br_type, preDecVec(1).io.is_ret, preDecVec(1).io.offset)
-  // printf("IFU branch predict %d %d, bpu jump pc %x\n",bpu.io.br_taken(0),bpu.io.br_taken(1),bpu.io.jump_pc)
+  // printf("-------- stage 1 --------\n")
+  // printf("IFU in redirect valid %d\n",io.in.valid && (io.in.bits.mispred))
+  // printf("IFU pcReg %x, reset %d\n", pc, reset.asBool)
+  // printf("pcVec %x %x\n",pcVec(0),pcVec(1))
+
+  // printf("-------- stage 2 --------\n")
+  // printf("bpu pred valid %d %d, jump_pc2 %x\n",bpu.io.br_taken(0),bpu.io.br_taken(1),bpu.io.jump_pc)
+  // printf("pcVec2 %x %x\n",pcVec2(0),pcVec2(1))
+  // printf("instrVec %x %x\n",instrVec(0),instrVec(1))
+
+  // printf("-------- stage 3 --------\n")
+  // printf("preDecode1: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(0),preDecVec(0).io.is_br, preDecVec(0).io.br_type, preDecVec(0).io.is_ret, preDecVec(0).io.offset)
+  // printf("preDecode2: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(1),preDecVec(1).io.is_br, preDecVec(1).io.br_type, preDecVec(1).io.is_ret, preDecVec(1).io.offset)
+  // printf("IFU branch predict %d %d, bpu jump pc %x\n",bpu.io.br_taken3(0),bpu.io.br_taken3(1),bpu.io.jump_pc3)
   // printf("inst1: vaild %d, pc %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,io.out(0).bits.instr)
   // printf("inst2: vaild %d, pc %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,io.out(1).bits.instr)
-  // printf("IFU pcReg %x\n", pc)
   // printf("IBF in.out.ready %d %d\n",io.out(0).ready,io.out(1).ready)
-  // printf("--------one cycle--------\n")
+
+  // printf("ifu_redirect %d, ifu_redirect3 %d\n",ifu_redirect,ifu_redirect3)
+  // printf("--------one cycle--------\n\n")
 
 }

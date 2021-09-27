@@ -58,7 +58,7 @@ trait Config {
   def MISA : BigInt = {
     BigInt(MXL) << (MXLEN - 2) | BigInt(ISAEXT.toInt)
   }
-  def IBufSize  = 16
+  def IBufSize  = 64
 
   def nALU : Int = 2
 
@@ -88,7 +88,7 @@ trait Config {
   def VAddrBits = 64
   def GPHT_Size = 1024
   def ghrBits = log2Up(GPHT_Size)
-  def BtbSize = 512
+  def BtbSize = 256
   def BtbWays = 4
   def btbRows = BtbSize/BtbWays
 

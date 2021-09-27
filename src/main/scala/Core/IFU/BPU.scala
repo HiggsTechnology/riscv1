@@ -34,7 +34,7 @@ class BPUIO extends Bundle with Config{
   val pc = Vec(2,Input(UInt(XLEN.W)))
 
   //stage3
-  val predecode = Vec(2, ValidIO(new preDecode))
+  val predecode = Vec(2, Flipped(ValidIO(new preDecode)))
 
   val outfire = Vec(2,Input(Bool()))
 
@@ -134,7 +134,7 @@ class BPU extends Module with Config{
   val br_taken_predecode = Wire(Vec(FETCH_WIDTH, Bool()))
   val is_call = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    is_call(i) := (io.predecode(i).bits.br_type(i) === BRtype.J && io.predecode(i).bits.iscall(i)) || (io.predecode(i).bits.br_type(i) === BRtype.R && io.predecode(i).bits.iscall(i))
+    is_call(i) := (io.predecode(i).bits.br_type === BRtype.J && io.predecode(i).bits.iscall) || (io.predecode(i).bits.br_type === BRtype.R && io.predecode(i).bits.iscall)
     br_taken_predecode(i) := io.predecode(i).bits.is_br && (io.predecode(i).bits.br_type =/= BRtype.B || (io.predecode(i).bits.br_type === BRtype.B && bimPred3(i)))
   }
 
@@ -146,7 +146,13 @@ class BPU extends Module with Config{
   ras.io.flush := io.flush
 
   //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
-  io.jump_pc3 := Mux(bimPred3(0), Mux(io.predecode(0).bits.is_ret, ras.io.target, io.predecode(0).bits.pc3 + io.predecode(0).bits.offset), Mux(io.predecode(1).bits.is_ret, ras.io.target, io.predecode(1).bits.pc3 + io.predecode(1).bits.offset))
+  //printf("predecode pc %x %x, offset %x %x\n",io.predecode(0).bits.pc3,io.predecode(1).bits.pc3,io.predecode(0).bits.offset,io.predecode(1).bits.offset)
+  val target3 = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
+  
+  for(i <- 0 until FETCH_WIDTH){
+    target3(i) := Mux(io.predecode(i).bits.is_ret, ras.io.target, Mux(io.predecode(i).bits.br_type === BRtype.R && btb_hit3(i), btbtarget3(i), io.predecode(i).bits.pc3 + io.predecode(i).bits.offset))
+  }
+  io.jump_pc3 := Mux(br_taken_predecode(0), target3(0), target3(1))
   io.br_taken3 := br_taken_predecode
 
   io.gshare_idx := GPHT_Idx3
@@ -158,7 +164,7 @@ class BPU extends Module with Config{
   //btb update
   val pre_br_type = Wire(Vec(2,UInt(2.W)))
   for(i <- 0 until FETCH_WIDTH){
-    pre_br_type(i) := Mux(io.predecode(0).bits.is_ret(i), "b10".U, io.predecode(0).bits.br_type(i))
+    pre_br_type(i) := Mux(io.predecode(0).bits.is_ret, "b10".U, io.predecode(0).bits.br_type)
   }
 
   val btb_needUpdate = Wire(Vec(2,Bool()))
@@ -178,6 +184,10 @@ class BPU extends Module with Config{
   btb.io.update.needUpdate(2) := io.btb_update.valid
   btb.io.update.targets(2) := io.btb_update.bits.targets
   btb.io.update.br_pc(2) := io.btb_update.bits.br_pc
+
+  // printf("btb1 hit %d, target %x, type %x\n",btb_hit3(0),btbtarget3(0),br_type3(0))
+  // printf("btb2 hit %d, target %x, type %x\n",btb_hit3(1),btbtarget3(1),br_type3(1))
+  // printf("btb update %d %d\n",btb_needUpdate(0),btb_needUpdate(1))
 
 
   //GPHT, PHT, RAS update

@@ -178,7 +178,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
   // printf("ROB predict idx %d\n", io.predict.value)
   // for(i <- 0 until robSize){
-  //   printf("ROB %d: valid %d, wb %d, pc %x, inst %x, nospec %d\n",i.U, valid(i), wb(i),data(i).cf.pc,data(i).cf.instr,isAfter(io.predict,data(i).ROBIdx))
+  //   printf("ROB %d: valid %d, wb %d, mispred %d, pc %x, inst %x, nospec %d\n",i.U, valid(i), wb(i),mispred(i),data(i).cf.pc,data(i).cf.instr,isAfter(io.predict,data(i).ROBIdx))
   // }
 
 }

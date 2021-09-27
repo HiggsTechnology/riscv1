@@ -68,13 +68,17 @@ class BTB extends Module with Config {
 
     val btbHit = Wire(Vec(BtbWays, Bool()))
     for (i <- 0 until BtbWays) {
-      btbHit(i) := btbRead(i).tag === btbAddr.getTag(io.in.pc(j)) && btb_valid(i)(io.in.pc(j))
+      btbHit(i) := btbRead(i).tag === btbAddr.getTag(io.in.pc(j)) && btb_valid(i)(btbAddr.getIdx(io.in.pc(j)))
     }
 
     val brInfo = PriorityMux(btbHit, btbRead)
     io.resp.targets(j) := brInfo.target
     io.resp.hits(j) := btbHit.asUInt.orR
     io.resp.br_type(j) := brInfo._type
+
+    // when(io.in.pc(j)===0x80000010L.U){
+    //   printf("pc:80000010, tag %x, hit %d %d %d %d\n",btbAddr.getTag(io.in.pc(j)),btbHit(0),btbHit(1),btbHit(2),btbHit(3))
+    // }
   }
 
   //update btb
@@ -92,7 +96,7 @@ class BTB extends Module with Config {
     }
     val hitway = PriorityEncoder(btbHit)
     for (j <- 0 until BtbWays) {
-      when(btbHit.asUInt.orR && hitway === j.U){
+      when(btbHit.asUInt.orR && hitway === j.U && io.update.needUpdate(i)){
         btb_valid(j)(updateIdx(i)) := false.B
       }
     }
@@ -111,6 +115,7 @@ class BTB extends Module with Config {
 
     for (j <- 0 until BtbWays) {
       when(selectWay(i) === j.U && io.update.needUpdate(i)) {
+        //printf("btb update%d, way %d, pc %x, idx %d, tag %x, target %x\n",i.U,j.U,io.update.br_pc(i),updateIdx(i),btbWrite.tag,io.update.targets(i))
         btb(j)(updateIdx(i)) := btbWrite
         btb_valid(j)(updateIdx(i)) := true.B
       }
@@ -120,12 +125,21 @@ class BTB extends Module with Config {
   when(io.update.needUpdate(2)) {
     writeWay(updateIdx(2)) := selectWay(2) + 1.U
   }
-  when(io.update.needUpdate(1) && (selectWay(1) =/= selectWay(2) || !io.update.needUpdate(2))) {
+  when(io.update.needUpdate(1) && (updateIdx(1) =/= updateIdx(2) || !io.update.needUpdate(2))) {
     writeWay(updateIdx(1)) := selectWay(1) + 1.U
   }
-  when(io.update.needUpdate(0) && (selectWay(0) =/= selectWay(1) || !io.update.needUpdate(1)) && (selectWay(0) =/= selectWay(2) || !io.update.needUpdate(2))) {
+  when(io.update.needUpdate(0) && (updateIdx(0) =/= updateIdx(1) || !io.update.needUpdate(1)) && (updateIdx(0) =/= updateIdx(2) || !io.update.needUpdate(2))) {
     writeWay(updateIdx(0)) := selectWay(0) + 1.U
   }
+
+  // for(i <- 0 until btbRows){
+  //   if(i == 4){
+  //   for(j <- 0 until BtbWays){
+  //     printf("BTB row %d, way %d, valid %d, tag %x, type %x, target %x\n",i.U, j.U, btb_valid(j)(i), btb(j)(i).tag, btb(j)(i)._type, btb(j)(i).target)
+  //   }
+  //   printf("\n")
+  //   }
+  // }
 }
 
 
