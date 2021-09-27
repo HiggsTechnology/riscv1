@@ -29,7 +29,8 @@ class IFU extends Module with Config {
   val pc = RegInit(PC_START.U(XLEN.W))
 
   val bpu = Module(new BPU)
-
+  val ibf_ready = io.out(0).ready || (io.in.valid && io.in.bits.mispred)
+  bpu.io.ibf_ready := ibf_ready
   // object IFUState {
   //   val continue :: stall :: Nil = Enum(2)
   // }
@@ -40,16 +41,18 @@ class IFU extends Module with Config {
   
   val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
 
-  pcVec(0) := Mux(io.in.valid && (io.in.bits.mispred), io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
+  pcVec(0) := Mux(io.in.valid && io.in.bits.mispred, io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U
   }
   bpu.io.pc := pcVec
-  pc := pcVec(0) + 8.U
+  when(ibf_ready) {
+    pc := pcVec(0) + 8.U
+  }
 
 
   //stage2
-  val pcVec2 = RegNext(pcVec)
+  val pcVec2 = RegEnable(pcVec,ibf_ready)
 
   val instrVec = Wire(Vec(FETCH_WIDTH, UInt(INST_WIDTH)))
   val rdataVec = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
@@ -68,11 +71,11 @@ class IFU extends Module with Config {
   }
 
   //stage3
-  val pcVec3 = RegNext(pcVec2)
-  val instrVec3 = RegNext(instrVec)
+  val pcVec3 = RegEnable(pcVec2,ibf_ready)
+  val instrVec3 = RegEnable(instrVec,ibf_ready)
   val instrValid = RegNext(!reset.asBool) && RegNext(RegNext(!reset.asBool))
-  val br_taken2 = RegNext(bpu.io.br_taken)
-  val jump_pc2 = RegNext(bpu.io.jump_pc)
+  val br_taken2 = RegEnable(bpu.io.br_taken,ibf_ready)
+  val jump_pc2 = RegEnable(bpu.io.jump_pc,ibf_ready)
 
 
   val preDecVec= Seq.fill(FETCH_WIDTH)(Module(new PreDecode))
@@ -100,8 +103,8 @@ class IFU extends Module with Config {
 
   }
 
-  ifu_redirect := ((jump_pc2 =/= bpu.io.jump_pc3) || !br_taken2.asUInt.orR) && (bpu.io.br_taken3.asUInt.orR) && io.out(0).valid
-  val ifu_redirect3 = RegNext(ifu_redirect)
+  ifu_redirect := (((jump_pc2 =/= bpu.io.jump_pc3) || !br_taken2.asUInt.orR) && (bpu.io.br_taken3.asUInt.orR)) && io.out(0).valid
+  val ifu_redirect3 = RegEnable(ifu_redirect,ibf_ready)
 
   val flush = io.in.valid && io.in.bits.mispred
   val flush2 = flush || RegNext(flush)
@@ -121,7 +124,7 @@ class IFU extends Module with Config {
   bpu.io.ras_update.is_ret := io.in.valid && io.in.bits.is_ret
   bpu.io.ras_update.iscall := io.in.valid && io.in.bits.is_call
 
-  bpu.io.btb_update.valid := io.in.bits.btb_update
+  bpu.io.btb_update.valid := io.in.bits.btb_update && io.in.valid
   bpu.io.btb_update.bits.br_type := "b01".U
   bpu.io.btb_update.bits.targets := io.in.bits.new_pc
   bpu.io.btb_update.bits.br_pc := io.in.bits.pc

@@ -30,6 +30,7 @@ class preDecode extends Bundle with Config{
 
 class BPUIO extends Bundle with Config{
   //input
+  val ibf_ready = Input(Bool())
   //stage1
   val pc = Vec(2,Input(UInt(XLEN.W)))
 
@@ -79,8 +80,8 @@ class BPU extends Module with Config{
 
 
   //stage2
-  val GPHT_Idx2 = RegNext(GPHT_Idx1)
-  val pc2 = RegNext(pc1)
+  val GPHT_Idx2 = RegEnable(GPHT_Idx1,io.ibf_ready)
+  val pc2 = RegEnable(pc1,io.ibf_ready)
 
   val pred_select = RegInit(0.U(3.W))//第2位为高则选GPHT
 
@@ -119,17 +120,16 @@ class BPU extends Module with Config{
   }
 
   //stage3
-  val GPHT_taken3 = RegNext(GPHT_taken)
-  val PHT_taken3 = RegNext(PHT_taken)
-  val GPHT_Idx3 = RegNext(GPHT_Idx2)
-  val pc3 = RegNext(pc2) //跳转指令的pc
-  val bimPred3 = RegNext(bimPred)
-  val br_taken3 = RegNext(br_taken2)
-  val jump3 = RegNext(io.jump_pc)
-  val btb_hit3 = RegNext(btb_hit2)
-  val btbtarget3 = RegNext(btbtarget2)   //跳转到的pc
-  val br_type3 = RegNext(br_type2)
-
+  val GPHT_taken3 = RegEnable(GPHT_taken,io.ibf_ready)
+  val PHT_taken3 = RegEnable(PHT_taken,io.ibf_ready)
+  val GPHT_Idx3 = RegEnable(GPHT_Idx2,io.ibf_ready)
+  val pc3 = RegEnable(pc2,io.ibf_ready) //跳转指令的pc
+  val bimPred3 = RegEnable(bimPred,io.ibf_ready)
+  val br_taken3 = RegEnable(br_taken2,io.ibf_ready)
+  val jump3 = RegEnable(io.jump_pc,io.ibf_ready)
+  val btb_hit3 = RegEnable(btb_hit2,io.ibf_ready)
+  val btbtarget3 = RegEnable(btbtarget2,io.ibf_ready)   //跳转到的pc
+  val br_type3 = RegEnable(br_type2,io.ibf_ready)
   //根据predecode，以及stage2的GPHT、PHT，计算分支预测结果
   val br_taken_predecode = Wire(Vec(FETCH_WIDTH, Bool()))
   val is_call = Wire(Vec(FETCH_WIDTH, Bool()))
