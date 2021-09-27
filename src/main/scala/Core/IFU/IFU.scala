@@ -128,25 +128,25 @@ class IFU extends Module with Config {
 
   bpu.io.flush := io.in.valid && io.in.bits.mispred
 
-  // printf("-------- stage 1 --------\n")
-  // printf("IFU in redirect valid %d\n",io.in.valid && (io.in.bits.mispred))
-  // printf("IFU pcReg %x, reset %d\n", pc, reset.asBool)
-  // printf("pcVec %x %x\n",pcVec(0),pcVec(1))
-
-  // printf("-------- stage 2 --------\n")
-  // printf("bpu pred valid %d %d, jump_pc2 %x\n",bpu.io.br_taken(0),bpu.io.br_taken(1),bpu.io.jump_pc)
-  // printf("pcVec2 %x %x\n",pcVec2(0),pcVec2(1))
-  // printf("instrVec %x %x\n",instrVec(0),instrVec(1))
-
-  // printf("-------- stage 3 --------\n")
-  // printf("preDecode1: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(0),preDecVec(0).io.is_br, preDecVec(0).io.br_type, preDecVec(0).io.is_ret, preDecVec(0).io.offset)
-  // printf("preDecode2: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(1),preDecVec(1).io.is_br, preDecVec(1).io.br_type, preDecVec(1).io.is_ret, preDecVec(1).io.offset)
-  // printf("IFU branch predict %d %d, bpu jump pc %x\n",bpu.io.br_taken3(0),bpu.io.br_taken3(1),bpu.io.jump_pc3)
-  // printf("inst1: vaild %d, pc %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,io.out(0).bits.instr)
-  // printf("inst2: vaild %d, pc %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,io.out(1).bits.instr)
-  // printf("IBF in.out.ready %d %d\n",io.out(0).ready,io.out(1).ready)
-
-  // printf("ifu_redirect %d, ifu_redirect3 %d\n",ifu_redirect,ifu_redirect3)
-  // printf("--------one cycle--------\n\n")
+//   printf("-------- stage 1 --------\n")
+//   printf("IFU in redirect valid %d\n",io.in.valid && (io.in.bits.mispred))
+//   printf("IFU pcReg %x, reset %d\n", pc, reset.asBool)
+//   printf("pcVec %x %x\n",pcVec(0),pcVec(1))
+//
+//   printf("-------- stage 2 --------\n")
+//   printf("bpu pred valid %d %d, jump_pc2 %x\n",bpu.io.br_taken(0),bpu.io.br_taken(1),bpu.io.jump_pc)
+//   printf("pcVec2 %x %x\n",pcVec2(0),pcVec2(1))
+//   printf("instrVec %x %x\n",instrVec(0),instrVec(1))
+//
+//   printf("-------- stage 3 --------\n")
+//   printf("preDecode1: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(0),preDecVec(0).io.is_br, preDecVec(0).io.br_type, preDecVec(0).io.is_ret, preDecVec(0).io.offset)
+//   printf("preDecode2: inst %x, is_br %d, br_type %d, is_ret %d, offset %x\n",instrVec3(1),preDecVec(1).io.is_br, preDecVec(1).io.br_type, preDecVec(1).io.is_ret, preDecVec(1).io.offset)
+//   printf("IFU branch predict %d %d, bpu jump pc %x\n",bpu.io.br_taken3(0),bpu.io.br_taken3(1),bpu.io.jump_pc3)
+//   printf("inst1: vaild %d, pc %x, inst %x \n",io.out(0).valid,io.out(0).bits.pc,io.out(0).bits.instr)
+//   printf("inst2: vaild %d, pc %x, inst %x \n",io.out(1).valid,io.out(1).bits.pc,io.out(1).bits.instr)
+//   printf("IBF in.out.ready %d %d\n",io.out(0).ready,io.out(1).ready)
+//
+//   printf("ifu_redirect %d, ifu_redirect3 %d\n",ifu_redirect,ifu_redirect3)
+//   printf("--------one cycle--------\n\n")
 
 }

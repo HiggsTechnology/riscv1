@@ -115,7 +115,7 @@ class BTB extends Module with Config {
 
     for (j <- 0 until BtbWays) {
       when(selectWay(i) === j.U && io.update.needUpdate(i)) {
-        //printf("btb update%d, way %d, pc %x, idx %d, tag %x, target %x\n",i.U,j.U,io.update.br_pc(i),updateIdx(i),btbWrite.tag,io.update.targets(i))
+        //printf("btb update%d, way %d, pc %x, idx %d, tag %x, target %x, type %d\n",i.U,j.U,io.update.br_pc(i),updateIdx(i),btbWrite.tag,io.update.targets(i),btbWrite._type)
         btb(j)(updateIdx(i)) := btbWrite
         btb_valid(j)(updateIdx(i)) := true.B
       }

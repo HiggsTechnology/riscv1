@@ -90,16 +90,26 @@ class RAS extends Module with Config {
       stack(i) := stack_commit(i)
     }
     sp := sp_commit
+
+    when(io.update.iscall){
+      when(top_commit.retAddr===io.update.target){
+        stack(sp_commit).ctr := stack_commit(sp_commit).ctr + 1.U
+      }.otherwise{
+        sp := sp_commit + 1.U
+        stack(sp_commit + 1.U).retAddr := io.update.target
+        stack(sp_commit + 1.U).ctr := 1.U
+      }
+    }
   }
 
-  // printf("RAS    sp %d,     io.call %d,     io.ret %d\n",sp, io.push.iscall, io.is_ret)
-  // for(i <- 0 until RasSize){
-  //   printf("RAS %d: target %x, cnt %d\n", i.U, stack(i).retAddr, stack(i).ctr)
-    
-  // }
-  // printf("sp_commit %d, commit_call %d, commit_ret %d\n",sp_commit,io.update.iscall,io.update.is_ret)
-  // for(i <- 0 until RasSize){
-  //   printf("RAS commit %d: target %x, cnt %d\n", i.U, stack_commit(i).retAddr, stack_commit(i).ctr)
-  // }
+//   printf("RAS    sp %d,     io.call %d,     io.ret %d\n",sp, io.push.iscall, io.is_ret)
+//   for(i <- 0 until RasSize){
+//     printf("RAS %d: target %x, cnt %d\n", i.U, stack(i).retAddr, stack(i).ctr)
+//
+//   }
+//   printf("sp_commit %d, commit_call %d, commit_ret %d\n",sp_commit,io.update.iscall,io.update.is_ret)
+//   for(i <- 0 until RasSize){
+//     printf("RAS commit %d: target %x, cnt %d\n", i.U, stack_commit(i).retAddr, stack_commit(i).ctr)
+//   }
 
 }

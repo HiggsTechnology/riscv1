@@ -164,7 +164,7 @@ class BPU extends Module with Config{
   //btb update
   val pre_br_type = Wire(Vec(2,UInt(2.W)))
   for(i <- 0 until FETCH_WIDTH){
-    pre_br_type(i) := Mux(io.predecode(0).bits.is_ret, "b10".U, io.predecode(0).bits.br_type)
+    pre_br_type(i) := Mux(io.predecode(i).bits.is_ret, "b10".U, io.predecode(i).bits.br_type)
   }
 
   val btb_needUpdate = Wire(Vec(2,Bool()))
