@@ -149,7 +149,7 @@ class ExuBlock extends Module with Config{
   when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===FuncType.csr){
     csr.io.in.valid := true.B
   }
-  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===5.U){
+  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===FuncType.bru){
     bru.io.in.valid := true.B
   }
   csr.io.in.bits := jumprs.io.out.bits
