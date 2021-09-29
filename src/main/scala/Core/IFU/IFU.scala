@@ -1,7 +1,7 @@
 package Core.IFU
 
 
-import Core.{RedirectIO, Config, Pc_Instr}
+import Core.{BPU_Update, Config, Pc_Instr, RedirectIO}
 import chisel3._
 import chisel3.util._
 
@@ -19,7 +19,7 @@ class RAMHelper extends BlackBox {
 }
 
 class IFUIO extends Bundle {
-  val in  = Flipped(ValidIO(new RedirectIO))  //branch
+  val in  = Flipped(ValidIO(new BPU_Update))  //branch
   val out = Vec(2, DecoupledIO(new Pc_Instr))
   val redirect = Flipped(ValidIO(new RedirectIO))
   //  val ifu2rw = new IFU2RW
@@ -28,9 +28,9 @@ class IFUIO extends Bundle {
 class IFU extends Module with Config {
   val io = IO(new IFUIO)
   val pc = RegInit(PC_START.U(XLEN.W))
-
+  val mispred = io.redirect.bits.mispred
   val bpu = Module(new BPU)
-  val ibf_ready = io.out(0).ready || (io.in.valid && io.in.bits.mispred)
+  val ibf_ready = io.out(0).ready || (io.in.valid && mispred)
   bpu.io.ibf_ready := ibf_ready
   // object IFUState {
   //   val continue :: stall :: Nil = Enum(2)
@@ -43,7 +43,7 @@ class IFU extends Module with Config {
   val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
 
   //后端重定向优先级最高，第三拍转跳指令
-  pcVec(0) := Mux(io.in.valid && io.in.bits.mispred, io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
+  pcVec(0) := Mux(io.in.valid && mispred, io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U
   }
@@ -131,7 +131,7 @@ class IFU extends Module with Config {
   bpu.io.btb_update.bits.targets := io.in.bits.new_pc
   bpu.io.btb_update.bits.br_pc := io.in.bits.pc
 
-  bpu.io.flush := io.in.valid && io.in.bits.mispred
+  bpu.io.flush := io.in.valid && mispred
 
 //   printf("-------- stage 1 --------\n")
 //   printf("IFU in redirect valid %d\n",io.in.valid && (io.in.bits.mispred))
