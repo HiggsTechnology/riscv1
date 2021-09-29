@@ -21,6 +21,7 @@ class RAMHelper extends BlackBox {
 class IFUIO extends Bundle {
   val in  = Flipped(ValidIO(new RedirectIO))  //branch
   val out = Vec(2, DecoupledIO(new Pc_Instr))
+  val redirect = Flipped(ValidIO(new RedirectIO))
   //  val ifu2rw = new IFU2RW
 }
 
@@ -95,7 +96,7 @@ class IFU extends Module with Config {
     io.out(i).bits.br_taken := bpu.io.br_taken3(i)
     io.out(i).bits.gshare_idx := bpu.io.gshare_idx(i)
     io.out(i).bits.gshare_pred := bpu.io.gshare_pred(i)
-    io.out(i).bits.pc_pred := bpu.io.pc_pred(i)
+    io.out(i).bits.pht_pred := bpu.io.pc_pred(i)
     io.out(i).bits.btbtarget := bpu.io.btbtarget(i)
 
     io.out(i).bits.pc    := pcVec3(i)
@@ -107,7 +108,7 @@ class IFU extends Module with Config {
   ifu_redirect := (((jump_pc2 =/= bpu.io.jump_pc3) || !br_taken2.asUInt.orR) && (bpu.io.br_taken3.asUInt.orR)) && io.out(0).valid
   val ifu_redirect3 = RegEnable(ifu_redirect,ibf_ready)
 
-  val flush = io.in.valid && io.in.bits.mispred
+  val flush = io.in.valid && mispred
   val flush2 = flush || RegNext(flush)
 
   io.out(0).valid := instrValid && !flush2 && !ifu_redirect3
@@ -119,7 +120,7 @@ class IFU extends Module with Config {
   bpu.io.pred_update.bits.gshare_idx := io.in.bits.gshare_idx
   bpu.io.pred_update.bits.pc_idx := io.in.bits.pc(ghrBits+1,2)
   bpu.io.pred_update.bits.gshare_mispred := io.in.bits.gshare_mispred
-  bpu.io.pred_update.bits.pc_mispred := io.in.bits.pc_mispred
+  bpu.io.pred_update.bits.pht_mispred := io.in.bits.pht_mispred
 
   bpu.io.ras_update.target := io.in.bits.pc + 4.U
   bpu.io.ras_update.is_ret := io.in.valid && io.in.bits.is_ret

@@ -7,7 +7,7 @@ import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
 import Core.ExuBlock.RS.{RS, RS_inorder}
-import Core.{Config, ExuCommit, FuOutPut, MicroOp, RedirectIO}
+import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RedirectIO}
 import chisel3._
 import chisel3.util._
 import difftest.DifftestArchIntRegState
@@ -22,6 +22,7 @@ class ExuBlockIO extends Bundle with Config {
 
   val predict_robPtr = Input(new ROBPtr)
   val redirect  = ValidIO(new RedirectIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
+  val bpu_update = ValidIO(new BPU_Update)
   val exuCommit = Vec(6,ValidIO(new ExuCommit))
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
   val rs_can_allocate = Vec(ExuNum-1,Output(Bool()))
@@ -184,11 +185,13 @@ class ExuBlock extends Module with Config{
   //选择跳转信号,暂时不考虑csr
   when(ExuResult(0).valid){
     when(csr.io.jmp.valid){
-      io.redirect := csr.io.jmp
+      io.redirect   :=  csr.io.jmp
+      io.bpu_update :=  csr.io.bpu_update
     }
   }.elsewhen(ExuResult(1).valid){
     when(bru.io.jmp.valid){
-      io.redirect := bru.io.jmp
+      io.redirect   :=  bru.io.jmp
+      io.bpu_update :=  bru.io.bpu_update
     }
   }
 

@@ -1,6 +1,6 @@
 package Core.ExuBlock.FU
 
-import Core.{RedirectIO, CfCtrl, Config, FuInPut, FuOutPut}
+import Core.{BPU_Update, CfCtrl, Config, FuInPut, FuOutPut, RedirectIO}
 import Core.Define.Traps
 import Core.CtrlBlock.IDU.FuncOpType
 import chisel3._
@@ -39,6 +39,7 @@ class CSR extends Module with CsrRegDefine {
     val in  = Flipped(ValidIO(new FuInPut))
     val out = ValidIO(new FuOutPut)
     val jmp   : Valid[RedirectIO]     = ValidIO(new RedirectIO)
+    val bpu_update = ValidIO(new BPU_Update)
   }
   val io : CSRIO = IO(new CSRIO)
   private val op = io.in.bits.uop.ctrl.funcOpType
@@ -136,24 +137,30 @@ class CSR extends Module with CsrRegDefine {
       status.MPP := (if (supportUser) mode_u else mode_m)
     }
   }
-  io.jmp.bits.new_pc := new_pc
-  io.jmp.bits.taken := trap_valid
+
+
   io.out.bits.res := rdata
   io.out.bits.uop := io.in.bits.uop
   io.out.valid := io.in.valid
-  io.jmp.valid := io.in.valid & is_jmp
 
-  io.jmp.bits.pc := io.in.bits.uop.cf.pc
+  io.jmp.valid := io.in.valid & is_jmp
+  io.jmp.bits.new_pc := new_pc
   io.jmp.bits.ROBIdx := io.in.bits.uop.ROBIdx
-  io.jmp.bits.is_jalr := false.B
   io.jmp.bits.mispred := false.B
-  io.jmp.bits.is_ret := false.B
-  io.jmp.bits.is_call := false.B
-  io.jmp.bits.is_B := false.B
-  io.jmp.bits.gshare_idx := io.in.bits.uop.cf.gshare_idx
-  io.jmp.bits.gshare_mispred := false.B
-  io.jmp.bits.pc_mispred := false.B
-  io.jmp.bits.btb_update := false.B
+
+  io.bpu_update.valid       := io.in.valid & is_jmp
+  io.bpu_update.bits.pc     := io.in.bits.uop.cf.pc
+  io.bpu_update.bits.new_pc :=  new_pc
+  io.bpu_update.bits.taken := trap_valid
+  io.bpu_update.bits.pc := io.in.bits.uop.cf.pc
+  io.bpu_update.bits.is_jalr := false.B
+  io.bpu_update.bits.is_ret := false.B
+  io.bpu_update.bits.is_call := false.B
+  io.bpu_update.bits.is_B := false.B
+  io.bpu_update.bits.gshare_idx := io.in.bits.uop.cf.gshare_idx
+  io.bpu_update.bits.gshare_mispred := false.B
+  io.bpu_update.bits.pht_mispred := false.B
+  io.bpu_update.bits.btb_update := false.B
 
   private val csrCommit = Module(new DifftestCSRState)
   csrCommit.io.clock          := clock

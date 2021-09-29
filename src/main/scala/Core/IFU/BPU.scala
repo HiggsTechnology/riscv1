@@ -16,7 +16,7 @@ class pred_update extends Bundle with Config{
   val gshare_idx = Output(UInt(ghrBits.W))
   val pc_idx = Output(UInt(ghrBits.W))
   val gshare_mispred = Output(Bool())
-  val pc_mispred = Output(Bool())
+  val pht_mispred = Output(Bool())
 }
 
 class preDecode extends Bundle with Config{
@@ -173,7 +173,7 @@ class BPU extends Module with Config{
   //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
   //printf("predecode pc %x %x, offset %x %x\n",io.predecode(0).bits.pc3,io.predecode(1).bits.pc3,io.predecode(0).bits.offset,io.predecode(1).bits.offset)
   val target3 = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
-  
+
   for(i <- 0 until FETCH_WIDTH){
     val is_ret_pre    = io.predecode(i).bits.is_ret     //是否为ret指令
     val jalr_hit_pre  = io.predecode(i).bits.br_type === BRtype.R && btb_hit3(i)  //第一次遇到给一个pc+4的值，bru会mispredict更新btb。第二次遇到btb正确的值
@@ -243,9 +243,9 @@ class BPU extends Module with Config{
       PHT(pc_idx) := pc_newCnt
     }
 
-    when(io.pred_update.bits.pc_mispred && !io.pred_update.bits.gshare_mispred && pred_select =/= "b111".U){
+    when(io.pred_update.bits.pht_mispred && !io.pred_update.bits.gshare_mispred && pred_select =/= "b111".U){
       pred_select := pred_select + 1.U
-    }.elsewhen(!io.pred_update.bits.pc_mispred && io.pred_update.bits.gshare_mispred && pred_select =/= "b000".U){
+    }.elsewhen(!io.pred_update.bits.pht_mispred && io.pred_update.bits.gshare_mispred && pred_select =/= "b000".U){
       pred_select := pred_select - 1.U
     }
   }

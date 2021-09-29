@@ -26,7 +26,8 @@ class SimTop extends Module {
     val ctrlblock = Module(new ControlBlock)
     val exublock = Module(new ExuBlock)
 
-    ifu.io.in                       <>  exublock.io.redirect
+    ifu.io.redirect                 :=  exublock.io.redirect
+    ifu.io.in                       :=  exublock.io.bpu_update
     ibf.io.in                       <>  ifu.io.out
     ibf.io.flush                    :=  exublock.io.redirect.valid && exublock.io.redirect.bits.mispred
     ibf.io.flush_commit             :=  ctrlblock.io.out.flush_commit
