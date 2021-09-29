@@ -1,6 +1,6 @@
 package Core.ExuBlock.FU
 
-import Core.{BRU_OUTIO, CfCtrl, Config, FuInPut, FuOutPut}
+import Core.{RedirectIO, CfCtrl, Config, FuInPut, FuOutPut}
 import Core.Define.Traps
 import Core.CtrlBlock.IDU.FuncOpType
 import chisel3._
@@ -38,7 +38,7 @@ class CSR extends Module with CsrRegDefine {
     //    }
     val in  = Flipped(ValidIO(new FuInPut))
     val out = ValidIO(new FuOutPut)
-    val jmp   : Valid[BRU_OUTIO]     = ValidIO(new BRU_OUTIO)
+    val jmp   : Valid[RedirectIO]     = ValidIO(new RedirectIO)
   }
   val io : CSRIO = IO(new CSRIO)
   private val op = io.in.bits.uop.ctrl.funcOpType

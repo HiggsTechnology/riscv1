@@ -22,7 +22,7 @@ class pred_update extends Bundle with Config{
 class preDecode extends Bundle with Config{
   val pc3 = Output(UInt(XLEN.W))
   val is_br = Output(Bool())
-  val offset = Output(UInt(XLEN.W))
+  val offset = Output(UInt(XLEN.W))//偏移量，+4.U或立即数或立即数+寄存器数
   val br_type = Output(BRtype())
   val is_ret = Output(Bool())
   val iscall = Output(Bool())
@@ -68,13 +68,13 @@ class BPU extends Module with Config{
   //stage1
 
   //gshare
-  val ghr = RegInit(0.U(ghrBits.W))
+  val ghr = RegInit(0.U(ghrBits.W))//ghrBits=10, global history register
 
-  val GPHT_Idx1 = Wire(Vec(FETCH_WIDTH, UInt(ghrBits.W)))
+  val GPHT_Idx1 = Wire(Vec(FETCH_WIDTH, UInt(ghrBits.W)))//Global Pattern History Table,两位饱和计数器，taken+1，no taken -1
   val pc1 = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
 
   for(i <- 0 until FETCH_WIDTH) {
-    GPHT_Idx1(i) := io.pc(i)(ghrBits + 1, 2) ^ ghr
+    GPHT_Idx1(i) := io.pc(i)(ghrBits + 1, 2) ^ ghr//非压缩指令，所有指令后两位都相同，所以只需判断2～11位
     pc1(i) := io.pc(i)
   }
 
@@ -88,10 +88,10 @@ class BPU extends Module with Config{
   val PHT = Mem(GPHT_Size, UInt(2.W))
   val PHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    PHT_taken(i) := PHT.read(pc2(i)(ghrBits+1,2))(1)
+    PHT_taken(i) := PHT.read(pc2(i)(ghrBits+1,2))(1)//PHT_Idx= pc2(i)(11,2)
   }
 
-  val GPHT = Mem(GPHT_Size, UInt(2.W))
+  val GPHT = Mem(GPHT_Size, UInt(2.W))//GPHT有异或操作，PHT无异或操作
   val GPHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
     GPHT_taken(i) := GPHT.read(GPHT_Idx2(i))(1)
@@ -110,48 +110,57 @@ class BPU extends Module with Config{
   io.jump_pc := Mux(br_taken2(0), btb.io.resp.targets(0), btb.io.resp.targets(1))
   io.br_taken := br_taken2
 
-  val btb_hit2 = Wire(Vec(FETCH_WIDTH, Bool()))
-  val btbtarget2 = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
-  val br_type2 = Wire(Vec(FETCH_WIDTH, UInt(2.W)))
-  for(i <- 0 until FETCH_WIDTH){
-    btb_hit2(i) := btb.io.resp.hits(i)
+  val btb_hit2     = Wire(Vec(FETCH_WIDTH, Bool()))
+  val btbtarget2   = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
+  val br_type2     = Wire(Vec(FETCH_WIDTH, UInt(2.W)))
+  for(i <- 0 until FETCH_WIDTH){                         //将btb的信号传到第三拍
+    btb_hit2(i)   := btb.io.resp.hits(i)
     btbtarget2(i) := btb.io.resp.targets(i)
-    br_type2(i) := btb.io.resp.br_type(i)
+    br_type2(i)   := btb.io.resp.br_type(i)
   }
 
   //stage3
-  val GPHT_taken3 = RegEnable(GPHT_taken,io.ibf_ready)
-  val PHT_taken3 = RegEnable(PHT_taken,io.ibf_ready)
-  val GPHT_Idx3 = RegEnable(GPHT_Idx2,io.ibf_ready)
-  val pc3 = RegEnable(pc2,io.ibf_ready) //跳转指令的pc
-  val bimPred3 = RegEnable(bimPred,io.ibf_ready)
-  val br_taken3 = RegEnable(br_taken2,io.ibf_ready)
-  val jump3 = RegEnable(io.jump_pc,io.ibf_ready)
-  val btb_hit3 = RegEnable(btb_hit2,io.ibf_ready)
-  val btbtarget3 = RegEnable(btbtarget2,io.ibf_ready)   //跳转到的pc
-  val br_type3 = RegEnable(br_type2,io.ibf_ready)
+  val GPHT_taken3          =   RegEnable(GPHT_taken,io.ibf_ready)
+  val PHT_taken3           =   RegEnable(PHT_taken,io.ibf_ready)
+  val GPHT_Idx3            =   RegEnable(GPHT_Idx2,io.ibf_ready)
+  val pc3                  =   RegEnable(pc2,io.ibf_ready) //跳转指令的pc
+  val bimPred3             =   RegEnable(bimPred,io.ibf_ready)
+  val br_taken3            =   RegEnable(br_taken2,io.ibf_ready)
+  val jump3                =   RegEnable(io.jump_pc,io.ibf_ready)
+  val btb_hit3             =   RegEnable(btb_hit2,io.ibf_ready)
+  val btbtarget3           =   RegEnable(btbtarget2,io.ibf_ready)   //跳转到的pc
+  val br_type3             =   RegEnable(br_type2,io.ibf_ready)
   //根据predecode，以及stage2的GPHT、PHT，计算分支预测结果
-  val br_taken_predecode = Wire(Vec(FETCH_WIDTH, Bool()))
-  val is_call = Wire(Vec(FETCH_WIDTH, Bool()))
+  val br_taken_predecode   =   Wire(Vec(FETCH_WIDTH, Bool()))
+  val is_call              =   Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
     is_call(i) := (io.predecode(i).bits.br_type === BRtype.J && io.predecode(i).bits.iscall) || (io.predecode(i).bits.br_type === BRtype.R && io.predecode(i).bits.iscall)
     br_taken_predecode(i) := io.predecode(i).bits.is_br && (io.predecode(i).bits.br_type =/= BRtype.B || (io.predecode(i).bits.br_type === BRtype.B && bimPred3(i)))
   }
 
   //传入RAS
-  ras.io.push.iscall := Mux(br_taken_predecode(0), io.outfire(0) && io.predecode(0).bits.is_br && is_call(0), io.outfire(1) && io.predecode(1).bits.is_br && is_call(1))
-  ras.io.push.target := Mux(is_call(0), io.predecode(0).bits.pc3, io.predecode(1).bits.pc3) + 4.U
-  ras.io.is_ret := Mux(br_taken_predecode(0), io.outfire(0) && io.predecode(0).bits.is_br && io.predecode(0).bits.is_ret, io.outfire(1) && io.predecode(1).bits.is_br && io.predecode(1).bits.is_ret)
-  ras.io.update := io.ras_update
-  ras.io.flush := io.flush
+  val call_br_0       =    io.outfire(0) && io.predecode(0).bits.is_br && is_call(0)
+  val call_br_1       =    io.outfire(1) && io.predecode(1).bits.is_br && is_call(1)
+  val ret_br_0        =    io.outfire(0) && io.predecode(0).bits.is_br && io.predecode(0).bits.is_ret
+  val ret_br_1        =    io.outfire(1) && io.predecode(1).bits.is_br && io.predecode(1).bits.is_ret
+  val pc_br_0         =    io.predecode(0).bits.pc3
+  val pc_br_1         =    io.predecode(1).bits.pc3
+  ras.io.push.iscall :=    Mux(br_taken_predecode(0), call_br_0, call_br_1)
+  ras.io.push.target :=    Mux(is_call(0), pc_br_0, pc_br_1) + 4.U
+  ras.io.is_ret      :=    Mux(br_taken_predecode(0), ret_br_0, ret_br_1)
+  ras.io.update      :=    io.ras_update
+  ras.io.flush       :=    io.flush
 
   //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
   //printf("predecode pc %x %x, offset %x %x\n",io.predecode(0).bits.pc3,io.predecode(1).bits.pc3,io.predecode(0).bits.offset,io.predecode(1).bits.offset)
   val target3 = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
   
   for(i <- 0 until FETCH_WIDTH){
-    target3(i) := Mux(io.predecode(i).bits.is_ret, ras.io.target, Mux(io.predecode(i).bits.br_type === BRtype.R && btb_hit3(i), btbtarget3(i), io.predecode(i).bits.pc3 + io.predecode(i).bits.offset))
-  }
+    val is_ret_pre    = io.predecode(i).bits.is_ret     //是否为ret指令
+    val jalr_hit_pre  = io.predecode(i).bits.br_type === BRtype.R && btb_hit3(i)  //第一次遇到给一个pc+4的值，bru会mispredict更新btb。第二次遇到btb正确的值
+    val pc_offset_pre = io.predecode(i).bits.pc3 + io.predecode(i).bits.offset    //预译码送过来的PC+IMM
+    target3(i) := Mux(is_ret_pre, ras.io.target, Mux(jalr_hit_pre, btbtarget3(i), pc_offset_pre))
+  }//return优先级最高，然后R型去检测btb，未命中则添加偏移量
   io.jump_pc3 := Mux(br_taken_predecode(0), target3(0), target3(1))
   io.br_taken3 := br_taken_predecode
 
@@ -164,26 +173,30 @@ class BPU extends Module with Config{
   //btb update
   val pre_br_type = Wire(Vec(2,UInt(2.W)))
   for(i <- 0 until FETCH_WIDTH){
-    pre_br_type(i) := Mux(io.predecode(i).bits.is_ret, "b10".U, io.predecode(i).bits.br_type)
+    pre_br_type(i) := Mux(io.predecode(i).bits.is_ret, "b10".U, io.predecode(i).bits.br_type)//历史遗留问题，第三阶段里is_ret用"b10".U标记
   }
 
-  val btb_needUpdate = Wire(Vec(2,Bool()))
-  val btb_needUpdate_part = Wire(Vec(2,Bool()))
+  val btb_needUpdate      = Wire(Vec(2,Bool()))//btb记录了pc、pc对应的跳转类型、对应的跳转目标地址
+  //val btb_needUpdate_part = Wire(Vec(2,Bool()))//btb_needUpdate太长拆成两行  后端的执行单元发现指令跳转目标错误或者方向错误时会刷新流水线, 同时更新BTB相应的表项.
   for(i <- 0 until FETCH_WIDTH) {
-    btb_needUpdate_part(i) := (io.predecode(i).bits.is_br && io.predecode(i).bits.br_type =/= BRtype.R) && (!btb_hit3(i) || br_type3(i) =/= pre_br_type(i) || btbtarget3(i) =/= io.predecode(i).bits.pc3 + io.predecode(i).bits.offset) //跳转的类型相同，地址相同，并且命中
-    btb_needUpdate(i) := (io.predecode(i).bits.is_ret && (!btb_hit3(i) || br_type3(i) =/= pre_br_type(i) || btbtarget3(i) =/= ras.io.target)) || btb_needUpdate_part(i)    //返回的
+    val br_type          =   io.predecode(i).bits.is_br && (io.predecode(i).bits.br_type =/= BRtype.R || io.predecode(i).bits.is_ret)
+    val type_mis         =   br_type3(i) =/= pre_br_type(i)
+    val target_mis       =   btbtarget3(i) =/= Mux(io.predecode(i).bits.is_ret, ras.io.target, io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)//跳转的类型相同，地址相同，并且命中
+    btb_needUpdate(i)    :=  br_type && (!btb_hit3(i) || type_mis || target_mis)//返回的
+    //btb_needUpdate_part(i)   := br_type && (!btb_hit3(i) || type_mis || btbtarget3(i) =/= io.predecode(i).bits.pc3 + io.predecode(i).bits.offset) //跳转的类型相同，地址相同，并且命中
+    //btb_needUpdate(i)        := (io.predecode(i).bits.is_ret && (!btb_hit3(i) || br_type3(i) =/= pre_br_type(i) || btbtarget3(i) =/= ras.io.target)) || btb_needUpdate_part(i)    //返回的
   }
 
   for(i <- 0 until FETCH_WIDTH){
-    btb.io.update.br_type(i) := pre_br_type(i)
-    btb.io.update.needUpdate(i) := btb_needUpdate(i)
-    btb.io.update.targets(i) := Mux(io.predecode(i).bits.is_ret, ras.io.target, io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)
-    btb.io.update.br_pc(i) := io.predecode(i).bits.pc3
+    btb.io.update.br_type(i)    :=  pre_br_type(i)
+    btb.io.update.needUpdate(i) :=  btb_needUpdate(i)
+    btb.io.update.targets(i)    :=  Mux(io.predecode(i).bits.is_ret, ras.io.target, io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)
+    btb.io.update.br_pc(i)      :=  io.predecode(i).bits.pc3
   }
-  btb.io.update.br_type(2) := io.btb_update.bits.br_type
-  btb.io.update.needUpdate(2) := io.btb_update.valid
-  btb.io.update.targets(2) := io.btb_update.bits.targets
-  btb.io.update.br_pc(2) := io.btb_update.bits.br_pc
+  btb.io.update.br_type(2)      :=  io.btb_update.bits.br_type
+  btb.io.update.needUpdate(2)   :=  io.btb_update.valid
+  btb.io.update.targets(2)      :=  io.btb_update.bits.targets
+  btb.io.update.br_pc(2)        :=  io.btb_update.bits.br_pc
 
   // printf("btb1 hit %d, target %x, type %x\n",btb_hit3(0),btbtarget3(0),br_type3(0))
   // printf("btb2 hit %d, target %x, type %x\n",btb_hit3(1),btbtarget3(1),br_type3(1))

@@ -1,6 +1,6 @@
 package Core.ExuBlock.FU
 
-import Core.{BRU_OUTIO, Config, FuInPut, FuOutPut, MisPredictIO}
+import Core.{RedirectIO, Config, FuInPut, FuOutPut, MisPredictIO}
 import Core.CtrlBlock.IDU.FuncType
 import chisel3._
 import chisel3.util._
@@ -21,7 +21,7 @@ object BRUOpType {
 class BRUIO extends Bundle {
   val in  = Flipped(ValidIO(new FuInPut))
   val out = ValidIO(new FuOutPut)
-  val jmp : ValidIO[BRU_OUTIO] = ValidIO(new BRU_OUTIO)
+  val jmp : ValidIO[RedirectIO] = ValidIO(new RedirectIO)
 }
 
 class BRU extends Module with Config {

@@ -49,11 +49,11 @@ class BTB extends Module with Config {
     val update = Input(new BTBUpdate)
   })
 
-  val btbAddr = new TableAddr(log2Up(btbRows))
+  val btbAddr = new TableAddr(log2Up(btbRows))//btbRows=256/4=2^6
 
   class btbEntry extends Bundle with Config {
     val tag = UInt(btbAddr.tagBits.W)
-    val _type = UInt(2.W)
+    val _type = UInt(2.W)//B,R,ret,J
     val target = UInt(VAddrBits.W)
   }
 

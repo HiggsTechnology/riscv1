@@ -1,7 +1,7 @@
 package Core.IFU
 
 
-import Core.{BRU_OUTIO, Config, Pc_Instr}
+import Core.{RedirectIO, Config, Pc_Instr}
 import chisel3._
 import chisel3.util._
 
@@ -19,7 +19,7 @@ class RAMHelper extends BlackBox {
 }
 
 class IFUIO extends Bundle {
-  val in  = Flipped(ValidIO(new BRU_OUTIO))  //branch
+  val in  = Flipped(ValidIO(new RedirectIO))  //branch
   val out = Vec(2, DecoupledIO(new Pc_Instr))
   //  val ifu2rw = new IFU2RW
 }
@@ -41,6 +41,7 @@ class IFU extends Module with Config {
   
   val pcVec    = Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
 
+  //后端重定向优先级最高，第三拍转跳指令
   pcVec(0) := Mux(io.in.valid && io.in.bits.mispred, io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U

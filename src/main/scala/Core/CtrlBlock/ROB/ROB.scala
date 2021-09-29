@@ -2,7 +2,7 @@ package Core.CtrlBlock.ROB
 
 import Core.ExuBlock.FU.BRUOpType
 import Core.Config.robSize
-import Core.{BRU_OUTIO, CommitIO, Config, ExuCommit, MicroOp, MisPredictIO}
+import Core.{RedirectIO, CommitIO, Config, ExuCommit, MicroOp, MisPredictIO}
 import difftest.{DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
@@ -14,7 +14,7 @@ class ROBIO extends Bundle {//todo:
   val can_allocate = Output(Bool())
 
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
-  val redirect = Flipped(ValidIO(new BRU_OUTIO))//BRU告诉ROB
+  val redirect = Flipped(ValidIO(new RedirectIO))//BRU告诉ROB
   val commit = Vec(2,ValidIO(new CommitIO))
   val flush_out = Output(Bool())
 

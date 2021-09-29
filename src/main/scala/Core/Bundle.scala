@@ -42,7 +42,7 @@ class ALU_OUTIO extends Bundle with Config {
   val aluRes = Output(UInt(XLEN.W))
 }
 
-class BRU_OUTIO extends Bundle with Config {
+class RedirectIO extends Bundle with Config {
   val pc = Output(UInt(XLEN.W))
   val new_pc = Output(UInt(XLEN.W))
   val taken  = Output(Bool())

@@ -1,6 +1,6 @@
 package Core.CtrlBlock
 
-import Core.{BRU_OUTIO, Config, ExuCommit, MicroOp, Pc_Instr}
+import Core.{RedirectIO, Config, ExuCommit, MicroOp, Pc_Instr}
 import Core.Config.{ExuNum, PhyRegIdxWidth}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
@@ -22,7 +22,7 @@ class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
   val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
   val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
-  val redirect  = Flipped(ValidIO(new BRU_OUTIO))
+  val redirect  = Flipped(ValidIO(new RedirectIO))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))

@@ -2,12 +2,12 @@ package Core.ExuBlock
 
 
 import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU}
-import Core.CtrlBlock.IDU.{SrcType1, SrcType2}
+import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
 import Core.ExuBlock.RS.{RS, RS_inorder}
-import Core.{BRU_OUTIO, Config, ExuCommit, FuOutPut, MicroOp}
+import Core.{Config, ExuCommit, FuOutPut, MicroOp, RedirectIO}
 import chisel3._
 import chisel3.util._
 import difftest.DifftestArchIntRegState
@@ -21,7 +21,7 @@ class ExuBlockIO extends Bundle with Config {
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
   val predict_robPtr = Input(new ROBPtr)
-  val redirect  = ValidIO(new BRU_OUTIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
+  val redirect  = ValidIO(new RedirectIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
   val exuCommit = Vec(6,ValidIO(new ExuCommit))
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
   val rs_can_allocate = Vec(ExuNum-1,Output(Bool()))
@@ -146,7 +146,7 @@ class ExuBlock extends Module with Config{
   //执行单元运算，有decouple，直接连接
   csr.io.in.valid := false.B
   bru.io.in.valid := false.B
-  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===3.U){
+  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===FuncType.csr){
     csr.io.in.valid := true.B
   }
   when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===5.U){
