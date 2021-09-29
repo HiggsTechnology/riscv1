@@ -43,29 +43,23 @@ class ALU_OUTIO extends Bundle with Config {
 }
 
 class RedirectIO extends Bundle with Config {
+  val new_pc = Output(UInt(XLEN.W))
+  val mispred = Output(Bool())
+  val ROBIdx = Output(new ROBPtr)
+}
+
+class BPU_Update extends Bundle with Config {
   val pc = Output(UInt(XLEN.W))
   val new_pc = Output(UInt(XLEN.W))
   val taken  = Output(Bool())
-  val mispred = Output(Bool())
-  val ROBIdx = Output(new ROBPtr)
   val is_jalr = Output(Bool())
   val is_ret = Output(Bool())
   val is_call = Output(Bool())
   val is_B = Output(Bool())
   val gshare_idx = Output(UInt(ghrBits.W))
   val gshare_mispred = Output(Bool())
-  val pc_mispred = Output(Bool())
+  val pht_mispred = Output(Bool())//
   val btb_update = Output(Bool())
-}
-
-class BPU_update extends Bundle with Config {
-  //ras
-  val pc = Output(UInt(XLEN.W))
-  val is_ret = Output(Bool())
-  val is_call = Output(Bool())
-  //gshare
-  val is_B = Output(Bool())
-  val gshare_idx = Output(UInt(ghrBits.W))
 }
 
 class LSU_OUTIO extends Bundle with Config {

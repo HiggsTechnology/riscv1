@@ -181,6 +181,8 @@ class ExuBlock extends Module with Config{
   lsq.io.predict_robPtr := io.predict_robPtr
   io.redirect := DontCare
   io.redirect.valid := false.B
+  io.bpu_update := DontCare
+  io.bpu_update.valid := false.B
 
   //选择跳转信号,暂时不考虑csr
   when(ExuResult(0).valid){
