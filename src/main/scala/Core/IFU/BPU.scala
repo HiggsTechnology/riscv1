@@ -65,8 +65,9 @@ class BPU extends Module with Config{
 
   val btb = Module(new BTB)
   val ras = Module(new RAS)
-  //stage1
 
+
+  //stage1
   //gshare
   val ghr = RegInit(0.U(ghrBits.W))//ghrBits=10, global history register
 
@@ -77,6 +78,13 @@ class BPU extends Module with Config{
     GPHT_Idx1(i) := io.pc(i)(ghrBits + 1, 2) ^ ghr//非压缩指令，所有指令后两位都相同，所以只需判断2～11位
     pc1(i) := io.pc(i)
   }
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
   //stage2
@@ -104,11 +112,13 @@ class BPU extends Module with Config{
 
   val br_taken2 = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    bimPred(i) := Mux(pred_select(2), GPHT_taken(i), PHT_taken(i))  //直接定义用GPHT来看
-    br_taken2(i) := btb.io.resp.hits(i) && (btb.io.resp.br_type(i) =/= BTBtype.B || (btb.io.resp.br_type(i) === BTBtype.B && bimPred(i)))  //要么是绝对转跳，要么是分支转跳，但是预测地址相同
+    val notB_btb        = btb.io.resp.br_type(i) =/= BTBtype.B   //不是B指令
+    val isB_GPHTget_btb = btb.io.resp.br_type(i) === BTBtype.B && bimPred(i)  //是B指令且GPHT预测此条B指令跳转
+    bimPred(i)   := Mux(pred_select(2), GPHT_taken(i), PHT_taken(i))  //刚开做了GPHT，后做了PHT，后为了比较性能，比较发现没有差异，固定为GPHT//直接定义用GPHT来看
+    br_taken2(i) := btb.io.resp.hits(i) && (notB_btb || isB_GPHTget_btb)  //要么是绝对转跳，要么是分支转跳，但是预测跳转
   }
-  io.jump_pc := Mux(br_taken2(0), btb.io.resp.targets(0), btb.io.resp.targets(1))
-  io.br_taken := br_taken2
+  io.jump_pc  := Mux(br_taken2(0), btb.io.resp.targets(0), btb.io.resp.targets(1))   //从BTB取到跳转地址
+  io.br_taken := br_taken2               //根据BTB和GHPT预测是否跳转
 
   val btb_hit2     = Wire(Vec(FETCH_WIDTH, Bool()))
   val btbtarget2   = Wire(Vec(FETCH_WIDTH, UInt(VAddrBits.W)))
@@ -119,6 +129,9 @@ class BPU extends Module with Config{
     br_type2(i)   := btb.io.resp.br_type(i)
   }
 
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //stage3
   val GPHT_taken3          =   RegEnable(GPHT_taken,io.ibf_ready)
   val PHT_taken3           =   RegEnable(PHT_taken,io.ibf_ready)
@@ -134,8 +147,14 @@ class BPU extends Module with Config{
   val br_taken_predecode   =   Wire(Vec(FETCH_WIDTH, Bool()))
   val is_call              =   Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    is_call(i) := (io.predecode(i).bits.br_type === BRtype.J && io.predecode(i).bits.iscall) || (io.predecode(i).bits.br_type === BRtype.R && io.predecode(i).bits.iscall)
-    br_taken_predecode(i) := io.predecode(i).bits.is_br && (io.predecode(i).bits.br_type =/= BRtype.B || (io.predecode(i).bits.br_type === BRtype.B && bimPred3(i)))
+    val jal_iscall         =   io.predecode(i).bits.br_type === BRtype.J && io.predecode(i).bits.iscall
+    val jalr_iscall        =   io.predecode(i).bits.br_type === BRtype.R && io.predecode(i).bits.iscall
+    val is_br_pre          =   io.predecode(i).bits.is_br
+    val notB_pre           =   io.predecode(i).bits.br_type =/= BRtype.B
+    val isB_GPHTget_pre    =   io.predecode(i).bits.br_type === BRtype.B && bimPred3(i)
+
+    is_call(i)            :=   jal_iscall || jalr_iscall      //jal或者jalr为call指令时
+    br_taken_predecode(i) :=   is_br_pre && (notB_pre || isB_GPHTget_pre)  //从预译码判断是否跳转，比BTB更加靠谱
   }
 
   //传入RAS
