@@ -8,11 +8,14 @@ import Core.IFU.{IFU, Ibuffer}
 import chisel3._
 import chisel3.util.ValidIO
 import difftest._
+import Core.Cache.DCache
+import Core.AXI4.AXI4IO
 
 class SimTopIO extends Bundle {
   val logCtrl = new LogCtrlIO
   val perfInfo = new PerfInfoIO
   val uart = new UARTIO
+  val memAXI_0 = new AXI4IO
 }
 
 class SimTop extends Module {
@@ -25,6 +28,11 @@ class SimTop extends Module {
     val ibf      = Module(new Ibuffer)
     val ctrlblock = Module(new ControlBlock)
     val exublock = Module(new ExuBlock)
+    val icache = Module(new DCache)
+
+    io.memAXI_0 <> icache.io.to_rw
+    icache.io.req <> ifu.io.cachereq
+    ifu.io.cacheresp := icache.io.resp
 
     ifu.io.redirect                 :=  exublock.io.redirect
     ifu.io.in                       :=  exublock.io.bpu_update

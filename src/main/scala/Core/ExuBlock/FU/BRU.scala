@@ -68,7 +68,7 @@ class BRU extends Module with Config {
   io.bpu_update.bits.btb_update := io.bpu_update.bits.is_jalr && !io.bpu_update.bits.is_ret && io.in.bits.uop.cf.btbtarget =/= io.bpu_update.bits.new_pc
 
   // when(io.in.valid){
-  //   printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.jmp.bits.taken, io.jmp.bits.mispred)
-  //   printf("BRU pc %x, iscall %d, is ret %d\n",io.jmp.bits.pc,io.jmp.bits.is_call,io.jmp.bits.is_ret)
+  //   printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.bpu_update.bits.taken, io.jmp.bits.mispred)
+  //   printf("BRU pc %x, iscall %d, is ret %d\n",io.bpu_update.bits.pc,io.bpu_update.bits.is_call,io.bpu_update.bits.is_ret)
   // }
 }
