@@ -47,10 +47,6 @@ class CacheIO extends Bundle with Config {
 class DCache extends Module with Config with CacheConfig with AXIParameter {
   val io = IO(new CacheIO)
 
-  io.to_rw.aw := DontCare
-  io.to_rw.w := DontCare
-  io.to_rw.b := DontCare
-
   val s_idle :: s_lookUp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(6)
   val state: UInt = RegInit(s_idle)
 
@@ -205,13 +201,11 @@ class DCache extends Module with Config with CacheConfig with AXIParameter {
   when(needRefill(0) && needRefill(1)) {
     io.to_rw.aw.valid := (state === s_miss) && needWriteBack(0)
     io.to_rw.aw.bits.addr := Cat(addrReg(0).tag, addrReg(0).index, 0.U(OffsetBits.W))
-    io.to_rw.aw.bits.burst := AXI4Parameters.BURST_INCR
   }.elsewhen(needRefill(0) || needRefill(1)){
     for (j <- 0 until 2) {
-      when(needRefill(0)){
+      when(needRefill(j)){
         io.to_rw.aw.valid := (state === s_miss) && needWriteBack(j)
         io.to_rw.aw.bits.addr := Cat(addrReg(j).tag, addrReg(j).index, 0.U(OffsetBits.W))
-        io.to_rw.aw.bits.burst := AXI4Parameters.BURST_INCR
       }
     }
   }
@@ -220,6 +214,7 @@ class DCache extends Module with Config with CacheConfig with AXIParameter {
   io.to_rw.w.valid  := (state === s_replace || state === s_refill ) && Mux(needRefill(0),needWriteBack(0),needWriteBack(1))
   when(writeMemCnt < retTimes.U) {
     io.to_rw.w.bits.data := writeDataReg(writeMemCnt)
+    io.to_rw.w.bits.strb := 0xffffffffL.U
     when(io.to_rw.w.fire){
       writeMemCnt := writeMemCnt + 1.U
     }
@@ -376,15 +371,30 @@ class DCache extends Module with Config with CacheConfig with AXIParameter {
   }
 
   //AXI连线
+  //write
+  io.to_rw.aw.bits.prot     := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
+  io.to_rw.aw.bits.id       := 0.U
+  io.to_rw.aw.bits.user     := 0.U
+  io.to_rw.aw.bits.len      := 1.U
+  io.to_rw.aw.bits.size     := AXI_SIZE.bytes32
+  io.to_rw.aw.bits.burst    := AXI4Parameters.BURST_INCR
+  io.to_rw.aw.bits.lock     := 0.U
+  io.to_rw.aw.bits.cache    := 0.U
+  io.to_rw.aw.bits.qos      := 0.U
+  io.to_rw.aw.bits.region   := 0.U
+
+  io.to_rw.w.bits.user      := 0.U
+
+  //read
+  io.to_rw.ar.bits.prot   := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
   io.to_rw.ar.bits.id     := 0.U
+  io.to_rw.ar.bits.user   := 0.U
   io.to_rw.ar.bits.len    := 1.U
   io.to_rw.ar.bits.size   := AXI_SIZE.bytes32
   io.to_rw.ar.bits.burst  := AXI4Parameters.BURST_INCR
   io.to_rw.ar.bits.lock   := 0.U
   io.to_rw.ar.bits.cache  := 0.U
   io.to_rw.ar.bits.qos    := 0.U
-  io.to_rw.ar.bits.user   := 0.U
-  io.to_rw.ar.bits.prot   := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
   io.to_rw.ar.bits.region := 0.U
 
 
