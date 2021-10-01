@@ -28,6 +28,9 @@ class LSQIO extends Bundle with Config {
   val predict_robPtr = Input(new ROBPtr)
   val flush = Input(Bool())
   val mispred_robPtr = Input(new ROBPtr)
+
+  val cache_ready = Vec(2,Input(Bool()))
+  val lsu_issued = Vec(2,Output(Bool()))
 }
 
 class LSQ extends Module with Config with HasCircularQueuePtrHelper{
@@ -156,16 +159,17 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   val deq0_dataRdy = (dataState(deq_vec(0).value) && isAfter(io.predict_robPtr,decode(deq_vec(0).value).ROBIdx)) || !is_store(deq_vec(0).value)
   val check_deq0    = io.lsu_in(0).valid && addr(deq_vec(1).value) =/= addr(deq_vec(0).value)
   val deq1_dataRdy = ((dataState(deq_vec(1).value) && isAfter(io.predict_robPtr,decode(deq_vec(1).value).ROBIdx)) || !is_store(deq_vec(1).value)) && check_deq0
-  io.lsu_in(0).valid := !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
-  io.lsu_in(1).valid := !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy
+  io.lsu_in(0).valid := io.cache_ready(0) && !io.flush && !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
+  io.lsu_in(1).valid := io.cache_ready(1) && !io.flush && !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy
   for(i <- 0 until 2){
     io.lsu_in(i).bits.uop := decode(deq_vec(i).value)
     io.lsu_in(i).bits.src(0) := addr(deq_vec(i).value)
     io.lsu_in(i).bits.src(1) := data(deq_vec(i).value)
     when(io.lsu_in(i).valid){issued(deq_vec(i).value) := true.B}
   }
-
-
+  for(i <- 0 until 2){
+    io.lsu_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value)
+  }
   //等待写回
   val needresp = Wire(Vec(2,Bool()))
   for(i <- 0 until 2){
@@ -219,7 +223,8 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
 
   // printf("LSQ enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("LSQ deqvalid %d %d, deq_vec %d %d\n", needresp(0)===true.B && (io.lsu_out(0).valid || resp(deq_vec(0).value)), needresp(0)===true.B && needresp(1)===true.B && (io.lsu_out(0).valid || resp(deq_vec(0).value)) && (io.lsu_out(1).valid || resp(deq_vec(1).value)), deq_vec(0).value, deq_vec(1).value)
-  // printf("deq0 %d %d %d\n",needresp(0)===true.B && (needresp(1)===false.B || valid(deq_vec(1).value) === false.B), (io.lsu_out(0).valid && resp(deq_vec(0).value)),(!io.flush || isBefore(decode(deq_vec(0).value).ROBIdx,io.predict_robPtr)))
+  // printf("LSQ to LSU valid %d %d\n",io.lsu_in(0).valid,io.lsu_in(1).valid)
+  // //printf("deq0 %d %d %d\n",needresp(0)===true.B && (needresp(1)===false.B || valid(deq_vec(1).value) === false.B), (io.lsu_out(0).valid && resp(deq_vec(0).value)),(!io.flush || isBefore(decode(deq_vec(0).value).ROBIdx,io.predict_robPtr)))
   // for(i <- 0 until lsqSize){
   //   printf("LSQ %d: valid %d, pc %x, inst %x, issued %d, resp %d, addr %x\n",i.U, valid(i),decode(i).cf.pc,decode(i).cf.instr, issued(i), resp(i), addr(i))
   // }

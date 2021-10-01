@@ -44,7 +44,7 @@ class CacheIO extends Bundle with Config {
   val to_rw   = new AXI4IO   //
 }
 
-class DCache extends Module with Config with CacheConfig with AXIParameter {
+class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with AXIParameter {
   val io = IO(new CacheIO)
 
   val s_idle :: s_lookUp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(6)
@@ -397,11 +397,15 @@ class DCache extends Module with Config with CacheConfig with AXIParameter {
   io.to_rw.ar.bits.qos    := 0.U
   io.to_rw.ar.bits.region := 0.U
 
-
-//   printf("cache state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d\n",state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready)
-//   when(io.to_rw.ar.fire){
-//     printf("addr is %x\n", io.to_rw.ar.bits.addr)
-//   }
+  when(state === s_miss || state === s_replace || state === s_refill ){
+    printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
+  }
+  when(io.to_rw.ar.fire){
+    printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
+  }
+  when(io.to_rw.aw.fire){
+    printf("aw addr is %x\n", io.to_rw.aw.bits.addr)
+  }
 }
 
 

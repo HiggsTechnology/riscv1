@@ -12,7 +12,7 @@ import chisel3._
 import chisel3.util._
 import difftest.DifftestArchIntRegState
 import utils._
-
+import Core.Cache.{CacheReq, CacheResp}
 
 
 class ExuBlockIO extends Bundle with Config {
@@ -28,6 +28,9 @@ class ExuBlockIO extends Bundle with Config {
   val rs_can_allocate = Vec(ExuNum-1,Output(Bool()))
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
+
+  val cachereq  = Vec(2,DecoupledIO(new CacheReq))
+  val cacheresp = Vec(2,Flipped(new CacheResp))
 }
 
 ///1,,写到orderqueue,保留站,指针给保留站
@@ -159,7 +162,14 @@ class ExuBlock extends Module with Config{
   alu2.io.in <> alu2rs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)
   lsu2.io.in <> lsq.io.lsu_in(1)
-
+  lsu1.io.issued := lsq.io.lsu_issued(0)
+  lsu2.io.issued := lsq.io.lsu_issued(1)
+  
+  lsq.io.cache_ready := io.cachereq.map(_.ready)
+  io.cachereq(0) <> lsu1.io.cachereq
+  io.cachereq(1) <> lsu2.io.cachereq
+  lsu1.io.cacheresp := io.cacheresp(0)
+  lsu2.io.cacheresp := io.cacheresp(1)
 
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
@@ -208,6 +218,8 @@ class ExuBlock extends Module with Config{
   lsq.io.flush := io.redirect.valid && io.redirect.bits.mispred
   lsq.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
+  lsu1.io.flush := io.redirect.valid && io.redirect.bits.mispred
+  lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
 
   jumprs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult
