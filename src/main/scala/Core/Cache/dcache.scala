@@ -386,7 +386,7 @@ class DCache extends Module with Config with CacheConfig with AXIParameter {
   io.to_rw.w.bits.user      := 0.U
 
   //read
-  io.to_rw.ar.bits.prot   := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
+  io.to_rw.ar.bits.prot   := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
   io.to_rw.ar.bits.id     := 0.U
   io.to_rw.ar.bits.user   := 0.U
   io.to_rw.ar.bits.len    := 1.U
