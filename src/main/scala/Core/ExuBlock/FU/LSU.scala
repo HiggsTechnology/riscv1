@@ -38,7 +38,7 @@ class LSUIO extends Bundle with Config {
   val cachereq  = DecoupledIO(new CacheReq)
   val cacheresp = Flipped(new CacheResp)
   val flush = Input(Bool())
-  val issued = Input(Bool())
+  val spec_issued = Input(Bool())
 }
 
 class LSU extends Module with Config {
@@ -69,8 +69,8 @@ class LSU extends Module with Config {
 
 
   val size = io.in.bits.uop.ctrl.funcOpType(1,0)
-  val wdata_align = genWdata(storedata, size) << (addr(2, 0) * 8.U)
-  val mask_align = genWmask(size) << (addr(2, 0))
+  val wdata_align = genWdata(storedata, size) //<< (addr(2, 0) * 8.U)
+  val mask_align = genWmask(size) //<< (addr(2, 0))
 
   io.cachereq.valid := io.in.valid
   io.cachereq.bits.addr := addr
@@ -80,7 +80,7 @@ class LSU extends Module with Config {
 
 
   val rdataSel = io.cacheresp.data
-  io.out.bits.res := LookupTree(io.in.bits.uop.ctrl.funcOpType, List(
+  io.out.bits.res := LookupTree(uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
     LSUOpType.lw   -> SignExt(rdataSel(31, 0), XLEN),
@@ -91,7 +91,7 @@ class LSU extends Module with Config {
   ))
 
   val inst_flushed = RegInit(false.B)
-  when(io.flush && io.issued){
+  when(io.flush && io.spec_issued && !io.cacheresp.datadone){
     inst_flushed := true.B
   }.elsewhen(io.cacheresp.datadone){
     inst_flushed := false.B
@@ -100,11 +100,11 @@ class LSU extends Module with Config {
   io.out.valid := io.cacheresp.datadone && !inst_flushed
   io.out.bits.uop := uop
 
-  when(io.in.valid){
-    printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
-  }
-  when(io.out.valid){
-    printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
-  }
+  // when(io.in.valid){
+  //   printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
+  // }
+  // when(io.out.valid){
+  //   printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
+  // }
 
 }

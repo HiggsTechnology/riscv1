@@ -30,7 +30,7 @@ class LSQIO extends Bundle with Config {
   val mispred_robPtr = Input(new ROBPtr)
 
   val cache_ready = Vec(2,Input(Bool()))
-  val lsu_issued = Vec(2,Output(Bool()))
+  val lsu_spec_issued = Vec(2,Output(Bool()))
 }
 
 class LSQ extends Module with Config with HasCircularQueuePtrHelper{
@@ -168,7 +168,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
     when(io.lsu_in(i).valid){issued(deq_vec(i).value) := true.B}
   }
   for(i <- 0 until 2){
-    io.lsu_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value)
+    io.lsu_spec_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value) && isAfter(decode(deq_vec(i).value).ROBIdx,io.predict_robPtr)
   }
   //等待写回
   val needresp = Wire(Vec(2,Bool()))

@@ -162,8 +162,8 @@ class ExuBlock extends Module with Config{
   alu2.io.in <> alu2rs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)
   lsu2.io.in <> lsq.io.lsu_in(1)
-  lsu1.io.issued := lsq.io.lsu_issued(0)
-  lsu2.io.issued := lsq.io.lsu_issued(1)
+  lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
+  lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
   
   lsq.io.cache_ready := io.cachereq.map(_.ready)
   io.cachereq(0) <> lsu1.io.cachereq

@@ -397,15 +397,27 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   io.to_rw.ar.bits.qos    := 0.U
   io.to_rw.ar.bits.region := 0.U
 
-  when(state === s_miss || state === s_replace || state === s_refill ){
-    printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
-  }
-  when(io.to_rw.ar.fire){
-    printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
-  }
-  when(io.to_rw.aw.fire){
-    printf("aw addr is %x\n", io.to_rw.aw.bits.addr)
-  }
+
+  // when(state === s_miss || state === s_replace || state === s_refill ){
+  //   printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
+  // }
+
+  // when(io.req(0).valid ||io.req(1).valid ){
+  //   printf("LSU1 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(0).valid,io.req(0).bits.addr,io.req(0).bits.isWrite,io.req(0).bits.data,io.req(0).bits.wmask)
+  //   printf("LSU2 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(1).valid,io.req(1).bits.addr,io.req(1).bits.isWrite,io.req(1).bits.data,io.req(1).bits.wmask)
+  // }
+  // when(io.resp(0).datadone || io.resp(1).datadone){
+  //   printf("cache out valid %d %d, %x %x\n",io.resp(0).datadone,io.resp(1).datadone,io.resp(0).data,io.resp(1).data)
+  //   printf("readReg1 %x, offset %x\n",readReg(0).asUInt,addrReg(0).Offset)
+  //   printf("readReg1 %x, offset %x\n",readReg(1).asUInt,addrReg(1).Offset)
+  // }
+  // when(io.to_rw.ar.fire){
+  //   printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
+  // }
+  // when(io.to_rw.aw.fire){
+  //   printf("aw addr is %x\n", io.to_rw.aw.bits.addr)
+  // }
+  
 }
 
 
