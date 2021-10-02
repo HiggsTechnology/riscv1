@@ -185,15 +185,15 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val writeDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(dataBits.W))))
   val writeMemCnt = Reg(UInt(log2Up(retTimes + 1).W))
 
-    for (i <- 0 until Ways) {
-      val way = Mux(needRefill(0),selectWay(0),selectWay(1))
-      val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
-      when(i.U === way && (state === s_miss)) {
-        for (k <- 0 until retTimes) {
-          writeDataReg(k) := dataArray(i)(refill_idx).asUInt >> (k.U * 8.U)
-        }
+  for (i <- 0 until Ways) {
+    val way = Mux(needRefill(0),selectWay(0),selectWay(1))
+    val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
+    when(i.U === way && (state === s_miss)) {
+      for (k <- 0 until retTimes) {
+        writeDataReg(k) := dataArray(i)(refill_idx).asUInt >> (k.U * dataBits.U)
       }
     }
+  }
 
   when(state === s_miss) {
       writeMemCnt := 0.U
