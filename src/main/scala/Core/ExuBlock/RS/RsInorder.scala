@@ -1,9 +1,10 @@
 package Core.ExuBlock.RS
 
-import Core.Config.rsSize
-import Core.Config.{OrderQueueSize, PhyRegIdxWidth, XLEN}
+import Core.Config.{ExuNum, rsSize}
+import Core.CtrlBlock.IDU.FuncType
 import Core.CtrlBlock.ROB.ROBPtr
-import Core.{CommitIO, Config, FuInPut, FuOutPut, MicroOp}
+import Core.ExuBlock.ExuBlockConfig.{JumpRsBruNo, JumpRsCsrNo}
+import Core.{Config, FuInPut, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -13,39 +14,43 @@ class RSPtr extends CircularQueuePtr[RSPtr](rsSize) with HasCircularQueuePtrHelp
   override def cloneType = (new RSPtr).asInstanceOf[this.type]
 }
 
-class RS_inorder(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
-  val io = IO(new Bundle {
-    //in
-    val in = Flipped(ValidIO(new MicroOp))
+/**
+ * 顺序执行使用的保留站
+ * 其实只有Jump在用，Todo: 考虑更名
+ * @param slave_num: 执行单元数
+ */
+class RsInorderIO(slave_num: Int) extends Bundle with Config{
+  //in
+  val in : ValidIO[MicroOp] = Flipped(ValidIO(new MicroOp))
+  val SrcIn : Vec[UInt] = Vec(2,Input(UInt(XLEN.W)))
+  val ExuResult : Vec[ValidIO[FuOutPut]] = Vec(ExuNum, Flipped(ValidIO(new FuOutPut)))
+  val out : Vec[ValidIO[FuInPut]] = Vec(slave_num, ValidIO(Flipped(new FuInPut)))
+  val full : Bool = Output(Bool())
+  val flush : Bool = Input(Bool())
+  val mispred_robPtr : ROBPtr = Input(new ROBPtr)
+}
 
-    val SrcIn = Vec(2,Input(UInt(XLEN.W)))
-
-    val ExuResult = Vec(6, Flipped(ValidIO(new FuOutPut)))
-
-    val out = ValidIO(Flipped(new FuInPut))
-
-    val full = Output(Bool())
-
-    val flush = Input(Bool())
-    val mispred_robPtr = Input(new ROBPtr)
-  })
-
+class RsInorder(
+  slave_num: Int,
+  size: Int = 2,
+  rsNum: Int = 0,
+  nFu: Int = ExuNum,
+  dispatchSize: Int =2,
+  name: String = "unnamedRS"
+) extends Module with Config with HasCircularQueuePtrHelper {
+  val io = IO(new RsInorderIO(slave_num = slave_num))
   val decode  = Mem(rsSize, new MicroOp)
   val valid   = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
-
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
-
-
   val enq_vec = RegInit(0.U.asTypeOf(new RSPtr))
   val deq_vec = RegInit(0.U.asTypeOf(new RSPtr))
-
   val rsFull = valid.asUInt.andR
 
   for (i <- 0 until rsSize){
-    for(j <- 0 until 6){
+    for(j <- 0 until ExuNum){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -81,11 +86,11 @@ class RS_inorder(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int 
     src2(enq_vec.value) := io.SrcIn(1)
 
     //入列指令侦听当拍执行单元
-    for(i <- 0 until 6){
+    for(i <- 0 until ExuNum){
       val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
       val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)
-      when(io.ExuResult(i).valid && exurfWen &&  psrc1Rdy && !io.in.bits.srcState(0)){
+      when(io.ExuResult(i).valid && exurfWen && psrc1Rdy && !io.in.bits.srcState(0)){
         src1(enq_vec.value) := io.ExuResult(i).bits.res
         srcState1(enq_vec.value) := true.B
       }
@@ -100,8 +105,12 @@ class RS_inorder(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int 
 
   val dispatchReady = srcState1(deq_vec.value) && srcState2(deq_vec.value) && valid(deq_vec.value)
 
-  io.out.bits := DontCare
-  io.out.valid := false.B
+  private val to_bru = io.out(JumpRsBruNo)
+  private val to_csr = io.out(JumpRsCsrNo)
+
+  // Todo: 简化端口定义，解决这个DontCare
+  to_bru := DontCare
+  to_csr := DontCare
   when(dispatchReady) {
     io.out.valid := dispatchReady
     io.out.bits.uop := decode(deq_vec.value)

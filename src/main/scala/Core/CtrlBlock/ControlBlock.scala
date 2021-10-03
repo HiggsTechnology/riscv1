@@ -1,7 +1,7 @@
 package Core.CtrlBlock
 
-import Core.{RedirectIO, Config, ExuCommit, MicroOp, Pc_Instr}
-import Core.Config.{ExuNum, PhyRegIdxWidth}
+import Core.{Config, ExuCommit, MicroOp, Pc_Instr, RedirectIO}
+import Core.Config.{ExuNum, PhyRegIdxWidth, RsNum}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
 import Core.CtrlBlock.ROB.{ROB, ROBPtr}
@@ -20,8 +20,8 @@ import utils._
 
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
-  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
-  val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
+  val rs_can_allocate = Vec(RsNum, Input(Bool()))
+  val exuCommit = Vec(ExuNum, Flipped(ValidIO(new ExuCommit)))
   val redirect  = Flipped(ValidIO(new RedirectIO))
 }
 class ControlBlockOUT extends Bundle{
@@ -42,7 +42,7 @@ class ControlBlock extends Module with Config{
   //Instantiate Modules
   val decoders     = Seq.fill(2)(Module(new IDU))
   val rename       = Module(new Rename)
-  val intBusyTable = Module(new BusyTable(4, 6))
+  val intBusyTable = Module(new BusyTable(numReadPorts = 2 * 2, numWritePorts = ExuNum))
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
   val rob          = Module(new ROB)
@@ -98,7 +98,7 @@ class ControlBlock extends Module with Config{
     intBusyTable.io.allocPregs(i).valid     := rename.io.out.microop(i).valid
     intBusyTable.io.allocPregs(i).bits      := rename.io.out.microop(i).bits.pdest
   }
-  for(i <- 0 until 6){
+  for(i <- 0 until ExuNum){
     //commit
     intBusyTable.io.wbPregs(i).valid        := io.in.exuCommit(i).valid
     intBusyTable.io.wbPregs(i).bits         := io.in.exuCommit(i).bits.pdest

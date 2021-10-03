@@ -60,17 +60,20 @@ trait Config {
   }
   def IBufSize  = 16
 
-  def nALU : Int = 2
+  def nALU: Int = 2
 
-  def nBRU : Int = 1
+  def nBRU: Int = 1
 
-  def nCSR : Int = 1
+  def nCSR: Int = 1
 
-  def nLSU : Int = 1
+  def nLSU: Int = 2
 
-  def ExuNum :Int = 5
+  def ExuNum: Int = nALU + nBRU + nCSR + nLSU
 
-  def rsSize :Int = 8
+  // 保留站和队列的数量之和，jmpRs，aluRs，lsq
+  def RsNum: Int = 1 + nALU + 1
+
+  def rsSize: Int = 8
 
   def PhyRegIdxWidth : Int = 7
 

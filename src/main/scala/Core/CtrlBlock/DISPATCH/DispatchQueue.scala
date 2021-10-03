@@ -1,6 +1,6 @@
 package Core.CtrlBlock.DISPATCH
 
-import Core.Config.{DispatchQueueSize, ExuNum}
+import Core.Config.{DispatchQueueSize, ExuNum, RsNum}
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -12,7 +12,7 @@ class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueS
 class DispatchQueueIN extends Bundle {
   val microop_in      = Vec(2, Flipped(ValidIO(new MicroOp)))
   val rs_num_in       = Vec(2, Input(UInt(log2Up(ExuNum-1).W)))
-  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
+  val rs_can_allocate = Vec(RsNum, Input(Bool()))
 }
 class DispatchQueueOUT extends Bundle {
   val can_allocate = Output(Bool())

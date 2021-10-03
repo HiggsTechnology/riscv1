@@ -14,6 +14,12 @@ import difftest.DifftestArchIntRegState
 import utils._
 import Core.Cache.{CacheReq, CacheResp}
 
+trait ExuBlockConfig extends Config {
+  def JumpRsSlaveNum = 2
+  def JumpRsBruNo = 0
+  def JumpRsCsrNo = 1
+}
+object ExuBlockConfig extends ExuBlockConfig
 
 class ExuBlockIO extends Bundle with Config {
   val in = Vec(2, Flipped(ValidIO(new MicroOp)))///此模块里，DispatchQueue在外部，给到OrderQueue
@@ -23,9 +29,9 @@ class ExuBlockIO extends Bundle with Config {
   val predict_robPtr = Input(new ROBPtr)
   val redirect  = ValidIO(new RedirectIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
   val bpu_update = ValidIO(new BPU_Update)
-  val exuCommit = Vec(6,ValidIO(new ExuCommit))
-  ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
-  val rs_can_allocate = Vec(ExuNum-1,Output(Bool()))
+  val exuCommit = Vec(ExuNum,ValidIO(new ExuCommit))
+
+  val rs_can_allocate = Vec(RsNum,Output(Bool()))
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
 
@@ -36,22 +42,23 @@ class ExuBlockIO extends Bundle with Config {
 ///1,,写到orderqueue,保留站,指针给保留站
 ///2,,orderq控制指令的发射
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
-class ExuBlock extends Module with Config{
+class ExuBlock extends Module with ExuBlockConfig{
   val io  = IO(new ExuBlockIO)
   val jumprs = Module(new RsInorder(slave_num = JumpRsSlaveNum, size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU2RS"))
   val lsq = Module(new LSQ)
-  val csr = Module(new CSR)
-  val bru = Module(new BRU)
-  val alu1 = Module(new ALU)
-  val alu2 = Module(new ALU)
-  val lsu1 = Module(new LSU)
-  val lsu2 = Module(new LSU)
-  val preg = Module(new Regfile(4,6,128))///新写
+  val csr = Module(new CSR)   // ExuRes 0
+  val bru = Module(new BRU)   // ExuRes 1
+  val alu1 = Module(new ALU)  // ExuRes 2
+  val alu2 = Module(new ALU)  // ExuRes 3
+  val lsu1 = Module(new LSU)  // ExuRes 4
+  val lsu2 = Module(new LSU)  // ExuRes 5
+  // 双发射，2*2读端口，6个执行单元，6个写端口，Todo: 限制写端口数量简化布线
+  val preg = Module(new Regfile(numReadPorts = 4,numWritePorts = ExuNum,numPreg = 128))///新写
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
-  private val ExuResult = Wire(Vec(6,ValidIO(new FuOutPut)))
+  private val ExuResult = Wire(Vec(ExuNum,ValidIO(new FuOutPut)))
   //todo:bru信号传出mispredict
 
 
@@ -228,7 +235,7 @@ class ExuBlock extends Module with Config{
   }
 
 
-  for(i <- 0 until 6){
+  for(i <- 0 until ExuNum){
     preg.io.write(i).addr := ExuResult(i).bits.uop.pdest
     preg.io.write(i).ena := ExuResult(i).bits.uop.ctrl.rfWen && ExuResult(i).valid
     preg.io.write(i).data := ExuResult(i).bits.res
