@@ -31,7 +31,7 @@ class BusyTable(numReadPorts: Int, numWritePorts: Int) extends Module with Confi
   val tableAfterWb    = table & (~wbMask).asUInt
   val tableAfterAlloc = tableAfterWb | allocMask
   io.read.map(r => r.resp := !table(r.req))
-  table := tableAfterAlloc
+  table := Cat(tableAfterAlloc(NRPhyRegs-1,1), 0.U)
   when(io.flush){
     table := 0.U(NRPhyRegs.W)
   }
