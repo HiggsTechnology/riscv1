@@ -137,7 +137,8 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   for (j <- 0 until 2) {
     when(reqValid(j) && writeReg(j).isWrite && (state === s_lookUp || state ===s_refill_done)) {
       for (i <- 0 until Ways) {
-        when(!needRefill(j) || RegNext(tagHitVec(j)(i)) || tagHitVec_done(j)(i)) {
+        val writeWay = RegNext(tagHitVec(j)(i)) || tagHitVec_done(j)(i)
+        when(writeWay) {
           val wdata = dataArray(i)(addrReg(j).index)
           for (k <- 0 until XLEN / 8) {
             when(writeReg(j).wmask(k)) {
