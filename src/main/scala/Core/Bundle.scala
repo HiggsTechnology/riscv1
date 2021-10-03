@@ -2,9 +2,17 @@ package Core
 
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
-import Core.ExuBlock.Mem.LSQPtr
 import Core.ExuBlock.MemReg.RegWriteIO
 import chisel3._
+import utils.OutUInt
+
+/**
+ * 真正的只有 PC 和 Instruction
+ */
+class PcInst extends Bundle with Config {
+  val pc    : UInt = OutUInt(XLEN)
+  val inst  : UInt = OutUInt(INST_WIDTH)
+}
 
 class Pc_Instr extends Bundle with Config {
   val pc    = Output(UInt(XLEN.W))
@@ -72,7 +80,7 @@ class EXU_OUTIO extends Bundle with Config {
   val reg_write_io = new RegWriteIO
 }
 
-class LSU2RW extends  Bundle with Config{
+class LSU2Mem extends  Bundle with Config{
   /** r:0, w:1 */
   val valid     = Output(Bool())
   val rready    = Input(Bool())
@@ -84,11 +92,11 @@ class LSU2RW extends  Bundle with Config{
   val strb      = Output(UInt(8.W))
 }
 
-class IFU2RW extends  Bundle with Config{
+class IFU2MemIO extends  Bundle with Config{
   val valid     = Output(Bool())
   val ready     = Input(Bool())
-  val pc        = Output(UInt(XLEN.W))
-  val rdata     = Input(UInt(XLEN.W))
+  val addr        = Output(UInt(XLEN.W))
+  val rdata     = Input(UInt((XLEN * 4).W))
 }
 
 // Micro OP
@@ -125,4 +133,17 @@ class CommitIO extends Bundle with Config {
 
 class MisPredictIO extends Bundle with Config {
   val misROBIdx = Output(new ROBPtr)
+}
+
+// 简单的同步总线，valid表明Output数据有效，ready表明Input数据有效
+class SimpleSyncBus extends  Bundle with Config{
+  /** r:0, w:1 */
+  val valid     = Output(Bool())
+  val ready     = Input(Bool())
+  val is_write  = Output(Bool())
+  val addr      = Output(UInt(XLEN.W))
+  val rdata     = Input(UInt(XLEN.W))
+  val wdata     = Output(UInt(XLEN.W))
+  val wstrb     = Output(UInt(8.W))
+  val size     = Output(UInt(3.W))
 }

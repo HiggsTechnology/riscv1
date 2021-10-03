@@ -1,6 +1,6 @@
 package Core.Define
 
-object Traps {
+object Exceptions {
   def InstAddressMisaligned = 0
 
   def InstAccessFault = 1
