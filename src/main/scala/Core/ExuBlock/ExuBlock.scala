@@ -6,7 +6,7 @@ import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
-import Core.ExuBlock.RS.{RS, RS_inorder}
+import Core.ExuBlock.RS.{RS, RsInorder}
 import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RedirectIO}
 import chisel3._
 import chisel3.util._
@@ -38,8 +38,7 @@ class ExuBlockIO extends Bundle with Config {
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
 class ExuBlock extends Module with Config{
   val io  = IO(new ExuBlockIO)
-  //k i
-  val jumprs = Module(new RS_inorder(size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
+  val jumprs = Module(new RsInorder(slave_num = JumpRsSlaveNum, size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU2RS"))
   val lsq = Module(new LSQ)

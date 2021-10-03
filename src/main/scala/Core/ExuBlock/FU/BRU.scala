@@ -43,9 +43,10 @@ class BRU extends Module with Config {
     BRUOpType.bgeu  ->  (src1 >= src2)
   ))
 
-  io.out.bits.res := io.in.bits.uop.cf.pc + 4.U
   val jump_pc = Mux((io.in.bits.uop.ctrl.funcOpType === BRUOpType.jalr),
     Cat(io.in.bits.src(0)(XLEN - 1,1), 0.U(1.W)) + io.in.bits.uop.data.imm, io.in.bits.uop.cf.pc + io.in.bits.uop.data.imm)
+
+  io.out.bits.res := io.in.bits.uop.cf.pc + 4.U
 
   io.out.bits.uop := io.in.bits.uop
   io.out.valid := io.in.valid

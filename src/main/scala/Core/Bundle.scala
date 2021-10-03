@@ -80,7 +80,7 @@ class EXU_OUTIO extends Bundle with Config {
   val reg_write_io = new RegWriteIO
 }
 
-class LSU2Mem extends  Bundle with Config{
+class LSU2MemIO extends  Bundle with Config{
   /** r:0, w:1 */
   val valid     = Output(Bool())
   val rready    = Input(Bool())

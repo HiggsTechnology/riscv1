@@ -1,5 +1,5 @@
 package Core.AXI4
-import Core.{Config, IFU2RW}
+import Core.{Config, IFU2MemIO}
 import chisel3._
 import utils._
 import chisel3.util._
@@ -9,7 +9,7 @@ object requireType {
 }
 
 class IFURWIO extends Bundle with Config {
-  val ifuin = Flipped(new IFU2RW) //ifu data in
+  val ifuin = Flipped(new IFU2MemIO) //ifu data in
   val ifu2crossbar = new AXI4IO //RW 2 crossbar AXI4
 }
 class IFURW extends Module with Config{
@@ -83,7 +83,7 @@ class IFURW extends Module with Config{
     }//fuck zero
     is(RState.ar_end) {
       import AXI4Parameters.{AXI_PROT, AXI_SIZE}
-      ar_addr   := io.ifuin.pc
+      ar_addr   := io.ifuin.addr
       ar_len    := 0.U
       ar_prot   := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.INSTRUCTION
       ar_size   := AXI_SIZE.bytes8

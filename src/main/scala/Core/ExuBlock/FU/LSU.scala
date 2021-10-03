@@ -1,12 +1,10 @@
 package Core.ExuBlock.FU
 
-import Core.{CfCtrl, Config, FuInPut, FuOutPut, LSU2RW, LSU_OUTIO}
-import Core.CtrlBlock.IDU.FuncType
-import Core.ExuBlock.MemReg.RAMHelper
+import Core.Cache.{CacheReq, CacheResp}
+import Core.{Config, FuInPut, FuOutPut}
 import chisel3._
 import chisel3.util._
 import utils.{LookupTree, SignExt, ZeroExt}
-import Core.Cache.{CacheReq, CacheResp}
 
 object LSUOpType {
   def lb   = "b0000000".U

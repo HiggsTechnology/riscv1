@@ -1,6 +1,6 @@
 package Core.AXI4
 import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
-import Core.{Config, LSU2RW}
+import Core.{Config, LSU2MemIO}
 import chisel3._
 import utils._
 import chisel3.util._
@@ -8,7 +8,7 @@ import chisel3.util._
 
 
 class LSURWIO extends Bundle with Config {
-  val lsuin = Flipped(new LSU2RW)
+  val lsuin = Flipped(new LSU2MemIO)
   val lsu2crossbar = new AXI4IO
 }
 
