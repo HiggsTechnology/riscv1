@@ -5,6 +5,7 @@
 /build_test/
 /bin/
 /build/
+/txt/
 !update.log
 ### Project Specific stuff
 test_run_dir/*

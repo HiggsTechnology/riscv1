@@ -109,15 +109,33 @@ class RsInorder(
   private val to_csr = io.out(JumpRsCsrNo)
 
   // Todo: 简化端口定义，解决这个DontCare
-  to_bru := DontCare
-  to_csr := DontCare
+  to_bru.bits := DontCare
+  to_csr.bits := DontCare
   when(dispatchReady) {
-    io.out.valid := dispatchReady
-    io.out.bits.uop := decode(deq_vec.value)
-    io.out.bits.src(0) := src1(deq_vec.value)
-    io.out.bits.src(1) := src2(deq_vec.value)
-    valid(deq_vec.value) := false.B
-    deq_vec := deq_vec + 1.U
+    when (decode(deq_vec.value).ctrl.funcType === FuncType.bru) {
+      to_bru.valid := true.B
+      to_bru.bits.uop := decode(deq_vec.value)
+      to_bru.bits.src(0) := src1(deq_vec.value)
+      to_bru.bits.src(1) := src2(deq_vec.value)
+      valid(deq_vec.value) := false.B
+      deq_vec := deq_vec + 1.U
+      to_csr := 0.U.asTypeOf(ValidIO(new FuInPut))
+    }.elsewhen(decode(deq_vec.value).ctrl.funcType === FuncType.csr) {
+      to_csr.valid := true.B
+      to_csr.bits.uop := decode(deq_vec.value)
+      to_csr.bits.src(0) := src1(deq_vec.value)
+      to_csr.bits.src(1) := src2(deq_vec.value)
+      valid(deq_vec.value) := false.B
+      deq_vec := deq_vec + 1.U
+      to_bru := 0.U.asTypeOf(ValidIO(new FuInPut))
+    }.otherwise {
+      to_csr := 0.U.asTypeOf(ValidIO(new FuInPut))
+      to_bru := 0.U.asTypeOf(ValidIO(new FuInPut))
+      assert(false.B, "RsInorder get invalid funcType: %d", io.in.bits.ctrl.funcType)
+    }
+  }.otherwise{
+    to_bru.valid := false.B
+    to_csr.valid := false.B
   }
 
   io.full := rsFull

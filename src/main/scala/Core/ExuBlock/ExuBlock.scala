@@ -154,16 +154,8 @@ class ExuBlock extends Module with ExuBlockConfig{
 
   //rs to exu
   //执行单元运算，有decouple，直接连接
-  csr.io.in.valid := false.B
-  bru.io.in.valid := false.B
-  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===FuncType.csr){
-    csr.io.in.valid := true.B
-  }
-  when(jumprs.io.out.valid && jumprs.io.out.bits.uop.ctrl.funcType===FuncType.bru){
-    bru.io.in.valid := true.B
-  }
-  csr.io.in.bits := jumprs.io.out.bits
-  bru.io.in.bits := jumprs.io.out.bits
+  bru.io.in <> jumprs.io.out(JumpRsBruNo)
+  csr.io.in <> jumprs.io.out(JumpRsCsrNo)
   alu1.io.in <> alu1rs.io.out
   alu2.io.in <> alu2rs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)

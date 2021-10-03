@@ -233,6 +233,10 @@ class CSR(
 //  addSource(RegNext(io.in_old.bits.cf.pc), "difftest_exceptionPC")
 //  addSource(RegNext(io.in_old.bits.cf.instr), "difftest_exceptionInst")
 
+  when (io.in.valid) {
+    printf("csr valid, pc: %x\n", io.in.bits.uop.cf.pc)
+  }
+
   def legalizePrivilege(priv: UInt): UInt =
     if (supportUser)
       Fill(2, priv(0))
