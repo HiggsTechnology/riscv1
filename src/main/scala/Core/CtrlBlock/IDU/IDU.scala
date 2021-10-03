@@ -28,7 +28,7 @@ class IDU extends Module with Config{
   io.out.bits.ctrl.rfrd       := Mux(isrfWen(instrType), rdAddr, 0.U)
   io.out.bits.ctrl.funcType   := funcType
   io.out.bits.ctrl.funcOpType := funcOpType
-  io.out.bits.ctrl.rfWen      := isrfWen(instrType)
+  io.out.bits.ctrl.rfWen      := isrfWen(instrType) && (rdAddr =/= 0.U)
 
   io.out.bits.ctrl.src1Type := src1Type
   io.out.bits.ctrl.src2Type := src2Type
