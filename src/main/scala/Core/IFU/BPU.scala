@@ -5,13 +5,13 @@ import chisel3._
 import chisel3.util._
 import utils._
 
-class btbupdate extends Bundle with Config{
+class BpuBtbUpdateIO extends Bundle with Config{
   val br_pc = Output(UInt(VAddrBits.W))
   val targets = Output(UInt(VAddrBits.W))
   val br_type = Output(UInt(2.W))
 }
 
-class pred_update extends Bundle with Config{
+class BpuPredUpdateIO extends Bundle with Config{
   val taken = Output(Bool())
   val gshare_idx = Output(UInt(ghrBits.W))
   val pc_idx = Output(UInt(ghrBits.W))
@@ -19,7 +19,7 @@ class pred_update extends Bundle with Config{
   val pht_mispred = Output(Bool())
 }
 
-class preDecode extends Bundle with Config{
+class BpuPreDecodeIO extends Bundle with Config{
   val pc3 = Output(UInt(XLEN.W))
   val is_br = Output(Bool())
   val offset = Output(UInt(XLEN.W))//偏移量，+4.U或立即数或立即数+寄存器数
@@ -35,7 +35,7 @@ class BPUIO extends Bundle with Config{
   val pc = Vec(2,Input(UInt(XLEN.W)))
 
   //stage3
-  val predecode = Vec(2, Flipped(ValidIO(new preDecode)))
+  val predecode = Vec(2, Flipped(ValidIO(new BpuPreDecodeIO)))
 
   val outfire = Vec(2,Input(Bool()))
 
@@ -54,9 +54,9 @@ class BPUIO extends Bundle with Config{
   val btbtarget = Vec(2,Output(UInt(XLEN.W)))
 
   //update
-  val pred_update = Flipped(ValidIO(new pred_update))
+  val pred_update = Flipped(ValidIO(new BpuPredUpdateIO))
   val ras_update = Input(new RASupdate)
-  val btb_update = Flipped(ValidIO(new btbupdate))
+  val btb_update = Flipped(ValidIO(new BpuBtbUpdateIO))
   val flush = Input(Bool())
 }
 
