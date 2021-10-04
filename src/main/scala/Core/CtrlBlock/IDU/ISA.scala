@@ -1,6 +1,6 @@
 package Core.CtrlBlock.IDU
 
-import Core.ExuBlock.FU.{ALUOpType, BRUOpType, CsrOpType, LSUOpType}
+import Core.ExuBlock.FU.{ALUOpType, BRUOpType, CsrOpType, LSUOpType, MDUOpType}
 import chisel3._
 import chisel3.util._
 
@@ -162,9 +162,52 @@ object RV64I_CSRInstr extends InstrType {
   )
 }
 
+object RV32M_Instr extends InstrType {
+  def MUL     = BitPat("b0000001_?????_?????_000_?????_0110011")
+  def MULH    = BitPat("b0000001_?????_?????_001_?????_0110011")
+  def MULHSU  = BitPat("b0000001_?????_?????_010_?????_0110011")
+  def MULHU   = BitPat("b0000001_?????_?????_011_?????_0110011")
+  def DIV     = BitPat("b0000001_?????_?????_100_?????_0110011")
+  def DIVU    = BitPat("b0000001_?????_?????_101_?????_0110011")
+  def REM     = BitPat("b0000001_?????_?????_110_?????_0110011")
+  def REMU    = BitPat("b0000001_?????_?????_111_?????_0110011")
+
+  val table = Array(
+    MUL            -> List(InstrR, FuncType.mdu, MDUOpType.mul    ,SrcType1.reg, SrcType2.reg),
+    MULH           -> List(InstrR, FuncType.mdu, MDUOpType.mulh   ,SrcType1.reg, SrcType2.reg),
+    MULHSU         -> List(InstrR, FuncType.mdu, MDUOpType.mulhsu ,SrcType1.reg, SrcType2.reg),
+    MULHU          -> List(InstrR, FuncType.mdu, MDUOpType.mulhu  ,SrcType1.reg, SrcType2.reg),
+    DIV            -> List(InstrR, FuncType.mdu, MDUOpType.div    ,SrcType1.reg, SrcType2.reg),
+    DIVU           -> List(InstrR, FuncType.mdu, MDUOpType.divu   ,SrcType1.reg, SrcType2.reg),
+    REM            -> List(InstrR, FuncType.mdu, MDUOpType.rem    ,SrcType1.reg, SrcType2.reg),
+    REMU           -> List(InstrR, FuncType.mdu, MDUOpType.remu   ,SrcType1.reg, SrcType2.reg)
+  )
+}
+
+object RV64M_Instr extends InstrType {
+  def MULW    = BitPat("b0000001_?????_?????_000_?????_0111011")
+  def DIVW    = BitPat("b0000001_?????_?????_100_?????_0111011")
+  def DIVUW   = BitPat("b0000001_?????_?????_101_?????_0111011")
+  def REMW    = BitPat("b0000001_?????_?????_110_?????_0111011")
+  def REMUW   = BitPat("b0000001_?????_?????_111_?????_0111011")
+
+  val table = Array(
+    MULW           -> List(InstrR, FuncType.mdu, MDUOpType.mulw  ,SrcType1.reg, SrcType2.reg),
+    DIVW           -> List(InstrR, FuncType.mdu, MDUOpType.divw  ,SrcType1.reg, SrcType2.reg),
+    DIVUW          -> List(InstrR, FuncType.mdu, MDUOpType.divuw ,SrcType1.reg, SrcType2.reg),
+    REMW           -> List(InstrR, FuncType.mdu, MDUOpType.remw  ,SrcType1.reg, SrcType2.reg),
+    REMUW          -> List(InstrR, FuncType.mdu, MDUOpType.remuw ,SrcType1.reg, SrcType2.reg)
+  )
+}
+
+
+
+
+
 object RVIInstr extends InstrType {
   val table : Array[(BitPat, List[UInt])] =
     RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++
-    RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table
+      RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table ++
+      RV64M_Instr.table ++ RV32M_Instr.table
   val defaultTable = List(InstrN, FuncType.alu, ALUOpType.add, SrcType1.pc, SrcType2.imm)
 }
