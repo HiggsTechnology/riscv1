@@ -2,6 +2,7 @@ package Core.ExuBlock.RS
 
 import Core.Config.{OrderQueueSize, PhyRegIdxWidth, XLEN}
 import Core.CtrlBlock.ROB.ROBPtr
+import Core.ExuBlock.FU.MDUOpType
 import Core.{CommitIO, Config, FuInPut, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -11,14 +12,16 @@ import utils._
 
 
 
-class RS_MDU(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
+class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
+    val DivIdle = Input(Bool())
+
     val in = Flipped(ValidIO(new MicroOp))
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
-    val ExuResult = Vec(6, Flipped(ValidIO(new FuOutPut)))
+    val ExuResult = Vec(nFu, Flipped(ValidIO(new FuOutPut)))
 
     val out = ValidIO(Flipped(new FuInPut))
 
@@ -36,19 +39,22 @@ class RS_MDU(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, 
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
+  val isDiv   = WireInit(VecInit(List.tabulate(rsSize)(i => MDUOpType.isDiv(decode(i).ctrl.funcOpType))))
   val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i))))///
+  val mulRdy  = WireInit(VecInit(List.tabulate(rsSize)(i => !isDiv(i) && instRdy(i))))
 
   val rsFull = valid.asUInt.andR
 
 
   val enqueueSelect = ParallelPriorityEncoder(valid.map(!_))
-  val dequeueSelect = ParallelPriorityEncoder(instRdy)
+  val nodifSelect = ParallelPriorityEncoder(instRdy)
+  val dequeueSelect = Mux(isDiv(nodifSelect) && io.DivIdle, nodifSelect, ParallelPriorityEncoder(mulRdy))
 
 
   //todo: 添加选择逻辑，是除法且idle同样发射，否则选乘法指令发射
   //侦听执行单元结果
   for (i <- 0 until rsSize){
-    for(j <- 0 until 6){
+    for(j <- 0 until nFu){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -73,7 +79,7 @@ class RS_MDU(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, 
     src2(enqueueSelect) := io.SrcIn(1)
 
     //入列指令侦听当拍执行单元
-    for(i <- 0 until 6){
+    for(i <- 0 until nFu){
       val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
       val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)

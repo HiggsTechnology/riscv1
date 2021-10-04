@@ -27,23 +27,35 @@ object MDUOpType {
   def isW(op: UInt) = op(3)
 }
 
-class MulDivIO(val len: Int) extends Bundle {
+class MulIO(val len: Int) extends Bundle {
   val in = Flipped(DecoupledIO(Vec(2, Output(UInt(len.W)))))
   val flush  = Input(Bool())
   val sign = Input(Bool())
-  val out = DecoupledIO(Output(UInt((len * 2).W)))
+  val out = ValidIO(Output(UInt((len * 2).W)))
+}
+
+class DivIO(val len: Int) extends Bundle {
+  val in = Flipped(DecoupledIO(Vec(2, Output(UInt(len.W)))))
+  val flush  = Input(Bool())
+  val sign = Input(Bool())
+  val out = ValidIO(Output(UInt((len * 2).W)))
+  val DivIdle = Output(Bool())
 }
 
 class WTMultiplier extends Module {
-  val io = IO(new Bundle{
-    val src1 = Input(UInt(64.W))
-    val src2 = Input(UInt(64.W))
-    val res = Output(UInt(128.W))
-  })
+  val io = IO(new MulIO(64))
+
+  def abs(a: UInt, sign: Bool): (Bool, UInt) = {val s = a(64 - 1) && sign
+    (s, Mux(s, -a, a))}
+  val (a, b) = (io.in.bits(0), io.in.bits(1))
+  val (aSign, aVal) = abs(a, io.sign)
+  val (bSign, bVal) = abs(b, io.sign)
+
+
   //level 0
   val branch0 = Wire(Vec(64, UInt(64.W)))
   for(i <- 0 until 64){
-    branch0(i) := Mux(io.src2(i),io.src1,0.U)
+    branch0(i) := Mux(aVal(i),bVal,0.U)
   }
   //level 1
   val branch1 = Wire(Vec(32, UInt(66.W)))
@@ -60,10 +72,12 @@ class WTMultiplier extends Module {
   for(i <- 0 until 8){
     branch3(i) := Cat(branch2(2*i+1),0.U(4.W)) + Cat(0.U(4.W),branch2(2*i))
   }
+  val pip = RegEnable(branch3, io.in.valid)
+  val qSign = RegEnable((aSign ^ bSign), io.in.valid)
   //level4
   val branch4 = Wire(Vec(4, UInt(80.W)))
   for(i <- 0 until 4){
-    branch4(i) := Cat(branch3(2*i+1),0.U(8.W)) + Cat(0.U(8.W),branch3(2*i))
+    branch4(i) := Cat(pip(2*i+1),0.U(8.W)) + Cat(0.U(8.W),pip(2*i))
   }
   //level5
   val branch5 = Wire(Vec(2, UInt(96.W)))
@@ -71,13 +85,15 @@ class WTMultiplier extends Module {
     branch5(i) := Cat(branch4(2*i+1),0.U(16.W)) + Cat(0.U(16.W),branch4(2*i))
   }
   //level6
-  io.res := Cat(branch5(1),0.U(32.W)) + Cat(0.U(32.W),branch5(0))
-
+  val res = Cat(branch5(1),0.U(32.W)) + Cat(0.U(32.W),branch5(0))
+  io.out.bits :=  Mux(qSign, -res, res)
+  io.out.valid := io.in.valid && !io.flush
+  io.in.ready := true.B
 }
 
 
 class Radix8Divider(len: Int = 64) extends Module {
-  val io = IO(new MulDivIO(len))
+  val io = IO(new DivIO(len))
 
   def abs(a: UInt, sign: Bool): (Bool, UInt) = {val s = a(len - 1) && sign
     (s, Mux(s, -a, a))}
@@ -97,7 +113,7 @@ class Radix8Divider(len: Int = 64) extends Module {
   val cnt = Counter(len)
   when (newReq) {state := s_log8} .elsewhen (state === s_log8) {
     val canSkipShift = (len.U | Log2(bReg)) - Log2(aValx2Reg)
-    cnt.value := Mux(divBy0, 0.U, Mux(canSkipShift >= (len-1).U, (len-1).U, canSkipShift))
+    cnt.value := Mux(divBy0, 0.U, Mux(canSkipShift >= (len-3).U, (len-3).U, canSkipShift))
     state := s_shift
   } .elsewhen (state === s_shift) {
     shiftReg := aValx2Reg << cnt.value
@@ -107,15 +123,20 @@ class Radix8Divider(len: Int = 64) extends Module {
     val x2bReg   = (bReg << 1.U).asUInt
     val x4enough = hi.asUInt >= x4bReg.asUInt
     val sr4 = Cat(Mux(x4enough, hi - x4bReg, hi)(len - 1, 0), lo, x4enough)
+    cnt.inc()
+    when (cnt.value === (len-3).U) { state := s_finish }.elsewhen(cnt.value < (len-3).U)
+
     val x2enough = sr4(len * 2, len).asUInt >= x2bReg.asUInt
     val sr2 = Cat(Mux(x2enough, sr4(len * 2, len) - x4bReg, sr4(len * 2, len))(len - 1, 0), sr4(len - 1, 0), x2enough)
+    cnt.inc()
+
     val x1enough = sr2(len * 2, len).asUInt >= bReg.asUInt
     val sr1 = Cat(Mux(x1enough, sr2(len * 2, len) - x4bReg, sr2(len * 2, len))(len - 1, 0), sr2(len - 1, 0), x1enough)
+    cnt.inc()
+
     shiftReg := sr4 ^ sr2 ^ sr1
-    cnt.inc()
-    cnt.inc()
-    cnt.inc()
-    when (cnt.value === (len-1).U) { state := s_finish }} .elsewhen (state === s_finish) {state := s_idle}
+
+    when (cnt.value >= (len-3).U) { state := s_finish }} .elsewhen (state === s_finish) {state := s_idle}
 
   val kill = state=/=s_idle && io.flush
   when(kill){
@@ -126,35 +147,40 @@ class Radix8Divider(len: Int = 64) extends Module {
   val resQ = Mux(qSignReg, -lo, lo)
   val resR = Mux(aSignReg, -r, r)
   io.out.bits := Cat(resR, resQ)
-  io.out.valid :=  io.in.valid // FIXME: should deal with ready = 0
+  io.out.valid :=  io.in.valid && (state === s_finish)
   io.in.ready := (state === s_idle)
 }
 
 
 class MDUIO extends Bundle {
-  val in  = Flipped(DecoupledIO(new FuInPut))
-  val out = DecoupledIO(new FuOutPut)
+  val in  = Flipped(ValidIO(new FuInPut))
+  val out = ValidIO(new FuOutPut)
+  val DivIdle = Output(Bool())
 }
 
 class MDU extends Module with Config {
-  val io = IO(new MDUIO)
-  val multiplier = Module(new WTMultiplier)
-  val divider    = Module(new Radix8Divider(XLEN))
+  val io   = IO(new MDUIO)
+  val mul  = Module(new WTMultiplier)
+  val div  = Module(new Radix8Divider(XLEN))
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
   val funcOpType = io.in.bits.uop.ctrl.funcOpType
+  val isDiv = MDUOpType.isDiv(funcOpType)
+  val isDivSign = MDUOpType.isDivSign(funcOpType)
+  val isW = MDUOpType.isW(funcOpType)
+
   src1 := io.in.bits.src(0)
   src2 := io.in.bits.src(1)
 
   io.out.bits.uop := io.in.bits.uop
-  io.out.valid :=
+  io.out.valid := Mux(isDiv,div.io.out.valid,mul.io.out.valid)
 
-  val isDiv = MDUOpType.isDiv(funcOpType)
-  val isDivSign = MDUOpType.isDivSign(funcOpType)
-  val isW = MDUOpType.isW(funcOpType)
-  multiplier.io.src1 := src1
-  multiplier.io.src2 := src2
-  //multiplier.io.in.valid   := !isDiv && io.in.valid
+  mul.io.in.bits(0) := src1
+  mul.io.in.bits(1) := src2
+  mul.io.in.valid   := !isDiv && io.in.valid
+
+  io.DivIdle := div.io.DivIdle
+
 
   val res = LookupTree(funcOpType, List(
     MDUOpType.mul   ->   (src1,src2),//todo:add def to
@@ -175,57 +201,3 @@ class MDU extends Module with Config {
 
 }
 
-class MDU extends Module with Config {
-  val io = IO(new MDUIO)
-
-  val (valid, src1, src2, func) = (io.in.valid, io.in.bits.src(0), io.in.bits.src(1), io.in.bits.uop.ctrl.funcOpType)
-  def access(valid: Bool, src1: UInt, src2: UInt, func: UInt): UInt = {
-    this.valid := valid
-    this.src1 := src1
-    this.src2 := src2
-    this.func := func
-    io.out.bits
-  }
-
-  val isDiv = MDUOpType.isDiv(func)
-  val isDivSign = MDUOpType.isDivSign(func)
-  val isW = MDUOpType.isW(func)
-
-  val mul = Module(new Multiplier(XLEN + 1))
-  val div = Module(new Divider(XLEN))
-  List(mul.io, div.io).map { case x =>
-    x.sign := isDivSign
-    x.out.ready := io.out.ready
-  }
-
-  val signext = SignExt(_: UInt, XLEN+1)
-  val zeroext = ZeroExt(_: UInt, XLEN+1)
-  val mulInputFuncTable = List(
-    MDUOpType.mul    -> (zeroext, zeroext),
-    MDUOpType.mulh   -> (signext, signext),
-    MDUOpType.mulhsu -> (signext, zeroext),
-    MDUOpType.mulhu  -> (zeroext, zeroext)
-  )
-  mul.io.in.bits(0) := LookupTree(func(1,0), mulInputFuncTable.map(p => (p._1(1,0), p._2._1(src1))))
-  mul.io.in.bits(1) := LookupTree(func(1,0), mulInputFuncTable.map(p => (p._1(1,0), p._2._2(src2))))
-
-  val divInputFunc = (x: UInt) => Mux(isW, Mux(isDivSign, SignExt(x(31,0), XLEN), ZeroExt(x(31,0), XLEN)), x)
-  div.io.in.bits(0) := divInputFunc(src1)
-  div.io.in.bits(1) := divInputFunc(src2)
-
-  mul.io.in.valid := io.in.valid && !isDiv
-  div.io.in.valid := io.in.valid && isDiv
-
-  val mulRes = Mux(func(1,0) === MDUOpType.mul(1,0), mul.io.out.bits(XLEN-1,0), mul.io.out.bits(2*XLEN-1,XLEN))
-  val divRes = Mux(func(1) /* rem */, div.io.out.bits(2*XLEN-1,XLEN), div.io.out.bits(XLEN-1,0))
-  val res = Mux(isDiv, divRes, mulRes)
-  io.out.bits := Mux(isW, SignExt(res(31,0),XLEN), res)
-
-  val isDivReg = Mux(io.in.fire(), isDiv, RegNext(isDiv))
-  io.in.ready := Mux(isDiv, div.io.in.ready, mul.io.in.ready)
-  io.out.valid := Mux(isDivReg, div.io.out.valid, mul.io.out.valid)
-
-  Debug(){printf("[FU-MDU] irv-orv %d %d - %d %d\n", io.in.ready, io.in.valid, io.out.ready, io.out.valid)}
-
-  BoringUtils.addSource(mul.io.out.fire(), "perfCntCondMmulInstr")
-}

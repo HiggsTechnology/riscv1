@@ -1,7 +1,7 @@
 package Core.CtrlBlock.DISPATCH
 
 import Core.CtrlBlock.IDU.FuncType
-import Core.{Config, MicroOp}
+import Core.{Config, MicroOp, RSType}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -29,10 +29,11 @@ class Dispatch extends Module with Config {
   val alu_ptr = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ALUPtr))))
   for(i <- 0 until 2){
     rs_num(i) := LookupTree(io.in.microop_in(i).bits.ctrl.funcType, List(
-      FuncType.csr -> 0.U,
-      FuncType.bru -> 0.U,
-      FuncType.alu -> 1.U,
-      FuncType.lsu -> 3.U
+      FuncType.csr -> RSType.jumprs,
+      FuncType.bru -> RSType.jumprs,
+      FuncType.alu -> RSType.alurs,
+      FuncType.lsu -> RSType.lsurs,
+      FuncType.mdu -> RSType.mdurs
     ))
   }
   when(io.in.can_allocate){

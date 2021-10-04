@@ -66,9 +66,11 @@ trait Config {
 
   def nCSR : Int = 1
 
-  def nLSU : Int = 1
+  def nLSU : Int = 2
 
-  def ExuNum :Int = 5
+  def nMDU : Int = 1
+
+  def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
 
   def rsSize :Int = 8
 
@@ -92,6 +94,17 @@ trait Config {
   def BtbWays = 4
   def btbRows = BtbSize/BtbWays
 
+}
+
+object RSType {
+  def typeSize  = 5
+  def jumprs: UInt = 0.U//csr,bru -> jumprs
+  def alurs: UInt  = 1.U//alu1rs, alu2rs
+  def alurs2: UInt = 2.U
+  def lsurs: UInt  = 3.U
+  def mdurs: UInt  = 4.U
+  def width     = log2Up(typeSize).W
+  def uwidth    = UInt(width)
 }
 
 object SrcState {

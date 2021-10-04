@@ -18,7 +18,7 @@ class LSQIO extends Bundle with Config {
 
   val SrcIn = Vec(2,Vec(2,Input(UInt(XLEN.W))))
 
-  val ExuResult = Vec(4, Flipped(ValidIO(new FuOutPut)))
+  val ExuResult = Vec(ExuNum-2, Flipped(ValidIO(new FuOutPut)))//subtract 2 l/d unit
 
   val lsu_in = Vec(2, ValidIO(new FuInPut))
   val lsu_out = Vec(2, Flipped(ValidIO(new FuOutPut)))
@@ -63,7 +63,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   //侦听执行单元结果
   for (i <- 0 until lsqSize){
     //LSU外其它执行单元
-    for(j <- 0 until 4){Vec
+    for(j <- 0 until (ExuNum-2)){Vec
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen     = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy     = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -120,7 +120,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
       resp(enq_vec(i).value) := false.B
 
       //入列指令侦听当拍执行单元
-      for (j <- 0 until 4) {
+      for (j <- 0 until (ExuNum-2)) {
         //侦听LSU外其它执行单元
         val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
         val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === io.in(i).bits.psrc(0)

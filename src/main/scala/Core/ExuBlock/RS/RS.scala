@@ -11,14 +11,14 @@ import utils._
 
 
 
-class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
+class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
     val in = Flipped(ValidIO(new MicroOp))
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
-    val ExuResult = Vec(6, Flipped(ValidIO(new FuOutPut)))
+    val ExuResult = Vec(nFu, Flipped(ValidIO(new FuOutPut)))
 
     val out = ValidIO(Flipped(new FuInPut))
 
@@ -48,7 +48,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   //侦听执行单元结果
   for (i <- 0 until rsSize){
-    for(j <- 0 until 6){
+    for(j <- 0 until nFu){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -73,7 +73,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     src2(enqueueSelect) := io.SrcIn(1)
 
     //入列指令侦听当拍执行单元
-    for(i <- 0 until 6){
+    for(i <- 0 until nFu){
       val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
       val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)
