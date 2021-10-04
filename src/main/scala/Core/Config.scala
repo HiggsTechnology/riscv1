@@ -68,9 +68,11 @@ trait Config {
 
   def nLSU : Int = 2
 
-  def nMDU : Int = 1
+  def nMDU : Int = 2
 
   def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
+
+  def RSNum :Int = ExuNum - 2
 
   def rsSize :Int = 8
 

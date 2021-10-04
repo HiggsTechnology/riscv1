@@ -23,7 +23,7 @@ class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, 
 
     val ExuResult = Vec(nFu, Flipped(ValidIO(new FuOutPut)))
 
-    val out = ValidIO(Flipped(new FuInPut))
+    val out = Vec(2, ValidIO(new FuInPut))
 
     val full = Output(Bool())
 
@@ -104,13 +104,21 @@ class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, 
 
   val dispatchReady = instRdy(dequeueSelect)
 
-  io.out.bits := DontCare
-  io.out.valid := false.B
+  io.out(0).bits := DontCare
+  io.out(0).valid := false.B
+  io.out(1).bits := DontCare
+  io.out(1).valid := false.B
   when(dispatchReady) {
-    io.out.valid := dispatchReady
-    io.out.bits.uop := decode(dequeueSelect)
-    io.out.bits.src(0) := src1(dequeueSelect)
-    io.out.bits.src(1) := src2(dequeueSelect)
+    io.out(0).valid := dispatchReady && !isDiv(dequeueSelect)
+    io.out(0).bits.uop := decode(dequeueSelect)
+    io.out(0).bits.src(0) := src1(dequeueSelect)
+    io.out(0).bits.src(1) := src2(dequeueSelect)
+    valid(dequeueSelect) := false.B
+
+    io.out(1).valid := dispatchReady && isDiv(dequeueSelect)
+    io.out(1).bits.uop := decode(dequeueSelect)
+    io.out(1).bits.src(0) := src1(dequeueSelect)
+    io.out(1).bits.src(1) := src2(dequeueSelect)
     valid(dequeueSelect) := false.B
   }
 

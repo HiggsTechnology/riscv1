@@ -12,7 +12,7 @@ class DispatchIN extends Bundle with Config {
 }
 class DispatchOUT extends Bundle with Config {
   val microop_out  = Vec(2, ValidIO(new MicroOp))
-  val rs_num_out   = Vec(2, Output(UInt(log2Up(ExuNum).W)))
+  val rs_num_out   = Vec(2, Output(UInt(log2Up(RSNum).W)))
 }
 class DispatchIO extends Bundle with Config {
   val in  = new DispatchIN
@@ -24,7 +24,7 @@ class ALUPtr extends CircularQueuePtr[ALUPtr](2) with HasCircularQueuePtrHelper{
 // 1csr 1jump 2alu 1lsu
 class Dispatch extends Module with Config {
   val io = IO(new DispatchIO)
-  val rs_num  = Wire(Vec(2, Output(UInt(log2Up(ExuNum-1).W))))
+  val rs_num  = Wire(Vec(2, Output(UInt(log2Up(RSNum).W))))
   val is_alu: Vec[Bool] = VecInit(io.in.microop_in.map(item => {item.valid && item.bits.ctrl.funcType === FuncType.alu}))
   val alu_ptr = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ALUPtr))))
   for(i <- 0 until 2){

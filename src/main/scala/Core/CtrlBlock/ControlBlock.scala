@@ -1,7 +1,7 @@
 package Core.CtrlBlock
 
-import Core.{RedirectIO, Config, ExuCommit, MicroOp, Pc_Instr}
-import Core.Config.{ExuNum, PhyRegIdxWidth}
+import Core.{Config, ExuCommit, MicroOp, Pc_Instr, RedirectIO}
+import Core.Config.{ExuNum, PhyRegIdxWidth, RSNum}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
 import Core.CtrlBlock.ROB.{ROB, ROBPtr}
@@ -20,13 +20,13 @@ import utils._
 
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
-  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
+  val rs_can_allocate = Vec(RSNum, Input(Bool()))
   val exuCommit = Vec(ExuNum,Flipped(ValidIO(new ExuCommit)))
   val redirect  = Flipped(ValidIO(new RedirectIO))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
-  val rs_num_out      = Vec(2, Output(UInt(log2Up(ExuNum).W)))
+  val rs_num_out      = Vec(2, Output(UInt(log2Up(RSNum).W)))
   val pregValid       = Vec(4, Output(Bool()))
   val debug_int_rat = Vec(32, Output(UInt(PhyRegIdxWidth.W)))
   val predict_robPtr = Output(new ROBPtr)

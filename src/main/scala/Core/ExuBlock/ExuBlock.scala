@@ -1,7 +1,7 @@
 package Core.ExuBlock
 
 
-import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU, MDU}
+import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU, MU,DU}
 import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
@@ -17,7 +17,7 @@ import Core.Cache.{CacheReq, CacheResp}
 
 class ExuBlockIO extends Bundle with Config {
   val in = Vec(2, Flipped(ValidIO(new MicroOp)))///此模块里，DispatchQueue在外部，给到OrderQueue
-  val rs_num_in = Vec(2, Input(UInt(log2Up(ExuNum-1).W)))///此模块里，给到rs的序号，OrderQueueBook//-1: bru/csr -> jumprs
+  val rs_num_in = Vec(2, Input(UInt(log2Up(RSNum).W)))///此模块里，给到rs的序号，OrderQueueBook//-1: bru/csr -> jumprs
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
   val predict_robPtr = Input(new ROBPtr)
@@ -25,7 +25,7 @@ class ExuBlockIO extends Bundle with Config {
   val bpu_update = ValidIO(new BPU_Update)
   val exuCommit = Vec(ExuNum,ValidIO(new ExuCommit))
   ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
-  val rs_can_allocate = Vec(ExuNum-1,Output(Bool()))
+  val rs_can_allocate = Vec(RSNum,Output(Bool()))
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
 
@@ -43,15 +43,16 @@ class ExuBlock extends Module with Config{
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU2RS"))
   val mdurs  = Module(new RS_MDU(size = rsSize, rsNum = 3, nFu = ExuNum, name = "MDURS"))
-  val lsq = Module(new LSQ)
-  val csr = Module(new CSR)
-  val bru = Module(new BRU)
+  val lsq  = Module(new LSQ)
+  val csr  = Module(new CSR)
+  val bru  = Module(new BRU)
   val alu1 = Module(new ALU)
   val alu2 = Module(new ALU)
-  val mdu  = Module(new MDU)
+  val mu   = Module(new MU)
+  val du   = Module(new DU)
   val lsu1 = Module(new LSU)
   val lsu2 = Module(new LSU)
-  val preg = Module(new Regfile(4,6,128))///新写
+  val preg = Module(new Regfile(numReadPorts = 4,numWritePorts = ExuNum,numPreg = 128))///新写
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val ExuResult = Wire(Vec(ExuNum,ValidIO(new FuOutPut)))
@@ -96,7 +97,7 @@ class ExuBlock extends Module with Config{
   mdurs.io.in := DontCare
   mdurs.io.in.valid := false.B
   mdurs.io.SrcIn := DontCare
-  mdurs.io.DivIdle := mdu.io.DivIdle//
+  mdurs.io.DivIdle := du.io.DivIdle//
 
   //  printf("rs_num_in0 %d in1 %d\n",io.rs_num_in(0),io.rs_num_in(1))
   //  printf("ExuBlock io.in(0) %d %x %x, io.in(1) %d %x %x\n",io.in(0).valid,io.in(0).bits.cf.pc,io.in(0).bits.cf.instr,io.in(1).valid,io.in(1).bits.cf.pc,io.in(1).bits.cf.instr)
@@ -131,19 +132,19 @@ class ExuBlock extends Module with Config{
     }
 
   }
-  when((io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && !(io.rs_num_in(1)===3.U && io.in(1).valid)){
+  when((io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && !(io.rs_num_in(1)===RSType.lsurs && io.in(1).valid)){
     lsq.io.in(0) := io.in(0) //in orderqueue rs  读寄存器
     lsq.io.in(0).bits.srcState(0) := io.busytablein(0) || (io.in(0).bits.ctrl.src1Type =/= SrcType1.reg)
     lsq.io.in(0).bits.srcState(1) := io.busytablein(1) || (io.in(0).bits.ctrl.src2Type =/= SrcType2.reg)
     //寄存器的输入
     lsq.io.SrcIn(0) := src_in(0)
-  }.elsewhen(!(io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && (io.rs_num_in(1)===3.U && io.in(1).valid)){
+  }.elsewhen(!(io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && (io.rs_num_in(1)===RSType.lsurs && io.in(1).valid)){
     lsq.io.in(0) := io.in(1) //in orderqueue rs  读寄存器
     lsq.io.in(0).bits.srcState(0) := io.busytablein(2) || (io.in(1).bits.ctrl.src1Type =/= SrcType1.reg)
     lsq.io.in(0).bits.srcState(1) := io.busytablein(3) || (io.in(1).bits.ctrl.src2Type =/= SrcType2.reg)
     //寄存器的输入
     lsq.io.SrcIn(0) := src_in(1)
-  }.elsewhen((io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && (io.rs_num_in(1)===3.U && io.in(1).valid)){
+  }.elsewhen((io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && (io.rs_num_in(1)===RSType.lsurs && io.in(1).valid)){
     lsq.io.in(0) := io.in(0) //in orderqueue rs  读寄存器
     lsq.io.in(0).bits.srcState(0) := io.busytablein(0) || (io.in(0).bits.ctrl.src1Type =/= SrcType1.reg)
     lsq.io.in(0).bits.srcState(1) := io.busytablein(1) || (io.in(0).bits.ctrl.src2Type =/= SrcType2.reg)
@@ -173,12 +174,13 @@ class ExuBlock extends Module with Config{
   bru.io.in.bits := jumprs.io.out.bits
   alu1.io.in <> alu1rs.io.out
   alu2.io.in <> alu2rs.io.out
-  mdu.io.in  <> mdurs.io.out
+  mu.io.in  <> mdurs.io.out(0)
+  du.io.in  <> mdurs.io.out(1)
   lsu1.io.in <> lsq.io.lsu_in(0)
   lsu2.io.in <> lsq.io.lsu_in(1)
   lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
   lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
-  
+
   lsq.io.cache_ready := io.cachereq.map(_.ready)
   io.cachereq(0) <> lsu1.io.cachereq
   io.cachereq(1) <> lsu2.io.cachereq
@@ -196,9 +198,10 @@ class ExuBlock extends Module with Config{
   ExuResult(1) := bru.io.out
   ExuResult(2) := alu1.io.out
   ExuResult(3) := alu2.io.out
-  ExuResult(4) := mdu.io.out//when add EXU, need before lsu1/lsu2
-  ExuResult(5) := lsu1.io.out
-  ExuResult(6) := lsu2.io.out
+  ExuResult(4) := mu.io.out//when add EXU, need before lsu1/lsu2
+  ExuResult(5) := du.io.out
+  ExuResult(6) := lsu1.io.out
+  ExuResult(7) := lsu2.io.out
 
   lsq.io.lsu_out(0) := lsu1.io.out
   lsq.io.lsu_out(1) := lsu2.io.out

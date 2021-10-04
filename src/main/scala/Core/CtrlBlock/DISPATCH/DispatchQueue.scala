@@ -1,6 +1,6 @@
 package Core.CtrlBlock.DISPATCH
 
-import Core.Config.{DispatchQueueSize, ExuNum}
+import Core.Config.{DispatchQueueSize, ExuNum, RSNum}
 import Core.{Config, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -11,13 +11,13 @@ class DispatchQueuePtr extends CircularQueuePtr[DispatchQueuePtr](DispatchQueueS
 }
 class DispatchQueueIN extends Bundle {
   val microop_in      = Vec(2, Flipped(ValidIO(new MicroOp)))
-  val rs_num_in       = Vec(2, Input(UInt(log2Up(ExuNum-1).W)))
-  val rs_can_allocate = Vec(ExuNum-1, Input(Bool()))
+  val rs_num_in       = Vec(2, Input(UInt(log2Up(RSNum).W)))
+  val rs_can_allocate = Vec(RSNum, Input(Bool()))
 }
 class DispatchQueueOUT extends Bundle {
   val can_allocate = Output(Bool())
   val microop_out  = Vec(2, ValidIO(new MicroOp))
-  val rs_num_out   = Vec(2, Output(UInt(log2Up(ExuNum-1).W)))
+  val rs_num_out   = Vec(2, Output(UInt(log2Up(RSNum).W)))
 }
 class DispatchQueueIO extends Bundle {
   val in  = new DispatchQueueIN
@@ -30,7 +30,7 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //定义输入数据接收MEM，接收输入MicroOp中的valid、data、rs number
   val valid     = RegInit(VecInit(Seq.fill(DispatchQueueSize)(false.B)))
   val data      = Mem(DispatchQueueSize, new MicroOp)
-  val rs_num    = Mem(DispatchQueueSize, UInt(log2Up(ExuNum).W))
+  val rs_num    = Mem(DispatchQueueSize, UInt(log2Up(RSNum).W))
   //定义头指针enq_vec代表入队逻辑，尾指针deq_vec代表出队逻辑
   val enq_vec   = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr))))
   val deq_vec   = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr))))
