@@ -178,9 +178,16 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
   val selectWay = Wire(Vec(2, UInt(log2Up(Ways).W)))
   val needWriteBack = Wire(Vec(2, Bool()))
+  val wb_tag = Wire(Vec(2, UInt(XLEN.W)))
+  wb_tag := DontCare
   for (j <- 0 until 2) {
     selectWay(j) := ParallelOperation(changevec(j), compare).addr
     needWriteBack(j) := dirtyVec(j)(selectWay(j)) && validVec(j)(selectWay(j))
+    for(i <- 0 until Ways){
+      when(i.U === selectWay(j)){
+        wb_tag(j) := tagArray(i)(addrReg(j).index)
+      }
+    }
   }
 
   val writeDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(dataBits.W))))
@@ -197,16 +204,16 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
   when(state === s_miss) {
-      writeMemCnt := 0.U
+    writeMemCnt := 0.U
   }
   when(needRefill(0) && needRefill(1)) {
     io.to_rw.aw.valid := (state === s_miss) && needWriteBack(0)
-    io.to_rw.aw.bits.addr := Cat(addrReg(0).tag, addrReg(0).index, 0.U(OffsetBits.W))
+    io.to_rw.aw.bits.addr := Cat(wb_tag(0), addrReg(0).index, 0.U(OffsetBits.W))
   }.elsewhen(needRefill(0) || needRefill(1)){
     for (j <- 0 until 2) {
       when(needRefill(j)){
         io.to_rw.aw.valid := (state === s_miss) && needWriteBack(j)
-        io.to_rw.aw.bits.addr := Cat(addrReg(j).tag, addrReg(j).index, 0.U(OffsetBits.W))
+        io.to_rw.aw.bits.addr := Cat(wb_tag(j), addrReg(j).index, 0.U(OffsetBits.W))
       }
     }
   }
@@ -276,25 +283,25 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       tagArray(i)(refill_idx)  := Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag)
       valid(i)(refill_idx)     := true.B
 
-//      when(reqValid(0) && writeReg(0).isWrite && needRefill(0)) {
-//        for (k <- 0 until XLEN / 8) {
-//          when(writeReg(0).wmask(k)) {
-//            mem_wb(addrReg(0).Offset + k.U) := writeReg(0).data(k * 8 + 7, k * 8)
-//          }
-//        }
-//        dirty(i)(addrReg(0).index) := true.B
-//      }.elsewhen(reqValid(0) && !writeReg(0).isWrite && needRefill(0)) {
-//        dirty(i)(addrReg(0).index) := false.B
-//      }.elsewhen(reqValid(1) && writeReg(1).isWrite && needRefill(1)){
-//        for (k <- 0 until XLEN / 8) {
-//          when(writeReg(1).wmask(k)) {
-//            mem_wb(addrReg(1).Offset + k.U) := writeReg(1).data(k * 8 + 7, k * 8)
-//          }
-//        }
-//      }.elsewhen(reqValid(1) && !writeReg(1).isWrite && needRefill(1)) {
-//        dirty(i)(addrReg(1).index) := false.B
-//      }
-      dirty(i)(refill_idx) := false.B
+      //      when(reqValid(0) && writeReg(0).isWrite && needRefill(0)) {
+      //        for (k <- 0 until XLEN / 8) {
+      //          when(writeReg(0).wmask(k)) {
+      //            mem_wb(addrReg(0).Offset + k.U) := writeReg(0).data(k * 8 + 7, k * 8)
+      //          }
+      //        }
+      //        dirty(i)(addrReg(0).index) := true.B
+      //      }.elsewhen(reqValid(0) && !writeReg(0).isWrite && needRefill(0)) {
+      //        dirty(i)(addrReg(0).index) := false.B
+      //      }.elsewhen(reqValid(1) && writeReg(1).isWrite && needRefill(1)){
+      //        for (k <- 0 until XLEN / 8) {
+      //          when(writeReg(1).wmask(k)) {
+      //            mem_wb(addrReg(1).Offset + k.U) := writeReg(1).data(k * 8 + 7, k * 8)
+      //          }
+      //        }
+      //      }.elsewhen(reqValid(1) && !writeReg(1).isWrite && needRefill(1)) {
+      //        dirty(i)(addrReg(1).index) := false.B
+      //      }
+      //dirty(i)(refill_idx) := false.B
       dataArray(i)(refill_idx) := mem_wb
     }.otherwise{
       mem_wb := DontCare
@@ -309,7 +316,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
   //s_refill_done
-  
+
 
   for (j <- 0 until 2) {
     for (i <- 0 until Ways) {
@@ -399,26 +406,27 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   io.to_rw.ar.bits.region := 0.U
 
 
-  // when(state === s_miss || state === s_replace || state === s_refill ){
-  //   printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
-  // }
+  //   if(cacheNum==1){
+  //   when(state === s_miss || state === s_replace || state === s_refill ){
+  //     printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
+  //   }
 
-  // when(io.req(0).valid ||io.req(1).valid ){
-  //   printf("LSU1 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(0).valid,io.req(0).bits.addr,io.req(0).bits.isWrite,io.req(0).bits.data,io.req(0).bits.wmask)
-  //   printf("LSU2 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(1).valid,io.req(1).bits.addr,io.req(1).bits.isWrite,io.req(1).bits.data,io.req(1).bits.wmask)
-  // }
-  // when(io.resp(0).datadone || io.resp(1).datadone){
-  //   printf("cache out valid %d %d, %x %x\n",io.resp(0).datadone,io.resp(1).datadone,io.resp(0).data,io.resp(1).data)
-  //   printf("readReg1 %x, offset %x\n",readReg(0).asUInt,addrReg(0).Offset)
-  //   printf("readReg1 %x, offset %x\n",readReg(1).asUInt,addrReg(1).Offset)
-  // }
-  // when(io.to_rw.ar.fire){
-  //   printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
-  // }
-  // when(io.to_rw.aw.fire){
-  //   printf("aw addr is %x\n", io.to_rw.aw.bits.addr)
-  // }
-  
+  //   when(io.req(0).valid ||io.req(1).valid ){
+  //     printf("LSU1 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(0).valid,io.req(0).bits.addr,io.req(0).bits.isWrite,io.req(0).bits.data,io.req(0).bits.wmask)
+  //     printf("LSU2 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(1).valid,io.req(1).bits.addr,io.req(1).bits.isWrite,io.req(1).bits.data,io.req(1).bits.wmask)
+  //   }
+  //   when(io.resp(0).datadone || io.resp(1).datadone){
+  //     printf("cache out valid %d %d, %x %x\n",io.resp(0).datadone,io.resp(1).datadone,io.resp(0).data,io.resp(1).data)
+  //     printf("readReg1 %x, offset %x\n",readReg(0).asUInt,addrReg(0).Offset)
+  //     printf("readReg1 %x, offset %x\n",readReg(1).asUInt,addrReg(1).Offset)
+  //   }
+  //   when(io.to_rw.ar.fire){
+  //     printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
+  //   }
+  //   when(io.to_rw.aw.fire){
+  //     printf("aw addr is %x\n", io.to_rw.aw.bits.addr)
+  //   }
+  //   }
 }
 
 

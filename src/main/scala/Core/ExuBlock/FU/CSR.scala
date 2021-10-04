@@ -185,7 +185,7 @@ class CSR(
   io.jmp.bits.new_pc      := new_pc
   io.jmp.bits.ROBIdx      := io.in.bits.uop.ROBIdx
   // 分支预测失败
-  io.jmp.bits.mispred     := false.B
+  io.jmp.bits.mispred     := io.in.valid & is_jmp
 
 
   io.bpu_update.valid       := io.in.valid & is_jmp

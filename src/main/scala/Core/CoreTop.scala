@@ -9,7 +9,7 @@ import chisel3._
 import chisel3.util.ValidIO
 import difftest._
 import Core.Cache.DCache
-import Core.AXI4.{AXI4IO, CROSSBAR_Nto1}
+import Core.AXI4.{AXI4IO, Crossbar}
 
 class SimTopIO extends Bundle {
   val logCtrl = new LogCtrlIO
@@ -30,7 +30,7 @@ class SimTop extends Module {
   val exublock = Module(new ExuBlock)
   val icache = Module(new DCache(cacheNum = 0))
   val dcache = Module(new DCache(cacheNum = 1))
-  val crossbar_xto1 = Module(new CROSSBAR_Nto1(ro_num = 1, rw_num = 1))
+  val crossbar_xto1 = Module(new Crossbar)
 
   io.memAXI_0 <> crossbar_xto1.io.out
 
