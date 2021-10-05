@@ -54,7 +54,7 @@ class BRU extends Module with Config {
   io.jmp.valid := io.in.valid
   io.jmp.bits.new_pc := Mux(io.bpu_update.bits.taken, jump_pc, io.in.bits.uop.cf.pc + 4.U)
   io.jmp.bits.ROBIdx := io.in.bits.uop.ROBIdx
-  io.jmp.bits.mispred := io.bpu_update.bits.taken ^ io.in.bits.uop.cf.br_taken || io.bpu_update.bits.btb_update
+  io.jmp.bits.mispred := io.bpu_update.bits.taken ^ io.in.bits.uop.cf.br_taken || io.bpu_update.bits.btb_update || io.bpu_update.bits.ras_flush
 
   io.bpu_update.valid := io.in.valid
   io.bpu_update.bits.pc := io.in.bits.uop.cf.pc
@@ -67,6 +67,7 @@ class BRU extends Module with Config {
   io.bpu_update.bits.gshare_mispred := io.bpu_update.bits.taken ^ io.in.bits.uop.cf.gshare_pred   //gpht
   io.bpu_update.bits.pht_mispred := io.bpu_update.bits.taken ^ io.in.bits.uop.cf.pht_pred          //pht
   io.bpu_update.bits.btb_update := io.bpu_update.bits.is_jalr && !io.bpu_update.bits.is_ret && io.in.bits.uop.cf.btbtarget =/= io.bpu_update.bits.new_pc
+  io.bpu_update.bits.ras_flush := io.bpu_update.bits.is_ret && io.in.bits.uop.cf.rastarget =/= io.bpu_update.bits.new_pc
 
   // when(io.in.valid){
   //   printf("BRU valid %d, pc %x, inst %x, new_pc %x, taken %d, mispred %d\n",io.in.valid, io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, io.jmp.bits.new_pc, io.bpu_update.bits.taken, io.jmp.bits.mispred)

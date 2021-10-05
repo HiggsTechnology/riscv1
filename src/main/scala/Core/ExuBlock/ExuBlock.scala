@@ -175,7 +175,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
   //并行通知保留站、寄存器
 
-  ExuResult(0) := csr.io.out
+  ExuResult(0) := RegNext(csr.io.out)
   ExuResult(1) := bru.io.out
   ExuResult(2) := alu1.io.out
   ExuResult(3) := alu2.io.out
@@ -192,12 +192,12 @@ class ExuBlock extends Module with ExuBlockConfig{
   io.bpu_update.valid := false.B
 
   //选择跳转信号,暂时不考虑csr
-  when(ExuResult(0).valid){
+  when(csr.io.out.valid){
     when(csr.io.jmp.valid){
       io.redirect   :=  csr.io.jmp
       io.bpu_update :=  csr.io.bpu_update
     }
-  }.elsewhen(ExuResult(1).valid){
+  }.elsewhen(bru.io.out.valid){
     when(bru.io.jmp.valid){
       io.redirect   :=  bru.io.jmp
       io.bpu_update :=  bru.io.bpu_update

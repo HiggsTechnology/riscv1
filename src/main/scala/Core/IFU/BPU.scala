@@ -52,12 +52,14 @@ class BPUIO extends Bundle with Config{
   val gshare_pred = Vec(2,Output(Bool()))
   val pc_pred = Vec(2,Output(Bool()))
   val btbtarget = Vec(2,Output(UInt(XLEN.W)))
+  val rastarget = Vec(2,Output(UInt(XLEN.W)))
 
   //update
   val pred_update = Flipped(ValidIO(new BpuPredUpdateIO))
   val ras_update = Input(new RASupdate)
   val btb_update = Flipped(ValidIO(new BpuBtbUpdateIO))
   val flush = Input(Bool())
+  val ras_flush = Input(Bool())
 }
 
 class BPU extends Module with Config{
@@ -65,8 +67,6 @@ class BPU extends Module with Config{
 
   val btb = Module(new BTB)
   val ras = Module(new RAS)
-
-
   //stage1
   //gshare
   val ghr = RegInit(0.U(ghrBits.W))//ghrBits=10, global history register
@@ -168,7 +168,8 @@ class BPU extends Module with Config{
   ras.io.push.target :=    Mux(is_call(0), pc_br_0, pc_br_1) + 4.U
   ras.io.is_ret      :=    Mux(br_taken_predecode(0), ret_br_0, ret_br_1)
   ras.io.update      :=    io.ras_update
-  ras.io.flush       :=    io.flush
+  ras.io.flush       :=    io.flush && !io.ras_flush
+  ras.io.ras_flush   :=    !io.ras_flush
 
   //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
   //printf("predecode pc %x %x, offset %x %x\n",io.predecode(0).bits.pc3,io.predecode(1).bits.pc3,io.predecode(0).bits.offset,io.predecode(1).bits.offset)
@@ -188,6 +189,7 @@ class BPU extends Module with Config{
   io.pc_pred := PHT_taken3
   for(i <- 0 until FETCH_WIDTH){
     io.btbtarget(i) := Mux(btb_hit3(i), btbtarget3(i), io.predecode(i).bits.pc3 + io.predecode(i).bits.offset)
+    io.rastarget(i) := ras.io.target
   }
   //btb update
   val pre_br_type = Wire(Vec(2,UInt(2.W)))

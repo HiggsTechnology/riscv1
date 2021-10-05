@@ -37,6 +37,7 @@ class RAS extends Module with Config {
 
     val update = Input(new RASupdate)
     val flush  = Input(Bool())
+    val ras_flush  = Input(Bool())
   })
 
 
@@ -102,14 +103,26 @@ class RAS extends Module with Config {
     }
   }
 
-//   printf("RAS    sp %d,     io.call %d,     io.ret %d\n",sp, io.push.iscall, io.is_ret)
-//   for(i <- 0 until RasSize){
-//     printf("RAS %d: target %x, cnt %d\n", i.U, stack(i).retAddr, stack(i).ctr)
-//
-//   }
-//   printf("sp_commit %d, commit_call %d, commit_ret %d\n",sp_commit,io.update.iscall,io.update.is_ret)
-//   for(i <- 0 until RasSize){
-//     printf("RAS commit %d: target %x, cnt %d\n", i.U, stack_commit(i).retAddr, stack_commit(i).ctr)
-//   }
+  when(io.ras_flush){
+    sp := 0.U
+    sp_commit := 0.U
+    for(i <- 0 until RasSize){
+      stack_commit(i).retAddr := 0.U
+      stack_commit(i).ctr := 0.U
+      stack(i).retAddr := 0.U
+      stack(i).ctr := 0.U
+    }
+  }
+  // when(io.printf){
+  // printf("RAS    sp %d,     io.call %d,     io.ret %d\n",sp, io.push.iscall, io.is_ret)
+  // for(i <- 0 until RasSize){
+  //   printf("RAS %d: target %x, cnt %d\n", i.U, stack(i).retAddr, stack(i).ctr)
+
+  // }
+  // printf("sp_commit %d, commit_call %d, commit_ret %d\n",sp_commit,io.update.iscall,io.update.is_ret)
+  // for(i <- 0 until RasSize){
+  //   printf("RAS commit %d: target %x, cnt %d\n", i.U, stack_commit(i).retAddr, stack_commit(i).ctr)
+  // }
+  // }
 
 }

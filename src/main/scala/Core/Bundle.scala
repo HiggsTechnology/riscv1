@@ -23,6 +23,7 @@ class Pc_Instr extends Bundle with Config {
   val gshare_pred = Output(Bool())
   val pht_pred = Output(Bool())
   val btbtarget = Output(UInt(XLEN.W))
+  val rastarget = Output(UInt(XLEN.W))
 }
 
 class CtrlSignalIO extends Bundle with Config {
@@ -68,6 +69,7 @@ class BPU_Update extends Bundle with Config {
   val gshare_mispred = Output(Bool())
   val pht_mispred = Output(Bool())//
   val btb_update = Output(Bool())
+  val ras_flush = Output(Bool())
 }
 
 class LSU_OUTIO extends Bundle with Config {

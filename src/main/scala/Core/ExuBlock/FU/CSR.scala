@@ -201,6 +201,7 @@ class CSR(
   io.bpu_update.bits.gshare_mispred := false.B
   io.bpu_update.bits.pht_mispred := false.B
   io.bpu_update.bits.btb_update := false.B
+  io.bpu_update.bits.ras_flush := false.B
 
   private val csrCommitIO = WireInit(0.U.asTypeOf(new CsrCommitIO))
   csrCommitIO.priviledgeMode := currentPriv
@@ -233,9 +234,9 @@ class CSR(
 //  addSource(RegNext(io.in_old.bits.cf.pc), "difftest_exceptionPC")
 //  addSource(RegNext(io.in_old.bits.cf.instr), "difftest_exceptionInst")
 
-  when (io.in.valid) {
-    printf("csr valid, pc: %x\n", io.in.bits.uop.cf.pc)
-  }
+  // when (io.in.valid) {
+  //   printf("csr valid, pc: %x\n", io.in.bits.uop.cf.pc)
+  // }
 
   def legalizePrivilege(priv: UInt): UInt =
     if (supportUser)

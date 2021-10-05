@@ -23,7 +23,7 @@ class IFU extends Module with Config {
   val pc = RegInit(PC_START.U(XLEN.W))
   val mispred = io.redirect.bits.mispred
   val bpu = Module(new BPU)
-  val continue = (io.out(0).ready || (io.redirect.valid && mispred)) && io.toMem(0).req.ready && io.toMem(0).req.ready
+  val continue = (io.out(0).ready || (io.redirect.valid && mispred)) && io.toMem(0).req.ready && io.toMem(1).req.ready
   bpu.io.continue := continue
   // object IFUState {
   //   val continue :: stall :: Nil = Enum(2)
@@ -109,6 +109,7 @@ class IFU extends Module with Config {
     io.out(i).bits.gshare_pred := bpu.io.gshare_pred(i)
     io.out(i).bits.pht_pred := bpu.io.pc_pred(i)
     io.out(i).bits.btbtarget := bpu.io.btbtarget(i)
+    io.out(i).bits.rastarget := bpu.io.rastarget(i)
 
     io.out(i).bits.pc    := pcVec3(i)
     io.out(i).bits.instr := instrVec3(i)
@@ -122,8 +123,20 @@ class IFU extends Module with Config {
   val flush = io.redirect.valid && mispred
   val flush2 = flush || RegNext(flush)
 
-  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(0).resp.valid || RegNext(!io.out(0).ready && !flush))
-  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(1).resp.valid || RegNext(!io.out(1).ready && !flush)) && !bpu.io.br_taken3(0)
+  val inst_not_enq = Seq.fill(2)(RegInit(false.B))
+  for(i <- 0 until 2){
+    when(io.out(i).valid && !io.out(i).ready && !flush){
+      inst_not_enq(i) := true.B
+    }.elsewhen(io.out(i).fire){
+      inst_not_enq(i) := false.B
+    }.elsewhen(flush){
+      inst_not_enq(i) := false.B
+    }
+  }
+
+
+  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(0).resp.valid || inst_not_enq(0))
+  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(1).resp.valid || inst_not_enq(1)) && !bpu.io.br_taken3(0)
 
 
   bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B
@@ -143,8 +156,9 @@ class IFU extends Module with Config {
   bpu.io.btb_update.bits.br_pc := io.in.bits.pc
 
   bpu.io.flush := io.in.valid && mispred
+  bpu.io.ras_flush := io.in.bits.ras_flush
 
-  // when(io.cachereq(0).ready && io.cachereq(1).ready){
+  // when(io.toMem(0).req.ready && io.toMem(1).req.ready){
   // printf("-------- stage 1 --------\n")
   // printf("IFU in redirect valid %d\n",io.redirect.valid && (io.redirect.bits.mispred))
   // printf("IFU pcReg %x, reset %d\n", pc, reset.asBool)

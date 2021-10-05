@@ -60,8 +60,9 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val br_pred = Wire(Vec(robSize,Bool()))
   val br_pred_reorder = Wire(Vec(robSize,Bool()))
   for(i <- 0 until robSize) {
-    val ret = data(i).ctrl.funcOpType === BRUOpType.jalr && data(i).cf.instr(11,7) === 0.U && (data(i).cf.instr(19,15) === 1.U || data(i).cf.instr(19,15) === 5.U)
-    br_pred(i) := valid(i) && (data(i).cf.is_br && !ret && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
+    // val ret = data(i).ctrl.funcOpType === BRUOpType.jalr && data(i).cf.instr(11,7) === 0.U && (data(i).cf.instr(19,15) === 1.U || data(i).cf.instr(19,15) === 5.U)
+    // br_pred(i) := valid(i) && (data(i).cf.is_br && !ret && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
+    br_pred(i) := valid(i) && (data(i).cf.is_br && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
   }
   when(enq_vec(0).value > deq_vec(0).value){
     br_pred_reorder := DontCare
@@ -125,6 +126,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   BoringUtils.addSink(csrCommitIO, "difftestCsrCommitIO")
   when(io.exuCommit(0).valid){
     csrState(io.exuCommit(0).bits.ROBIdx.value) := csrCommitIO
+    //printf("wb csr idx %d, mtvec %x\n",io.exuCommit(0).bits.ROBIdx.value, csrCommitIO.mtvec)
   }
 
 
@@ -141,13 +143,14 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     commitIsCsr(i) := data(deq_vec(i).value).ctrl.funcType === FuncType.csr
   }
 
-  val commitCsrState = Wire(Vec(2,new CsrCommitIO))
-  commitCsrState(0) := Mux(commitIsCsr(0), csrState(deq_vec(0).value),currentCsrState)
-  commitCsrState(1) := Mux(commitIsCsr(1), csrState(deq_vec(1).value),commitCsrState(0))
+  val commitCsrState = Wire(new CsrCommitIO)
+  // commitCsrState(0) := Mux(commitIsCsr(0), csrState(deq_vec(0).value),currentCsrState)
+  // commitCsrState(1) := Mux(commitIsCsr(1), csrState(deq_vec(1).value),commitCsrState(0))
 
-  when(commitIsCsr(0) || commitIsCsr(1)){
-    currentCsrState := Mux(commitIsCsr(1), csrState(deq_vec(1).value), csrState(deq_vec(0).value))
+  when((commitReady(0) && commitIsCsr(0)) || (commitReady(1) && commitIsCsr(1))){
+    currentCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), csrState(deq_vec(0).value))
   }
+  commitCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), Mux((commitReady(0) && commitIsCsr(0)),csrState(deq_vec(0).value),currentCsrState))
 
   for(i <- 0 until 2){
     io.commit(i).valid := commitReady(i)
@@ -190,28 +193,30 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
     instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
 
+
+  }
+
     val difftestCSRState = Module(new DifftestCSRState)
     difftestCSRState.io.clock           := clock
     difftestCSRState.io.coreid          := 0.U
-    difftestCSRState.io.priviledgeMode  := RegNext(commitCsrState(i).priviledgeMode)
-    difftestCSRState.io.mstatus         := RegNext(commitCsrState(i).mstatus)
-    difftestCSRState.io.sstatus         := RegNext(commitCsrState(i).sstatus)
-    difftestCSRState.io.mepc            := RegNext(commitCsrState(i).mepc)
-    difftestCSRState.io.sepc            := RegNext(commitCsrState(i).sepc)
-    difftestCSRState.io.mtval           := RegNext(commitCsrState(i).mtval)
-    difftestCSRState.io.stval           := RegNext(commitCsrState(i).stval)
-    difftestCSRState.io.mtvec           := RegNext(commitCsrState(i).mtvec)
-    difftestCSRState.io.stvec           := RegNext(commitCsrState(i).stvec)
-    difftestCSRState.io.mcause          := RegNext(commitCsrState(i).mcause)
-    difftestCSRState.io.scause          := RegNext(commitCsrState(i).scause)
-    difftestCSRState.io.satp            := RegNext(commitCsrState(i).satp)
-    difftestCSRState.io.mip             := RegNext(commitCsrState(i).mip)
-    difftestCSRState.io.mie             := RegNext(commitCsrState(i).mie)
-    difftestCSRState.io.mscratch        := RegNext(commitCsrState(i).mscratch)
-    difftestCSRState.io.sscratch        := RegNext(commitCsrState(i).sscratch)
-    difftestCSRState.io.mideleg         := RegNext(commitCsrState(i).mideleg)
-    difftestCSRState.io.medeleg         := RegNext(commitCsrState(i).medeleg)
-  }
+    difftestCSRState.io.priviledgeMode  := RegNext(commitCsrState.priviledgeMode)
+    difftestCSRState.io.mstatus         := RegNext(commitCsrState.mstatus)
+    difftestCSRState.io.sstatus         := RegNext(commitCsrState.sstatus)
+    difftestCSRState.io.mepc            := RegNext(commitCsrState.mepc)
+    difftestCSRState.io.sepc            := RegNext(commitCsrState.sepc)
+    difftestCSRState.io.mtval           := RegNext(commitCsrState.mtval)
+    difftestCSRState.io.stval           := RegNext(commitCsrState.stval)
+    difftestCSRState.io.mtvec           := RegNext(commitCsrState.mtvec)
+    difftestCSRState.io.stvec           := RegNext(commitCsrState.stvec)
+    difftestCSRState.io.mcause          := RegNext(commitCsrState.mcause)
+    difftestCSRState.io.scause          := RegNext(commitCsrState.scause)
+    difftestCSRState.io.satp            := RegNext(commitCsrState.satp)
+    difftestCSRState.io.mip             := RegNext(commitCsrState.mip)
+    difftestCSRState.io.mie             := RegNext(commitCsrState.mie)
+    difftestCSRState.io.mscratch        := RegNext(commitCsrState.mscratch)
+    difftestCSRState.io.sscratch        := RegNext(commitCsrState.sscratch)
+    difftestCSRState.io.mideleg         := RegNext(commitCsrState.mideleg)
+    difftestCSRState.io.medeleg         := RegNext(commitCsrState.medeleg)
 
   val hitTrap = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
@@ -230,9 +235,14 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)
   // printf("ROB predict idx %d\n", io.predict.value)
+
+  // printf("csr commit %d %d\n", (commitReady(0) && commitIsCsr(0)),(commitReady(1) && commitIsCsr(1)))
+  // printf("commit tvec %x\n",commitCsrState.mtvec)
   // for(i <- 0 until robSize){
-  //   printf("ROB %d: valid %d, wb %d, mispred %d, pc %x, inst %x, nospec %d\n",i.U, valid(i), wb(i),mispred(i),data(i).cf.pc,data(i).cf.instr,isAfter(io.predict,data(i).ROBIdx))
+  //   printf("ROB %d: valid %d, wb %d, mispred %d, pc %x, inst %x, nospec %d, mtvec %x\n",i.U, valid(i), wb(i),mispred(i),data(i).cf.pc,data(i).cf.instr,isAfter(io.predict,data(i).ROBIdx),csrState(i).mtvec)
   // }
+
+
 
 }
 
