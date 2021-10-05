@@ -1,7 +1,7 @@
 package Core.CtrlBlock.DISPATCH
 
 import Core.Config.{DispatchQueueSize, ExuNum, RSNum}
-import Core.{Config, MicroOp}
+import Core.{Config, MicroOp, RSType}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -57,7 +57,7 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效
   io.out.microop_out(0).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value))
-  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===3.U)//rs_num===3.U can allow in 2 instr
+  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===RSType.lsurs)//rs_num===3.U can allow in 2 instr
   for (i <- 0 until 2) {
     io.out.microop_out(i).bits  := data(deq_vec(i).value)
     io.out.rs_num_out(i)        := rs_num(deq_vec(i).value)

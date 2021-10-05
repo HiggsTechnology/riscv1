@@ -118,8 +118,19 @@ class IFU extends Module with Config {
   val flush = io.redirect.valid && mispred
   val flush2 = flush || RegNext(flush)
 
-  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(0).datadone || RegNext(!io.out(0).ready && !flush))
-  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(1).datadone || RegNext(!io.out(1).ready && !flush)) && !bpu.io.br_taken3(0)
+  val inst_not_enq = Seq.fill(2)(RegInit(false.B))
+  for(i <- 0 until 2){
+    when(io.out(i).valid && !io.out(i).ready && !flush){
+      inst_not_enq(i) := true.B
+    }.elsewhen(io.out(i).fire){
+      inst_not_enq(i) := false.B
+    }.elsewhen(flush){
+      inst_not_enq(i) := false.B
+    }
+  }
+
+  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(0).datadone || inst_not_enq(0))
+  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(1).datadone || inst_not_enq(1)) && !bpu.io.br_taken3(0)
 
 
   bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B

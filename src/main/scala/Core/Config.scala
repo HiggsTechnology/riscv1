@@ -72,7 +72,7 @@ trait Config {
 
   def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
 
-  def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, LSU and CSR connect to 1 RS
+  def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, BRU and CSR connect to 1 RS
 
   def rsSize :Int = 8
 

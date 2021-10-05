@@ -20,7 +20,7 @@ class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, n
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
-    val ExuResult = Vec(nFu, Flipped(ValidIO(new FuOutPut)))
+    val ExuResult = Vec(ExuNum, Flipped(ValidIO(new FuOutPut)))
 
     val out = ValidIO(new FuInPut)
 
@@ -50,7 +50,7 @@ class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, n
 
   //侦听执行单元结果
   for (i <- 0 until rsSize){
-    for(j <- 0 until nFu){
+    for(j <- 0 until ExuNum){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -75,7 +75,7 @@ class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, n
     src2(enqueueSelect) := io.SrcIn(1)
 
     //入列指令侦听当拍执行单元
-    for(i <- 0 until nFu){
+    for(i <- 0 until ExuNum){
       val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
       val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)

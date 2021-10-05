@@ -42,8 +42,8 @@ class ExuBlock extends Module with Config{
   val jumprs = Module(new RS_inorder(size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU2RS"))
-  val murs   = Module(new RS(size = rsSize, rsNum = 3, nFu = ExuNum, name = "MURS"))
-  val durs   = Module(new RS_DU(size = rsSize, rsNum = 4, nFu = ExuNum, name = "DURS"))
+  val murs   = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "MURS"))
+  val durs   = Module(new RS_DU(size = rsSize, rsNum = 5, nFu = ExuNum, name = "DURS"))
   val lsq  = Module(new LSQ)
   val csr  = Module(new CSR)
   val bru  = Module(new BRU)
@@ -212,6 +212,7 @@ class ExuBlock extends Module with Config{
   ExuResult(5) := du.io.out
   ExuResult(6) := lsu1.io.out
   ExuResult(7) := lsu2.io.out
+  //  printf("mu_out_valid %d du_out_valid %d\n",mu.io.out.valid,du.io.out.valid)
 
   lsq.io.lsu_out(0) := lsu1.io.out
   lsq.io.lsu_out(1) := lsu2.io.out

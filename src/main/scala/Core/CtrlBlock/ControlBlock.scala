@@ -42,7 +42,7 @@ class ControlBlock extends Module with Config{
   //Instantiate Modules
   val decoders     = Seq.fill(2)(Module(new IDU))
   val rename       = Module(new Rename)
-  val intBusyTable = Module(new BusyTable(4, 6))
+  val intBusyTable = Module(new BusyTable(4, ExuNum))
   val dispatch     = Module(new Dispatch)
   val disQueue     = Module(new DispatchQueue)
   val rob          = Module(new ROB)
@@ -98,7 +98,7 @@ class ControlBlock extends Module with Config{
     intBusyTable.io.allocPregs(i).valid     := rename.io.out.microop(i).valid
     intBusyTable.io.allocPregs(i).bits      := rename.io.out.microop(i).bits.pdest
   }
-  for(i <- 0 until 6){
+  for(i <- 0 until ExuNum){
     //commit
     intBusyTable.io.wbPregs(i).valid        := io.in.exuCommit(i).valid
     intBusyTable.io.wbPregs(i).bits         := io.in.exuCommit(i).bits.pdest
