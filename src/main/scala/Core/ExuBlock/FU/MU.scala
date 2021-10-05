@@ -36,7 +36,6 @@ class MUIO extends Bundle {
 class MulIO(val len: Int) extends Bundle {
   val in = Flipped(ValidIO(Vec(2, Output(UInt(len.W)))))
   val flush  = Input(Bool())
-  val sign = Input(Bool())
   val out = ValidIO(Output(UInt((len * 2).W)))
 }
 
@@ -87,5 +86,60 @@ class WTMultiplier extends Module {
 class MU extends Module with Config {
   val io   = IO(new MUIO)
   val mul  = Module(new WTMultiplier)
+  val src = new MDUbit(UInt(XLEN.W))
+  val funcOpType = io.in.bits.uop.ctrl.funcOpType
+  val isDiv = MDUOpType.isDiv(funcOpType)
+  val isDivSign = MDUOpType.isDivSign(funcOpType)
+  val isW = MDUOpType.isW(funcOpType)
 
+  val src1 = Wire(UInt(XLEN.W))
+  val src2 = Wire(UInt(XLEN.W))
+  src1 := io.in.bits.src(0)
+  src2 := io.in.bits.src(1)
+
+  def isMinus(x:UInt):Bool = x(XLEN-1)  //通过补码判断是否为负数
+
+  mul.io.in.valid   := io.in.valid    //如果是乘法则进入
+  mul.io.flush := io.flush
+
+  val (resMinus:Bool) = LookupTree(funcOpType, List(
+    MDUOpType.mul     ->   false.B,
+    MDUOpType.mulh    ->   (isMinus(src1) ^ isMinus(src2)),
+    MDUOpType.mulhsu  ->   isMinus(src1),
+    MDUOpType.mulhu   ->   false.B,
+    MDUOpType.mulw    ->   false.B
+  ))
+//  val (mul.io.in.bits) = LookupTree(funcOpType, List(
+//    MDUOpType.mul     ->   (src1, src2),
+//    MDUOpType.mulh    ->   (src.single(src1), src.single(src2)),
+//    MDUOpType.mulhsu  ->   (src.single(src1), src2),
+//    MDUOpType.mulhu   ->   (src1, src2),
+//    MDUOpType.mulw    ->   (src1, src2)
+//  ))
+  mul.io.in.bits(0) := LookupTree(funcOpType, List(
+    MDUOpType.mul     ->   src1,
+    MDUOpType.mulh    ->   src.single(src1),
+    MDUOpType.mulhsu  ->   src.single(src1),
+    MDUOpType.mulhu   ->   src1,
+    MDUOpType.mulw    ->   src1
+  ))
+  mul.io.in.bits(1) := LookupTree(funcOpType, List(
+    MDUOpType.mul     ->   src2,
+    MDUOpType.mulh    ->   src.single(src2),
+    MDUOpType.mulhsu  ->   src2,
+    MDUOpType.mulhu   ->   src2,
+    MDUOpType.mulw    ->   src2
+  ))
+  val res1 = Mux(resMinus, -mul.io.out.bits, mul.io.out.bits)
+  val res = LookupTree(funcOpType, List(
+    MDUOpType.mul     ->   res1(63,0),
+    MDUOpType.mulh    ->   res1(127,64),
+    MDUOpType.mulhsu  ->   res1(127,64),
+    MDUOpType.mulhu   ->   res1(127,64),
+    MDUOpType.mulw    ->   res1(31,0)
+  ))
+
+  io.out.bits.res := Mux(isW, SignExt(res(31,0), 64), res)
+  io.out.bits.uop := RegNext(io.in.bits.uop)
+  io.out.valid := mul.io.out.valid//RegNext(io.in.valid && !io.flush) && mul.io.out.valid //做了冗余
 }

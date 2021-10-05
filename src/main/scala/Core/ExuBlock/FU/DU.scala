@@ -104,9 +104,8 @@ class Radix8Divider(len: Int = 64) extends Module {
 
 }
 
-class DU extends Module with Config {
-  val io   = IO(new MDUIO)
-  val mul  = Module(new WTMultiplier)
+class DU extends Module with Config with HasCircularQueuePtrHelper {
+  val io   = IO(new DUIO)
   val div  = Module(new Radix8Divider(XLEN))
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
@@ -114,36 +113,61 @@ class DU extends Module with Config {
   val isDiv = MDUOpType.isDiv(funcOpType)
   val isDivSign = MDUOpType.isDivSign(funcOpType)
   val isW = MDUOpType.isW(funcOpType)
+  val src = new MDUbit(UInt(XLEN.W))
+  val ROBIdx = Reg(new ROBPtr)
+  when(io.in.valid){
+    ROBIdx := io.in.bits.uop.ROBIdx
+  }//in RS_DU, ensure that when io.in.valid, last is done
 
   src1 := io.in.bits.src(0)
   src2 := io.in.bits.src(1)
+  def isMinus64(x:UInt):Bool = x(XLEN-1)  //通过补码判断是否为负数
+  def isMinus32(x:UInt):Bool = x(32-1)
 
-  io.out.bits.uop := io.in.bits.uop
-  io.out.valid := Mux(isDiv,div.io.out.valid,mul.io.out.valid)
+  div.io.in.valid := io.in.valid
+  div.io.flush := io.flush
 
-  mul.io.in.bits(0) := src1
-  mul.io.in.bits(1) := src2
-  mul.io.in.valid   := !isDiv && io.in.valid
-
-  io.DivIdle := div.io.DivIdle
-
-
-  val res = LookupTree(funcOpType, List(
-    MDUOpType.mul   ->   (src1 * src2),//todo:add def to
-    MDUOpType.mulh  ->    (src1 * src2),
-    MDUOpType.mulhsu   ->   (src1 * src2),
-    MDUOpType.mulhu   ->   (src1 * src2),
-    MDUOpType.div   ->   (src1 * src2),
-    MDUOpType.divu   ->   (src1 * src2),
-    MDUOpType.rem   ->   (src1 * src2),
-    MDUOpType.remu   ->   (src1 * src2),
-
-    MDUOpType.mulw   ->   (src1 * src2),
-    MDUOpType.divw   ->   (src1 * src2),
-    MDUOpType.divuw   ->   (src1 * src2),
-    MDUOpType.remw   ->   (src1 * src2),
-    MDUOpType.remuw   ->   (src1 * src2)
+  val (resMinus:Bool) = LookupTree(funcOpType, List(
+    MDUOpType.div     ->   (isMinus64(src1) ^ isMinus64(src2)),
+    MDUOpType.divu    ->   false.B,
+    MDUOpType.divw    ->   (isMinus32(src1) ^ isMinus32(src2)),
+    MDUOpType.divuw   ->   false.B
   ))
 
+//  val (div.io.in.bits) = LookupTree(funcOpType, List(
+//    MDUOpType.div     ->   (src.single(src1), src.single(src2)),
+//    MDUOpType.divu    ->   (src1, src2),
+//    MDUOpType.divw    ->   (src.half(src1), src.half(src2)),
+//    MDUOpType.divuw   ->   (src1(31,0), src2(31,0)),
+//  ))
+  div.io.in.bits(0) := LookupTree(funcOpType, List(
+    MDUOpType.div     ->   src.single(src1),
+    MDUOpType.divu    ->   src1,
+    MDUOpType.divw    ->   src.half(src1),
+    MDUOpType.divuw   ->   src1(31,0)
+  ))
+  div.io.in.bits(1) := LookupTree(funcOpType, List(
+    MDUOpType.div     ->   src.single(src2),
+    MDUOpType.divu    ->   src2,
+    MDUOpType.divw    ->   src.half(src2),
+    MDUOpType.divuw   ->   src2(31,0)
+  ))
+
+  val res = Mux(resMinus, -div.io.out.bits, div.io.out.bits)
+//  val res = LookupTree(funcOpType, List(
+//    MDUOpType.div     ->   res1(63,0),
+//    MDUOpType.divu    ->   res1(63,0),
+//    MDUOpType.divw    ->   res1(31,0),
+//    MDUOpType.divuw   ->   res1(31,0)
+//  ))
+
+  io.out.bits.res := Mux(isW, SignExt(res(31,0), 64), res)
+
+  io.out.bits.uop := io.in.bits.uop
+  io.out.valid    := div.io.out.valid && (!io.flush || (io.flush && isAfter(io.mispred_robPtr,ROBIdx)))
+  //是flush当拍直接kill，不会给出div.io.out.valid
+  io.DivIdle    := div.io.DivIdle
+
 }
+
 
