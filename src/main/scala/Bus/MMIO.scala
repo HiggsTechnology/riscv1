@@ -4,6 +4,7 @@ import Core.Cache.{CacheReq, CacheResp}
 import chisel3._
 import chisel3.util._
 import utils.{OutBool, OutUInt}
+import Core.Config.MMIOConfig
 
 object SimpleBusParameter {
   object SIZE {
@@ -53,29 +54,7 @@ class MMIO(num_master: Int, num_slave: Int) extends Module {
   }
   val io : MMIO_IO = IO(new MMIO_IO)
 
-  /**
-   * address mapping<br/>
-   * clint始终在CPU内部<br/>
-   * uart仿真时在SimTop发出，接上SoC后与memory统一处理<br/>
-   */
-  private val addrMap : Map[String, ((Long, Long), Boolean)] = Map(
-    // name     ->  ((addr from  , to         ), ordered)
-    "clint"     ->  ((0x02000000L, 0x0200ffffL), true   ), // "clint"
-    "uart16550" ->  ((0x10000000L, 0x10000fffL), true   ), // "uart16550"
-    "spi"       ->  ((0x10001000L, 0x10001fffL), true   ), // "spi"
-    "spi-xip"   ->  ((0x30000000L, 0x3fffffffL), true   ), // "spi-xip"
-    "chiplink"  ->  ((0x40000000L, 0x7fffffffL), true   ), // "chiplink"
-    "mem"       ->  ((0x80000000L, 0xffffffffL), false  ), // "dcache/mem"
-    "outside"   ->  ((0x10002000L, 0x7fffffffL), false  ), // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间"
-  )
-  private val activateAddrMap = List(
-    addrMap("mem"),
-    addrMap("clint"),
-    addrMap("uart16550"),
-//    addrMap("outsize")
-  )
-
-  val crossbar = Module(new MMIOCrossbar(num_master = num_master, num_slave = num_slave, addrConfig = activateAddrMap))
+  val crossbar = Module(new MMIOCrossbar(num_master = num_master, num_slave = num_slave, addrConfig = MMIOConfig.activateAddrMap))
   (crossbar.io.in zip io.master).foreach{ case(cb_in, io_master) => cb_in <> io_master }
   (crossbar.io.out zip io.slave).foreach{ case(cb_out, io_slave) => cb_out <> io_slave }
 
@@ -194,13 +173,14 @@ class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module
 
   // bind out.req channel
   (io.out zip outSelVec).foreach { case (out, v) => {
-    out.req.bits   := io.in.req.bits
-    out.req.valid  := io.in.req.valid
+    out.req.bits   <> io.in.req.bits
+    out.req.valid  := v && (io.in.req.valid && (state === State.idle))
     out.resp.ready := v
   }}
 
   io.in.resp.valid  := outSelResp.resp.fire()
-  io.in.resp.bits   := outSelResp.resp.bits
+  io.in.resp.bits   <> outSelResp.resp.bits
+  outSelResp.resp.ready := io.in.resp.ready
   io.in.req.ready   := outSel.req.ready
 
   switch (state) {

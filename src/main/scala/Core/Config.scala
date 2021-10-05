@@ -95,6 +95,29 @@ trait Config {
   def BtbWays = 4
   def btbRows = BtbSize/BtbWays
 
+  object MMIOConfig {
+    /**
+     * address mapping<br/>
+     * clint始终在CPU内部<br/>
+     * uart仿真时在SimTop发出，接上SoC后与memory统一处理<br/>
+     */
+    val addrMap : Map[String, ((Long, Long), Boolean)] = Map(
+      // name     ->  ((addr from  , to         ), ordered)
+      "clint"     ->  ((0x02000000L, 0x0200ffffL), true   ), // "clint"
+      "uart16550" ->  ((0x10000000L, 0x10000fffL), true   ), // "uart16550"
+      "spi"       ->  ((0x10001000L, 0x10001fffL), true   ), // "spi"
+      "spi-xip"   ->  ((0x30000000L, 0x3fffffffL), true   ), // "spi-xip"
+      "chiplink"  ->  ((0x40000000L, 0x7fffffffL), true   ), // "chiplink"
+      "mem"       ->  ((0x80000000L, 0xffffffffL), false  ), // "dcache/mem"
+      "outside"   ->  ((0x10002000L, 0x7fffffffL), false  ), // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间"
+    )
+    val activateAddrMap = List(
+      addrMap("mem"),
+      addrMap("clint"),
+      addrMap("uart16550"),
+      //    addrMap("outsize")
+    )
+  }
 }
 
 object SrcState {

@@ -39,6 +39,7 @@ class LSUIO extends Bundle with Config {
 //  val cacheresp = Flipped(ValidIO(new SimpleRespBundle))
   val flush = Input(Bool())
   val spec_issued = Input(Bool())
+  val skip = Output(Bool())
 }
 
 class LSU extends Module with Config {
@@ -64,6 +65,7 @@ class LSU extends Module with Config {
   val io = IO(new LSUIO)
   val uop = RegEnable(io.in.bits.uop, io.toMem.req.fire())
   val addr = Mux(io.in.valid, io.in.bits.src(0), 0.U)
+  val addrReg = RegEnable(io.in.bits.src(0), io.toMem.req.fire())
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
 
@@ -100,7 +102,7 @@ class LSU extends Module with Config {
 
   io.out.valid := io.toMem.resp.valid && !inst_flushed
   io.out.bits.uop := uop
-
+  io.skip := addrReg < 0x80000000L.U
   // when(io.in.valid){
   //   printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
   // }

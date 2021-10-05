@@ -4,7 +4,7 @@ import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.MemReg.RegWriteIO
 import chisel3._
-import utils.OutUInt
+import utils.{OutBool, OutUInt}
 
 /**
  * 真正的只有 PC 和 Instruction
@@ -119,9 +119,10 @@ class FuOutPut extends Bundle with Config{
 }
 
 class ExuCommit extends Bundle with Config {
-  val ROBIdx   = Output(new ROBPtr)
-  val pdest    = Output(UInt(PhyRegIdxWidth.W))
-  val res      = Output(UInt(XLEN.W))
+  val ROBIdx    = Output(new ROBPtr)
+  val pdest     = Output(UInt(PhyRegIdxWidth.W))
+  val res       = Output(UInt(XLEN.W))
+  val skip      = OutBool()
 }
 
 class CommitIO extends Bundle with Config {

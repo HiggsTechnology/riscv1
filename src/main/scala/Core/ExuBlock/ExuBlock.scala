@@ -234,8 +234,10 @@ class ExuBlock extends Module with ExuBlockConfig{
     io.exuCommit(i).bits.pdest := ExuResult(i).bits.uop.pdest
     io.exuCommit(i).bits.ROBIdx := ExuResult(i).bits.uop.ROBIdx
     io.exuCommit(i).bits.res := ExuResult(i).bits.res
+    io.exuCommit(i).bits.skip := false.B
   }
-
+  io.exuCommit(4).bits.skip := lsu1.io.skip
+  io.exuCommit(5).bits.skip := lsu2.io.skip
 
   io.rs_can_allocate(0) := !jumprs.io.full///can_allocate
   io.rs_can_allocate(1) := !alu1rs.io.full

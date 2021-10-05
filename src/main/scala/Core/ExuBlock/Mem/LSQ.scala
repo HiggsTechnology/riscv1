@@ -160,7 +160,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   val check_deq0    = io.lsu_in(0).valid && addr(deq_vec(1).value) =/= addr(deq_vec(0).value)
   val deq1_dataRdy = ((dataState(deq_vec(1).value) && isAfter(io.predict_robPtr,decode(deq_vec(1).value).ROBIdx)) || !is_store(deq_vec(1).value)) && check_deq0
   io.lsu_in(0).valid := !io.flush && !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
-  io.lsu_in(1).valid := !io.flush && !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy
+  io.lsu_in(1).valid := !io.flush && !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy && io.cache_ready(0)
   for(i <- 0 until 2){
     io.lsu_in(i).bits.uop := decode(deq_vec(i).value)
     io.lsu_in(i).bits.src(0) := addr(deq_vec(i).value)

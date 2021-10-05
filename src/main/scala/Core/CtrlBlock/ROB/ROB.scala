@@ -32,6 +32,7 @@ class ROBPtr extends CircularQueuePtr[ROBPtr](robSize) with HasCircularQueuePtrH
 class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new ROBIO)//todo:根据错误预测的分支指令是否提交给IBF信号能否输出
 
+  val skip      = RegInit(VecInit(Seq.fill(robSize)(false.B)))
   val valid     = RegInit(VecInit(Seq.fill(robSize)(false.B)))
   val wb        = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:添加isbranch寄存器
   val mispred   = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:等到分支指令robIdx走到第一个再冲刷
@@ -91,6 +92,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     when(io.in(i).valid && io.in(0).valid && allowEnq){
       valid(enq_vec(i).value) := io.in(i).valid && io.in(0).valid && allowEnq
       wb(enq_vec(i).value) := false.B
+      skip(enq_vec(i).value) := false.B
       mispred(enq_vec(i).value) := false.B
       data(enq_vec(i).value) := io.in(i).bits
       data(enq_vec(i).value).ROBIdx := enq_vec(i)
@@ -108,6 +110,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   for(i <- 0 until 6){
     when(io.exuCommit(i).valid){
       wb(io.exuCommit(i).bits.ROBIdx.value) := true.B
+      skip(io.exuCommit(i).bits.ROBIdx.value) := io.exuCommit(i).bits.skip
       res(io.exuCommit(i).bits.ROBIdx.value) := io.exuCommit(i).bits.res
     }
   }
@@ -148,7 +151,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.clock := clock
     instrCommit.io.coreid := 0.U
     instrCommit.io.index := i.U
-    instrCommit.io.skip := false.B
+    instrCommit.io.skip := RegNext(skip(deq_vec(i).value))
     instrCommit.io.isRVC := false.B
     instrCommit.io.scFailed := false.B
 
