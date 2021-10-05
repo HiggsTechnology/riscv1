@@ -159,13 +159,13 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   val deq0_dataRdy = (dataState(deq_vec(0).value) && isAfter(io.predict_robPtr,decode(deq_vec(0).value).ROBIdx)) || !is_store(deq_vec(0).value)
   val check_deq0    = io.lsu_in(0).valid && addr(deq_vec(1).value) =/= addr(deq_vec(0).value)
   val deq1_dataRdy = ((dataState(deq_vec(1).value) && isAfter(io.predict_robPtr,decode(deq_vec(1).value).ROBIdx)) || !is_store(deq_vec(1).value)) && check_deq0
-  io.lsu_in(0).valid := io.cache_ready(0) && !io.flush && !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
-  io.lsu_in(1).valid := io.cache_ready(1) && !io.flush && !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy
+  io.lsu_in(0).valid := !io.flush && !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
+  io.lsu_in(1).valid := !io.flush && !issued(deq_vec(1).value) && valid(deq_vec(1).value) && addrState(deq_vec(1).value) && deq1_dataRdy
   for(i <- 0 until 2){
     io.lsu_in(i).bits.uop := decode(deq_vec(i).value)
     io.lsu_in(i).bits.src(0) := addr(deq_vec(i).value)
     io.lsu_in(i).bits.src(1) := data(deq_vec(i).value)
-    when(io.lsu_in(i).valid){issued(deq_vec(i).value) := true.B}
+    when(io.lsu_in(i).valid && io.cache_ready(i)){issued(deq_vec(i).value) := true.B}
   }
   for(i <- 0 until 2){
     io.lsu_spec_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value) && isAfter(decode(deq_vec(i).value).ROBIdx,io.predict_robPtr)

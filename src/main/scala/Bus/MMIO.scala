@@ -1,33 +1,54 @@
 package Bus
 
-import Core.SimpleSyncBus
+import Core.Cache.{CacheReq, CacheResp}
 import chisel3._
 import chisel3.util._
 import utils.{OutBool, OutUInt}
 
+object SimpleBusParameter {
+  object SIZE {
+    def EnumSize = 4
+    def Width = log2Up(EnumSize)
+    val bytes1 :: bytes2 :: bytes4 :: bytes8 :: Nil = Enum(EnumSize)
+  }
+}
+
 // MMIO的通用简单读写端口
-class MMIOSimpleReqBundle extends Bundle {
-  val is_write  : Bool = OutBool()
+class SimpleReqBundle extends Bundle {
+  val isWrite  : Bool = OutBool()
   val addr      : UInt = OutUInt(32)
-  val wdata     : UInt = OutUInt(64)
-  val wstrb     : UInt = OutUInt(8)
+  val data     : UInt = OutUInt(64)
+  val wmask     : UInt = OutUInt(8)
   val size      : UInt = OutUInt(3)
+  def toCacheReq() : CacheReq = {
+    val res = new CacheReq
+    res.addr := addr
+    res.isWrite := isWrite
+    res.data := data
+    res.wmask := wmask
+    res
+  }
 }
 
-class MMIOSimpleRespBundle extends Bundle {
-  val rdata     : UInt = OutUInt(64)
+class SimpleRespBundle extends Bundle {
+  val data     : UInt = OutUInt(64)
+  def toCacheResp() : CacheResp = {
+    val res = new CacheResp
+    res.data := data
+    res
+  }
 }
 
-class MMIOSimpleBus extends Bundle {
-  val req : DecoupledIO[MMIOSimpleReqBundle] = Decoupled(new MMIOSimpleReqBundle)
-  val resp : DecoupledIO[MMIOSimpleRespBundle] = Flipped(Decoupled(new MMIOSimpleRespBundle))
+class SimpleBus extends Bundle {
+  val req : DecoupledIO[SimpleReqBundle] = Decoupled(new SimpleReqBundle)
+  val resp : DecoupledIO[SimpleRespBundle] = Flipped(Decoupled(new SimpleRespBundle))
 }
 
 // Todo: Support multi-master
-class MMIO(num_master: Int = 1, num_slave: Int = 3) extends Module {
+class MMIO(num_master: Int, num_slave: Int) extends Module {
   class MMIO_IO extends Bundle {
-    val master : Vec[SimpleSyncBus] = Vec(num_master, Flipped(new SimpleSyncBus))
-    val slave : Vec[SimpleSyncBus] = Vec(num_slave, new SimpleSyncBus)
+    val master : Vec[SimpleBus] = Vec(num_master, Flipped(new SimpleBus))
+    val slave : Vec[SimpleBus] = Vec(num_slave, new SimpleBus)
     val difftest_skip : Bool = OutBool()
   }
   val io : MMIO_IO = IO(new MMIO_IO)
@@ -37,35 +58,114 @@ class MMIO(num_master: Int = 1, num_slave: Int = 3) extends Module {
    * clint始终在CPU内部<br/>
    * uart仿真时在SimTop发出，接上SoC后与memory统一处理<br/>
    */
-  private val addrMap : Map[String, Tuple2[Long, Long]] = Map(
-    "clint"     ->  (0x02000000L, 0x0200ffffL), // "clint"
-    "uart16550" ->  (0x10000000L, 0x10000fffL), // "uart16550"
-    "spi"       ->  (0x10001000L, 0x10001fffL), // "spi"
-    "spi-xip"   ->  (0x30000000L, 0x3fffffffL), // "spi-xip"
-    "chiplink"  ->  (0x40000000L, 0x7fffffffL), // "chiplink"
-    "mem"       ->  (0x80000000L, 0xffffffffL), // "mem"
+  private val addrMap : Map[String, ((Long, Long), Boolean)] = Map(
+    // name     ->  ((addr from  , to         ), ordered)
+    "clint"     ->  ((0x02000000L, 0x0200ffffL), true   ), // "clint"
+    "uart16550" ->  ((0x10000000L, 0x10000fffL), true   ), // "uart16550"
+    "spi"       ->  ((0x10001000L, 0x10001fffL), true   ), // "spi"
+    "spi-xip"   ->  ((0x30000000L, 0x3fffffffL), true   ), // "spi-xip"
+    "chiplink"  ->  ((0x40000000L, 0x7fffffffL), true   ), // "chiplink"
+    "mem"       ->  ((0x80000000L, 0xffffffffL), false  ), // "dcache/mem"
+    "outside"   ->  ((0x10002000L, 0x7fffffffL), false  ), // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间"
   )
   private val activateAddrMap = List(
     addrMap("mem"),
     addrMap("clint"),
     addrMap("uart16550"),
+//    addrMap("outsize")
   )
 
-  private val crossbar : MMIOCrossbar1toN = Module(new MMIOCrossbar1toN(activateAddrMap))
-  crossbar.io.in  <> io.master(0)
-  crossbar.io.out(0) <> io.slave(0)
-  crossbar.io.out(1) <> io.slave(1)
-  crossbar.io.out(2) <> io.slave(2)
+  val crossbar = Module(new MMIOCrossbar(num_master = num_master, num_slave = num_slave, addrConfig = activateAddrMap))
+  (crossbar.io.in zip io.master).foreach{ case(cb_in, io_master) => cb_in <> io_master }
+  (crossbar.io.out zip io.slave).foreach{ case(cb_out, io_slave) => cb_out <> io_slave }
 
-  private val skip = RegNext(io.slave(1).valid || io.slave(2).valid)
+  // 告诉difftest不要比较 Todo:这个skip逻辑不对，存在并行，skip需要和对应的访存指令绑定
+  private val skip = io.slave(1).req.valid || io.slave(2).req.valid
   io.difftest_skip := skip
 }
 
+class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Long), Boolean)]) extends Module {
+  class MMIOCrossbarIO extends Bundle {
+    val in : Vec[SimpleBus] = Vec(num_master, Flipped(new SimpleBus))
+    val out : Vec[SimpleBus] = Vec(num_slave, new SimpleBus)
+  }
+  val io : MMIOCrossbarIO = IO(new MMIOCrossbarIO)
+
+  val cb1toN = Seq.fill(num_master)(Module(new MMIOCrossbar1toN(addrConfig)))
+  val cbNto1forClint = Module(new MMIOCrossbarNto1(num_master))
+  val cbNto1forSimUart = Module(new MMIOCrossbarNto1(num_master))
+//  val cbNto1forAXI4 = Module(new MMIOCrossbarNto1(num_master))
+
+  (cb1toN zip io.in).foreach { case (cb, io_in) => cb.io.in <> io_in }
+  cb1toN(0).io.out(0) <> io.out(0)    // DCache in(0)
+  cb1toN(1).io.out(0) <> io.out(1)    // DCache in(1)
+  (cb1toN zip cbNto1forClint.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(1) <> cb_in }
+  cbNto1forClint.io.out <> io.out(2)  // Clint
+  (cb1toN zip cbNto1forSimUart.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(2) <> cb_in }
+  cbNto1forSimUart.io.out <> io.out(3)// SimUart
+//  (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(3) <> cb_in }
+//  cbNto1forAXI4.io.out <> io.out(4) // AXI4
+
+}
+
+class MMIOCrossbarNto1(num_master: Int) extends Module {
+  class MMIOCrossbarNto1IO extends Bundle {
+    val in : Vec[SimpleBus] = Vec(num_master, Flipped(new SimpleBus))
+    val out = new SimpleBus
+  }
+  val io : MMIOCrossbarNto1IO = IO(new MMIOCrossbarNto1IO)
+
+  // 一个状态机，每次只允许一个信号通过
+  object State {
+    val idle :: readResp :: writeResp :: Nil = Enum(3)
+  }
+  val state = RegInit(State.idle)
+
+  val arb = Module(new Arbiter(chiselTypeOf(io.in(0).req.bits), num_master))
+
+  // req
+  (arb.io.in zip io.in).foreach{ case(arb_in, io_in) =>
+    arb_in <> io_in.req
+  }
+  val selReq = arb.io.out
+  val selIdx = Reg(UInt(log2Up(num_master).W))
+  io.out.req.bits <> arb.io.out.bits
+  io.out.req.valid := arb.io.out.valid && (state === State.idle)
+  selReq.ready := io.out.req.ready && (state === State.idle)
+
+  // resp
+  io.in.foreach(_.resp.bits := io.out.resp.bits)
+  io.in.foreach(_.resp.valid := false.B)
+  io.in(selIdx).resp.valid := io.out.resp.valid
+  io.out.resp.ready := io.in(selIdx).resp.ready
+
+  when(state === State.idle) {
+    when(selReq.fire()) {
+      selIdx := arb.io.chosen
+      when(selReq.bits.isWrite) {
+        state := State.writeResp
+      }.elsewhen(!selReq.bits.isWrite) {
+        state := State.readResp
+      }
+    }
+  }.elsewhen(state === State.readResp) {
+    when(io.out.resp.fire()) {
+      state := State.idle
+    }
+  }.elsewhen(state === State.writeResp) {
+    when(io.out.resp.fire()) {
+      state := State.idle
+    }
+  }
+
+
+}
+
 // 参考nutshell的SimpleBusCrossbar1toN实现
-class MMIOCrossbar1toN(addrSpace: List[Tuple2[Long, Long]]) extends Module {
+class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module {
   class MMIOCrossbar1toNIO extends Bundle {
-    val in : SimpleSyncBus = Flipped(new SimpleSyncBus)
-    val out : Vec[SimpleSyncBus] = Vec(addrSpace.length, new SimpleSyncBus)
+    val in : SimpleBus = Flipped(new SimpleBus)
+    val out : Vec[SimpleBus] = Vec(addrConfig.length, new SimpleBus)
   }
 
   val io : MMIOCrossbar1toNIO = IO(new MMIOCrossbar1toNIO)
@@ -77,32 +177,34 @@ class MMIOCrossbar1toN(addrSpace: List[Tuple2[Long, Long]]) extends Module {
 
   val state : UInt = RegInit(State.idle)
 
-  val inAddr : UInt = io.in.addr
-  val outSelVec : Vec[Bool] = VecInit(addrSpace.map(
-    range => (inAddr >= range._1.U && inAddr <= range._2.U)
+  val inAddr : UInt = io.in.req.bits.addr
+  val outSelVec : Vec[Bool] = VecInit(addrConfig.map(
+    config => (inAddr >= config._1._1.U && inAddr <= config._1._2.U)
   ))
-//  printf("req_valid: %b, outSelVec: %b\n", io.in.valid, outSelVec.asUInt())
 
   val outSelIdx : UInt = PriorityEncoder(outSelVec)
-  val outSel : SimpleSyncBus = io.out(outSelIdx)
+  val outSel : SimpleBus = io.out(outSelIdx)
+  val outSelIdxResp = RegEnable(outSelIdx, outSel.req.fire() && (state === State.idle))
+  val outSelResp = io.out(outSelIdxResp)
 
-  assert(!io.in.valid || outSelVec.asUInt.orR, "address decode error, bad addr = 0x%x\n", inAddr)
-  assert(!(io.in.valid && outSelVec.asUInt.andR), "address decode error, bad addr = 0x%x\n", inAddr)
+  //  printf("req_valid: %b, outSelVec: %b\n", io.in.valid, outSelVec.asUInt())
 
-  // bind out channel
-  (io.out zip outSelVec).foreach { case (o, v) => {
-    o.valid     := v && state === State.idle && io.in.valid
-    o.addr      := io.in.addr
-    o.is_write  := io.in.is_write
-    o.wdata     := io.in.wdata
-    o.wstrb     := io.in.wstrb
-    o.size      := io.in.size
+  assert(!io.in.req.valid || outSelVec.asUInt.orR, "address decode error, bad addr = 0x%x\n", inAddr)
+  assert(!(io.in.req.valid && outSelVec.asUInt.andR), "address decode error, bad addr = 0x%x\n", inAddr)
+
+  // bind out.req channel
+  (io.out zip outSelVec).foreach { case (out, v) => {
+    out.req.bits   := io.in.req.bits
+    out.req.valid  := io.in.req.valid
+    out.resp.ready := v
   }}
 
+  io.in.resp.valid  := outSelResp.resp.fire()
+  io.in.resp.bits   := outSelResp.resp.bits
+  io.in.req.ready   := outSel.req.ready
+
   switch (state) {
-    is (State.idle)       { when (outSel.valid) { state := State.wait_resp } }
-    is (State.wait_resp)  { when (outSel.ready) { state := State.idle } }
+    is (State.idle)       { when (outSel.req.fire()) { state := State.wait_resp } }
+    is (State.wait_resp)  { when (outSelResp.resp.fire()) { state := State.idle } }
   }
-  io.in.ready   := outSel.ready
-  io.in.rdata   := outSel.rdata
 }

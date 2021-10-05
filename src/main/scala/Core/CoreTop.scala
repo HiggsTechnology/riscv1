@@ -2,6 +2,7 @@
 // mill -i __.test.runMain core.TopMain -td ./build
 package Core
 
+import Bus.MMIO
 import Core.CtrlBlock.{ControlBlock, ControlBlockOUT}
 import Core.ExuBlock.ExuBlock
 import Core.IFU.{IFU, Ibuffer}
@@ -10,6 +11,7 @@ import chisel3.util.ValidIO
 import difftest._
 import Core.Cache.DCache
 import Core.AXI4.{AXI4IO, Crossbar}
+import Device.{Clint, SimUart}
 
 class SimTopIO extends Bundle {
   val logCtrl = new LogCtrlIO
@@ -20,9 +22,7 @@ class SimTopIO extends Bundle {
 
 class SimTop extends Module {
   val io       = IO(new SimTopIO)
-  io.uart.in.valid  := false.B
-  io.uart.out.valid := false.B
-  io.uart.out.ch  := 0.U
+
 
   val ifu      = Module(new IFU)
   val ibf      = Module(new Ibuffer)
@@ -30,19 +30,28 @@ class SimTop extends Module {
   val exublock = Module(new ExuBlock)
   val icache = Module(new DCache(cacheNum = 0))
   val dcache = Module(new DCache(cacheNum = 1))
-  val crossbar = Module(new Crossbar)
+  val crossbar  = Module(new Crossbar)
+  val clint     = Module(new Clint)
+  val simUart   = Module(new SimUart)
+  // master:  2;  2 lsu
+  // slave:   5;  2 DataCache, 1 clint, 1 SimUart, 1 AXI4Crossbar write straightly
+  val mmio     = Module(new MMIO(num_master = 2, num_slave = 4))
 
   io.memAXI_0 <> crossbar.io.out
 
   crossbar.io.in(0) <> icache.io.to_rw
   crossbar.io.in(1) <> dcache.io.to_rw
 
+  icache.io.bus <> ifu.io.toMem
 
-  icache.io.req <> ifu.io.cachereq
-  ifu.io.cacheresp := icache.io.resp
+  mmio.io.master(0) <> exublock.io.toMem(0)
+  mmio.io.master(1) <> exublock.io.toMem(1)
 
-  dcache.io.req <> exublock.io.cachereq
-  exublock.io.cacheresp := dcache.io.resp
+  dcache.io.bus(0)  <> mmio.io.slave(0)
+  dcache.io.bus(1)  <> mmio.io.slave(1)
+  clint.io.bus      <> mmio.io.slave(2)
+  simUart.io.bus    <> mmio.io.slave(3)
+  io.uart           <> simUart.io.uart
 
   ifu.io.redirect                 :=  exublock.io.redirect
   ifu.io.in                       :=  exublock.io.bpu_update

@@ -1,6 +1,7 @@
 package Core.ExuBlock
 
 
+import Bus.{SimpleReqBundle, SimpleRespBundle, SimpleBus}
 import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU}
 import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
@@ -12,7 +13,7 @@ import chisel3._
 import chisel3.util._
 import difftest.DifftestArchIntRegState
 import utils._
-import Core.Cache.{CacheReq, CacheResp}
+
 
 trait ExuBlockConfig extends Config {
   def JumpRsSlaveNum = 2
@@ -35,8 +36,7 @@ class ExuBlockIO extends Bundle with Config {
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
 
-  val cachereq  = Vec(2,DecoupledIO(new CacheReq))
-  val cacheresp = Vec(2,Flipped(new CacheResp))
+  val toMem = Vec(2, new SimpleBus)
 }
 
 ///1,,写到orderqueue,保留站,指针给保留站
@@ -162,12 +162,11 @@ class ExuBlock extends Module with ExuBlockConfig{
   lsu2.io.in <> lsq.io.lsu_in(1)
   lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
   lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
-  
-  lsq.io.cache_ready := io.cachereq.map(_.ready)
-  io.cachereq(0) <> lsu1.io.cachereq
-  io.cachereq(1) <> lsu2.io.cachereq
-  lsu1.io.cacheresp := io.cacheresp(0)
-  lsu2.io.cacheresp := io.cacheresp(1)
+
+  io.toMem(0) <> lsu1.io.toMem
+  io.toMem(1) <> lsu2.io.toMem
+  lsq.io.cache_ready := io.toMem.map(_.req.ready)
+
 
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者

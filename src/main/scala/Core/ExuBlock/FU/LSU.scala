@@ -1,5 +1,6 @@
 package Core.ExuBlock.FU
 
+import Bus.{SimpleBus, SimpleReqBundle, SimpleRespBundle}
 import Core.Cache.{CacheReq, CacheResp}
 import Core.{Config, FuInPut, FuOutPut}
 import chisel3._
@@ -33,8 +34,9 @@ object LSUOpType {
 class LSUIO extends Bundle with Config {
   val in  = Flipped(ValidIO(new FuInPut))
   val out = ValidIO(new FuOutPut)
-  val cachereq  = DecoupledIO(new CacheReq)
-  val cacheresp = Flipped(new CacheResp)
+  val toMem = new SimpleBus
+//  val cachereq  = DecoupledIO(new SimpleReqBundle)
+//  val cacheresp = Flipped(ValidIO(new SimpleRespBundle))
   val flush = Input(Bool())
   val spec_issued = Input(Bool())
 }
@@ -60,7 +62,7 @@ class LSU extends Module with Config {
   }
 
   val io = IO(new LSUIO)
-  val uop = RegEnable(io.in.bits.uop,io.in.valid)
+  val uop = RegEnable(io.in.bits.uop, io.toMem.req.fire())
   val addr = Mux(io.in.valid, io.in.bits.src(0), 0.U)
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
@@ -70,14 +72,14 @@ class LSU extends Module with Config {
   val wdata_align = genWdata(storedata, size) //<< (addr(2, 0) * 8.U)
   val mask_align = genWmask(size) //<< (addr(2, 0))
 
-  io.cachereq.valid := io.in.valid
-  io.cachereq.bits.addr := addr
-  io.cachereq.bits.isWrite := isStore
-  io.cachereq.bits.wmask   := mask_align
-  io.cachereq.bits.data    := wdata_align
+  io.toMem.req.valid := io.in.valid
+  io.toMem.req.bits.addr := addr
+  io.toMem.req.bits.isWrite := isStore
+  io.toMem.req.bits.wmask   := mask_align
+  io.toMem.req.bits.data    := wdata_align
+  io.toMem.req.bits.size    := size       // 0: 1byte, 1: 2bytes, 2: 4bytes, 3: 8bytes
 
-
-  val rdataSel = io.cacheresp.data
+  val rdataSel = io.toMem.resp.bits.data
   io.out.bits.res := LookupTree(uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),
@@ -89,13 +91,14 @@ class LSU extends Module with Config {
   ))
 
   val inst_flushed = RegInit(false.B)
-  when(io.flush && io.spec_issued && !io.cacheresp.datadone){
+  when(io.flush && io.spec_issued && !io.toMem.resp.valid){
     inst_flushed := true.B
-  }.elsewhen(io.cacheresp.datadone){
+  }.elsewhen(io.toMem.resp.valid){
     inst_flushed := false.B
   }
+  io.toMem.resp.ready := true.B
 
-  io.out.valid := io.cacheresp.datadone && !inst_flushed
+  io.out.valid := io.toMem.resp.valid && !inst_flushed
   io.out.bits.uop := uop
 
   // when(io.in.valid){

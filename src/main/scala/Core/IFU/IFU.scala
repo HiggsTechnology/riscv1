@@ -1,5 +1,6 @@
 package Core.IFU
 
+import Bus.{SimpleBus, SimpleBusParameter, SimpleReqBundle, SimpleRespBundle}
 import Core.AXI4.AXI4Parameters
 import Core.Cache.{CacheReq, CacheResp}
 import Core.{BPU_Update, Config, Pc_Instr, RedirectIO}
@@ -11,8 +12,9 @@ class IFUIO extends Bundle {
   val in  = Flipped(ValidIO(new BPU_Update))  //branch
   val out = Vec(2, DecoupledIO(new Pc_Instr))
   val redirect = Flipped(ValidIO(new RedirectIO))
-  val cachereq  = Vec(2,DecoupledIO(new CacheReq))
-  val cacheresp = Vec(2,Flipped(new CacheResp))
+  val toMem = Vec(2, new SimpleBus)
+//  val cachereq  = Vec(2,DecoupledIO(new SimpleReqBundle))
+//  val cacheresp = Vec(2,Flipped(ValidIO(new SimpleRespBundle)))
   //  val ifu2rw = new IFU2RW
 }
 
@@ -21,7 +23,7 @@ class IFU extends Module with Config {
   val pc = RegInit(PC_START.U(XLEN.W))
   val mispred = io.redirect.bits.mispred
   val bpu = Module(new BPU)
-  val continue = (io.out(0).ready || (io.redirect.valid && mispred)) && io.cachereq(0).ready && io.cachereq(1).ready
+  val continue = (io.out(0).ready || (io.redirect.valid && mispred)) && io.toMem(0).req.ready && io.toMem(0).req.ready
   bpu.io.continue := continue
   // object IFUState {
   //   val continue :: stall :: Nil = Enum(2)
@@ -63,11 +65,13 @@ class IFU extends Module with Config {
   //stage2
   val pcVec2 = RegEnable(pcVec,continue)
   for(i <- 0 until FETCH_WIDTH){
-    io.cachereq(i).valid := continue && RegNext(!reset.asBool)
-    io.cachereq(i).bits.addr := pcVec2(i)
-    io.cachereq(i).bits.isWrite := false.B
-    io.cachereq(i).bits.wmask   := DontCare
-    io.cachereq(i).bits.data    := DontCare
+    io.toMem(i).req.valid := continue && RegNext(!reset.asBool)
+    io.toMem(i).req.bits.addr := pcVec2(i)
+    io.toMem(i).req.bits.isWrite  := false.B
+    io.toMem(i).req.bits.wmask    := DontCare
+    io.toMem(i).req.bits.data     := DontCare
+    io.toMem(i).req.bits.size     := SimpleBusParameter.SIZE.bytes8
+    io.toMem(i).resp.ready        := true.B
   }
 
 
@@ -80,10 +84,10 @@ class IFU extends Module with Config {
   val instrReg3 = Reg(Vec(2,UInt(INST_WIDTH)))
   val instrVec3 = Wire(Vec(2,UInt(INST_WIDTH)))
   for(i <- 0 until FETCH_WIDTH){
-    when(io.cacheresp(i).datadone){
-      instrReg3(i) := io.cacheresp(i).data(31,0)
+    when(io.toMem(i).resp.valid){
+      instrReg3(i) := io.toMem(i).resp.bits.data(31,0)
     }
-    instrVec3(i) := Mux(io.cacheresp(i).datadone, io.cacheresp(i).data(31,0), instrReg3(i))
+    instrVec3(i) := Mux(io.toMem(i).resp.valid, io.toMem(i).resp.bits.data(31,0), instrReg3(i))
   }
 
 
@@ -91,7 +95,7 @@ class IFU extends Module with Config {
   for(i <- 0 until FETCH_WIDTH){
     preDecVec(i).io.instr:= instrVec3(i)
 
-    bpu.io.predecode(i).valid := io.cacheresp(i).datadone
+    bpu.io.predecode(i).valid := io.toMem(i).resp.valid
     bpu.io.predecode(i).bits.pc3 := pcVec3(i)
     bpu.io.predecode(i).bits.is_br := preDecVec(i).io.is_br
     bpu.io.predecode(i).bits.offset := preDecVec(i).io.offset
@@ -118,8 +122,8 @@ class IFU extends Module with Config {
   val flush = io.redirect.valid && mispred
   val flush2 = flush || RegNext(flush)
 
-  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(0).datadone || RegNext(!io.out(0).ready && !flush))
-  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.cacheresp(1).datadone || RegNext(!io.out(1).ready && !flush)) && !bpu.io.br_taken3(0)
+  io.out(0).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(0).resp.valid || RegNext(!io.out(0).ready && !flush))
+  io.out(1).valid := !flush && flushCnt === 0.U && !ifu_redirect3 && (io.toMem(1).resp.valid || RegNext(!io.out(1).ready && !flush)) && !bpu.io.br_taken3(0)
 
 
   bpu.io.pred_update.valid := io.in.valid && io.in.bits.is_B

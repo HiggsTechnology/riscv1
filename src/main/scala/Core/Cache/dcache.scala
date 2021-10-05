@@ -1,5 +1,6 @@
 package Core.Cache
 
+import Bus.{SimpleBusParameter, SimpleBus, SimpleReqBundle, SimpleRespBundle}
 import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE, dataBits}
 import Core.AXI4.{AXI4IO, AXI4Parameters, AXIParameter}
 import Core.Config
@@ -10,7 +11,7 @@ import utils.ParallelOperation
 
 
 sealed trait CacheConfig extends AXIParameter{
-  def TotalSize = 32 //Kb
+  def TotalSize = 4 //Kb
   def Ways = 4
   def LineSize = 64 // byte
   def Sets = TotalSize * 1024 / LineSize / Ways
@@ -31,16 +32,30 @@ class CacheReq extends Bundle with Config with CacheConfig {
   val isWrite = Bool() //op
   val data = UInt(XLEN.W)
   val wmask = UInt((XLEN/8).W)
+  def toSimpleReqBundle : SimpleReqBundle = {
+    val res = new SimpleReqBundle
+    res.isWrite := isWrite
+    res.addr := addr
+    res.data := data
+    res.wmask := wmask
+    res.size := SimpleBusParameter.SIZE.bytes8
+    res
+  }
 }
 
 class CacheResp extends Bundle with Config with CacheConfig {
   val data = Output(UInt(XLEN.W))
-  val datadone = Output(Bool())
+  def toSimpleRespBundle : SimpleRespBundle = {
+    val res = new SimpleRespBundle
+    res.data := data
+    res
+  }
 }
 
 class CacheIO extends Bundle with Config {
-  val req = Vec(2,Flipped(DecoupledIO(new CacheReq)))
-  val resp = Vec(2,new CacheResp)
+  val bus = Vec(2, Flipped(new SimpleBus))
+//  val req   = Vec(2,Flipped(DecoupledIO(new SimpleReqBundle)))
+//  val resp  = Vec(2,ValidIO(new SimpleRespBundle))
   val to_rw   = new AXI4IO   //
 }
 
@@ -59,26 +74,26 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val writeMem = Seq.fill(2)(Reg(UInt((LineSize * 8).W)))
 
   //stage1 拆信号 判断hitvec
-  val addr = io.req.map(_.bits.addr.asTypeOf(addrBundle))
-  val storeEn = io.req.map(_.valid && (state === s_idle || state === s_lookUp))
+  val addr = io.bus.map(_.req.bits.addr.asTypeOf(addrBundle))
+  val storeEn = io.bus.map(_.req.valid && (state === s_idle || state === s_lookUp))
   val reqValid = Reg(Vec(2, Bool()))
   when(storeEn(0) || storeEn(1)) {
-    reqValid(0) := io.req(0).valid
-    reqValid(1) := io.req(1).valid
+    reqValid(0) := io.bus(0).req.valid
+    reqValid(1) := io.bus(1).req.valid
   }
   val addrReg = Seq.fill(2)(Reg(addrBundle))
   val writeReg = Seq.fill(2)(Reg(new CacheReq))
   for (j <- 0 until 2) {
     when(storeEn(j)) {
       addrReg(j) := addr(j)
-      writeReg(j) := io.req(j).bits
+      writeReg(j) := io.bus(j).req.bits
     }
   }
 
   val tagHitVec = Seq.fill(2)(Wire(Vec(Ways, Bool())))
   for (j <- 0 until 2) {
     for (i <- 0 until Ways) {
-      tagHitVec(j)(i) := io.req(j).valid && valid(i)(addr(j).index) && tagArray(i)(addr(j).index) === addr(j).tag && ((state === s_idle) || (state === s_lookUp))
+      tagHitVec(j)(i) := io.bus(j).req.valid && valid(i)(addr(j).index) && tagArray(i)(addr(j).index) === addr(j).tag && ((state === s_idle) || (state === s_lookUp))
     }
   }
   val hit = Wire(Vec(2, Bool()))
@@ -94,8 +109,8 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
   val needRefill = Seq.fill(2)(Reg(Bool()))
   when(storeEn(0) || storeEn(1)) {
-    needRefill(0) := io.req(0).valid && !hit(0)
-    needRefill(1) := io.req(1).valid && !hit(1) && (addr(0).tag =/= addr(1).tag || addr(0).index =/= addr(1).index)
+    needRefill(0) := io.bus(0).req.valid && !hit(0)
+    needRefill(1) := io.bus(1).req.valid && !hit(1) && (addr(0).tag =/= addr(1).tag || addr(0).index =/= addr(1).index)
   }
 
   //store the meta&data to the readReg or writeReg
@@ -114,7 +129,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val hazd = Wire(Vec(2,Vec(2,Bool())))
   for(m <- 0 until 2){
     for(n <- 0 until 2){
-      hazd(m)(n) :=  RegNext(io.req(m).bits.isWrite && storeEn(m) && hit(m)) && (!io.req(n).bits.isWrite && storeEn(n) && hit(n)) && ((addr(n).tag === addrReg(m).tag) && (addr(n).index === addrReg(m).index))
+      hazd(m)(n) :=  RegNext(io.bus(m).req.bits.isWrite && storeEn(m) && hit(m)) && (!io.bus(n).req.bits.isWrite && storeEn(n) && hit(n)) && ((addr(n).tag === addrReg(m).tag) && (addr(n).index === addrReg(m).index))
     }
   }
   for(m <- 0 until 2){
@@ -328,9 +343,9 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
   //TODO hazrad will happend when the read HIT is after write HIT, write need at lest one clk to write regs, when the read will read the data in the RegNext(CLK)
   for (j <- 0 until 2) {
-    io.req(j).ready  := (state ===s_idle) || (state ===s_lookUp)
-    io.resp(j).data  := readReg(j).asUInt >> addrReg(j).Offset * 8.U
-    io.resp(j).datadone := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid(j)
+    io.bus(j).req.ready  := (state ===s_idle) || (state ===s_lookUp)
+    io.bus(j).resp.bits.data := readReg(j).asUInt >> addrReg(j).Offset * 8.U
+    io.bus(j).resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid(j)
   }
 
 
@@ -340,16 +355,16 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   //-------------------------------------状态机------------------------------------------------
   switch(state) {
     is(s_idle) {
-      when((!hit(0) && io.req(0).valid) || (!hit(1) && io.req(1).valid)){
+      when((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
         state := s_miss
-      }.elsewhen(io.req(0).valid || io.req(1).valid) {
+      }.elsewhen(io.bus(0).req.valid || io.bus(1).req.valid) {
         state := s_lookUp
       }
     }
     is(s_lookUp) {
-      when((!hit(0) && io.req(0).valid) || (!hit(1) && io.req(1).valid)){
+      when((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
         state := s_miss
-      }.elsewhen(!io.req(0).valid && !io.req(1).valid){
+      }.elsewhen(!io.bus(0).req.valid && !io.bus(1).req.valid){
         state := s_idle
       }//若hit即完成本次读取回归idle，否则需要icache从mem读取并且refill icache
     }
