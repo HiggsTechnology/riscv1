@@ -148,3 +148,24 @@ class SimpleSyncBus extends  Bundle with Config{
   val wstrb     = Output(UInt(8.W))
   val size     = Output(UInt(3.W))
 }
+
+class CsrCommitIO extends Bundle {
+  val priviledgeMode = UInt(2.W)
+  val mstatus = UInt(64.W)
+  val sstatus = UInt(64.W)
+  val mepc = UInt(64.W)
+  val sepc = UInt(64.W)
+  val mtval = UInt(64.W)
+  val stval = UInt(64.W)
+  val mtvec = UInt(64.W)
+  val stvec = UInt(64.W)
+  val mcause = UInt(64.W)
+  val scause = UInt(64.W)
+  val satp = UInt(64.W)
+  val mip = UInt(64.W)
+  val mie = UInt(64.W)
+  val mscratch = UInt(64.W)
+  val sscratch = UInt(64.W)
+  val mideleg = UInt(64.W)
+  val medeleg = UInt(64.W)
+}

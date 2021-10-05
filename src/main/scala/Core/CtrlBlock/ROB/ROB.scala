@@ -2,10 +2,12 @@ package Core.CtrlBlock.ROB
 
 import Core.ExuBlock.FU.BRUOpType
 import Core.Config.robSize
-import Core.{RedirectIO, CommitIO, Config, ExuCommit, MicroOp, MisPredictIO}
-import difftest.{DifftestInstrCommit, DifftestTrapEvent}
+import Core.CtrlBlock.IDU.FuncType
+import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, RedirectIO}
+import difftest.{DiffCSRStateIO, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.BoringUtils
 import utils._
 
 class ROBIO extends Bundle {//todo:
@@ -38,6 +40,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val mispred   = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:等到分支指令robIdx走到第一个再冲刷
   val res       = Mem(robSize, UInt(XLEN.W))
   val data      = Mem(robSize, new MicroOp)
+  val csrState  = RegInit(VecInit(Seq.fill(robSize)(0.U.asTypeOf(Flipped(new CsrCommitIO)))))
 
   val enq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ROBPtr))))///循环指针，enq发射阶段进来的信号在orderqueue的位置
   val deq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ROBPtr))))///出列的指针
@@ -115,11 +118,36 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     }
   }
 
+  private val csrCommitIO = WireInit(0.U.asTypeOf(new CsrCommitIO))
+
+  val currentCsrState = RegInit(csrCommitIO)
+
+  BoringUtils.addSink(csrCommitIO, "difftestCsrCommitIO")
+  when(io.exuCommit(0).valid){
+    csrState(io.exuCommit(0).bits.ROBIdx.value) := csrCommitIO
+  }
+
+
+
 
   //dequeue
   val commitReady = Wire(Vec(2,Bool()))
   commitReady(0) := !bru_flush && valid(deq_vec(0).value) && wb(deq_vec(0).value)
   commitReady(1) := !bru_flush && valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
+
+  val commitIsCsr = Wire(Vec(2,Bool()))
+
+  for(i <- 0 until 2){
+    commitIsCsr(i) := data(deq_vec(i).value).ctrl.funcType === FuncType.csr
+  }
+
+  val commitCsrState = Wire(Vec(2,new CsrCommitIO))
+  commitCsrState(0) := Mux(commitIsCsr(0), csrState(deq_vec(0).value),currentCsrState)
+  commitCsrState(1) := Mux(commitIsCsr(1), csrState(deq_vec(1).value),commitCsrState(0))
+
+  when(commitIsCsr(0) || commitIsCsr(1)){
+    currentCsrState := Mux(commitIsCsr(1), csrState(deq_vec(1).value), csrState(deq_vec(0).value))
+  }
 
   for(i <- 0 until 2){
     io.commit(i).valid := commitReady(i)
@@ -161,6 +189,28 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.wen := RegNext(data(deq_vec(i).value).ctrl.rfWen)
     instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
     instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
+
+    val difftestCSRState = Module(new DifftestCSRState)
+    difftestCSRState.io.clock           := clock
+    difftestCSRState.io.coreid          := 0.U
+    difftestCSRState.io.priviledgeMode  := RegNext(commitCsrState(i).priviledgeMode)
+    difftestCSRState.io.mstatus         := RegNext(commitCsrState(i).mstatus)
+    difftestCSRState.io.sstatus         := RegNext(commitCsrState(i).sstatus)
+    difftestCSRState.io.mepc            := RegNext(commitCsrState(i).mepc)
+    difftestCSRState.io.sepc            := RegNext(commitCsrState(i).sepc)
+    difftestCSRState.io.mtval           := RegNext(commitCsrState(i).mtval)
+    difftestCSRState.io.stval           := RegNext(commitCsrState(i).stval)
+    difftestCSRState.io.mtvec           := RegNext(commitCsrState(i).mtvec)
+    difftestCSRState.io.stvec           := RegNext(commitCsrState(i).stvec)
+    difftestCSRState.io.mcause          := RegNext(commitCsrState(i).mcause)
+    difftestCSRState.io.scause          := RegNext(commitCsrState(i).scause)
+    difftestCSRState.io.satp            := RegNext(commitCsrState(i).satp)
+    difftestCSRState.io.mip             := RegNext(commitCsrState(i).mip)
+    difftestCSRState.io.mie             := RegNext(commitCsrState(i).mie)
+    difftestCSRState.io.mscratch        := RegNext(commitCsrState(i).mscratch)
+    difftestCSRState.io.sscratch        := RegNext(commitCsrState(i).sscratch)
+    difftestCSRState.io.mideleg         := RegNext(commitCsrState(i).mideleg)
+    difftestCSRState.io.medeleg         := RegNext(commitCsrState(i).medeleg)
   }
 
   val hitTrap = Wire(Vec(2, Bool()))

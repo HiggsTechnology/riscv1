@@ -6,8 +6,9 @@ import Core._
 import chisel3._
 import chisel3.internal.firrtl.Width
 import chisel3.util._
-import difftest.DifftestCSRState
+import difftest.{DiffCSRStateIO, DifftestCSRState}
 import Core.Define.Exceptions
+import chisel3.util.experimental.BoringUtils
 
 /**
  * CSR 操作码
@@ -201,29 +202,29 @@ class CSR(
   io.bpu_update.bits.pht_mispred := false.B
   io.bpu_update.bits.btb_update := false.B
 
-  private val csrCommit = Module(new DifftestCSRState)
-  csrCommit.io.clock          := clock
-  csrCommit.io.coreid         := 0.U
-  csrCommit.io.priviledgeMode := RegNext(currentPriv)
-  csrCommit.io.mstatus        := RegNext(mstatus.asUInt())
-  csrCommit.io.sstatus        := RegNext(sstatus.asUInt())
-  csrCommit.io.mepc           := RegNext(mepc)
-  csrCommit.io.sepc           := RegNext(0.U)
-  csrCommit.io.mtval          := RegNext(mtval)
-  csrCommit.io.stval          := RegNext(0.U)
-  csrCommit.io.mtvec          := RegNext(mtvec)
-  csrCommit.io.stvec          := RegNext(0.U)
-  csrCommit.io.mcause         := RegNext(mcause)
-  csrCommit.io.scause         := RegNext(0.U)
-  csrCommit.io.satp           := RegNext(0.U)
-  csrCommit.io.mip            := RegNext(0.U)
-  csrCommit.io.mie            := RegNext(mie)
-  csrCommit.io.mscratch       := RegNext(mscratch)
-  csrCommit.io.sscratch       := RegNext(0.U)
-  csrCommit.io.mideleg        := RegNext(mideleg)
-  csrCommit.io.medeleg        := RegNext(medeleg)
+  private val csrCommitIO = WireInit(0.U.asTypeOf(new CsrCommitIO))
+  csrCommitIO.priviledgeMode := currentPriv
+  csrCommitIO.mstatus        := mstatus.asUInt()
+  csrCommitIO.sstatus        := sstatus.asUInt()
+  csrCommitIO.mepc           := mepc
+  csrCommitIO.sepc           := 0.U
+  csrCommitIO.mtval          := mtval
+  csrCommitIO.stval          := 0.U
+  csrCommitIO.mtvec          := mtvec
+  csrCommitIO.stvec          := 0.U
+  csrCommitIO.mcause         := mcause
+  csrCommitIO.scause         := 0.U
+  csrCommitIO.satp           := 0.U
+  csrCommitIO.mip            := 0.U
+  csrCommitIO.mie            := mie
+  csrCommitIO.mscratch       := mscratch
+  csrCommitIO.sscratch       := 0.U
+  csrCommitIO.mideleg        := mideleg
+  csrCommitIO.medeleg        := medeleg
+  BoringUtils.addSource(csrCommitIO, "difftestCsrCommitIO")
 
-// Todo: check difftest commit in ROB block
+
+  // Todo: check difftest commit in ROB block
 //  addSource(RegNext(io.in_old.bits.cf.pc),  "difftest_trapEvent_pc")
 //  addSource(RegNext(mcycle),            "difftest_trapEvent_cycleCnt")
 //  addSource(RegNext(minstret),          "difftest_trapEvent_instrCnt")
