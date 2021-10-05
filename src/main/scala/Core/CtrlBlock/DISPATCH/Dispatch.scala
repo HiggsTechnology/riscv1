@@ -1,6 +1,7 @@
 package Core.CtrlBlock.DISPATCH
 
 import Core.CtrlBlock.IDU.FuncType
+import Core.ExuBlock.FU.MDUOpType
 import Core.{Config, MicroOp, RSType}
 import chisel3._
 import chisel3.util._
@@ -33,16 +34,20 @@ class Dispatch extends Module with Config {
       FuncType.bru -> RSType.jumprs,
       FuncType.alu -> RSType.alurs,
       FuncType.lsu -> RSType.lsurs,
-      FuncType.mdu -> RSType.mdurs
+      FuncType.mdu -> RSType.murs
     ))
   }
   when(io.in.can_allocate){
     alu_ptr := VecInit(alu_ptr.map(_ + PopCount(is_alu)))
   }
   for(i <- 0 until 2){
-    when(io.in.microop_in(i).bits.ctrl.funcType === FuncType.alu){
+    val funcType = io.in.microop_in(i).bits.ctrl.funcType
+    when(funcType === FuncType.alu){
       val sel_rs = if (i == 0) 0.U else PopCount(is_alu.take(i))
       io.out.rs_num_out(i) := rs_num(i) + alu_ptr(sel_rs).value
+    }.elsewhen(funcType === FuncType.mdu){
+      val mdu_num = Mux(!MDUOpType.isDiv(funcType), 0.U, 1.U)//murs->4.U,durs->5.U
+      io.out.rs_num_out(i) := rs_num(i) + mdu_num
     }.otherwise{
       io.out.rs_num_out(i) := rs_num(i)
     }

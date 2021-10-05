@@ -1,44 +1,28 @@
 package Core.ExuBlock.FU
 
+import Core.CtrlBlock.ROB.ROBPtr
 import Core.{Config, FuInPut, FuOutPut}
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 import utils._
 
-object MDUOpType {
-  def mul    = "b0000".U
-  def mulh   = "b0001".U
-  def mulhsu = "b0010".U
-  def mulhu  = "b0011".U
-  def div    = "b0100".U
-  def divu   = "b0101".U
-  def rem    = "b0110".U
-  def remu   = "b0111".U
 
-  def mulw   = "b1000".U
-  def divw   = "b1100".U
-  def divuw  = "b1101".U
-  def remw   = "b1110".U
-  def remuw  = "b1111".U
-
-  def isDiv(op: UInt) = op(2)
-  def isDivSign(op: UInt) = isDiv(op) && !op(0)
-  def isW(op: UInt) = op(3)
-}
-
-
-class MDUIO extends Bundle {
+class DUIO extends Bundle {
   val in  = Flipped(ValidIO(new FuInPut))
   val out = ValidIO(new FuOutPut)
+  val flush = Input(Bool())//l/d会改变数据，所以必须确认存在分支的位置，需要补充一个predict.ROBIdx，而其它EXU只需关注是否在mispred.ROBIdx之后
+  val mispred_robPtr = Input(new ROBPtr)
   val DivIdle = Output(Bool())
 }
 
 class DivIO(val len: Int) extends Bundle {
-  val in = Flipped(DecoupledIO(Vec(2, Output(UInt(len.W)))))
+  val in = Flipped(ValidIO(Vec(2, Output(UInt(len.W)))))
   val flush  = Input(Bool())
   //val sign = Input(Bool())
-  val out = ValidIO(Output(UInt((len * 2).W)))
+  val out = ValidIO(Output(UInt((len).W)))//todo: Now Quotient, don't need remainder
+  //val res1 = Output(UInt((len).W))
+  //val res2 = Output(UInt((len).W))
   val DivIdle = Output(Bool())
 }
 
@@ -48,16 +32,16 @@ class Radix8Divider(len: Int = 64) extends Module {
 
   val s_idle :: s_shift :: s_compute ::  Nil = Enum(3)
   val state = RegInit(s_idle)
-  io.in.ready := (state === s_idle)
+  //io.in.ready := (state === s_idle)
   val newReq = (state === s_idle) && io.in.fire()
   val (a, b) = (io.in.bits(0), io.in.bits(1))
   val shiftReg = Reg(UInt((len * 2).W))
   val (hi,lo) = (shiftReg(len * 2-1, len),shiftReg(len - 1, 0))
 
-  val bReg = RegEnable(a, newReq)
-  val aReg = RegEnable(b, newReq)
+  val aReg = RegEnable(a, newReq)
+  val bReg = RegEnable(b, newReq)
 
-  val cnt = Reg(UInt((len+1).W))
+  val cnt = Reg(UInt(log2Up(len+1).W))
 
   when(newReq){
     val canSkipShift = (len.U | Log2(b)) - Log2(a)
@@ -67,13 +51,13 @@ class Radix8Divider(len: Int = 64) extends Module {
     shiftReg := aReg << cnt
     state := s_compute
   }.elsewhen (state === s_compute) {
-    when(cnt === 64.U){
+    when(cnt === len.U){
       val sr1 = Wire(UInt(len.W))
       val x1enough = hi.asUInt >= bReg.asUInt
       sr1 := Mux(x1enough, hi - bReg, hi)
       shiftReg := Cat(sr1,lo(len-2,0),x1enough)
       state := s_idle
-    }.elsewhen(cnt === 63.U){
+    }.elsewhen(cnt === (len-1).U){
       val sr2 = Wire(UInt(len.W))
       val sr1 = Wire(UInt(len.W))
       val x2enough = hi.asUInt >= bReg.asUInt
@@ -82,7 +66,7 @@ class Radix8Divider(len: Int = 64) extends Module {
       sr1 := Mux(x1enough, sr2 - bReg, sr2)
       shiftReg := Cat(sr1,lo(len-3,0),x2enough,x1enough)
       state := s_idle
-    }.elsewhen(cnt===62.U){
+    }.elsewhen(cnt === (len-2).U){
       val sr4 = Wire(UInt(len.W))
       val sr2 = Wire(UInt(len.W))
       val sr1 = Wire(UInt(len.W))
@@ -105,10 +89,18 @@ class Radix8Divider(len: Int = 64) extends Module {
       val x1enough = sr2.asUInt >= bReg.asUInt
       sr1 := Cat(Mux(x1enough, sr2 - bReg, sr2)(len - 2, 0), lo(len-3))
       shiftReg := Cat(sr1, lo(len-4,0), x4enough, x2enough, x1enough)
+      cnt := cnt + 3.U
     }
   }
-  io.out.valid := RegNext(state) === s_compute && state === s_idle
-  io.out.bits := shiftReg
+  val kill = state=/=s_idle && io.flush
+  when(kill){
+    state := s_idle
+  }
+  io.out.valid := RegNext(state) === s_compute && state === s_idle && RegNext(!io.flush)
+  io.DivIdle := (state === s_idle)//todo:compare through ROBIdx
+  io.out.bits := shiftReg(len-1,0)
+  //io.res1 := shiftReg(len-1,0)
+  //io.res2 := shiftReg(len*2-1,len)//remainder
 
 }
 

@@ -2,7 +2,6 @@ package Core.ExuBlock.RS
 
 import Core.Config.{OrderQueueSize, PhyRegIdxWidth, XLEN}
 import Core.CtrlBlock.ROB.ROBPtr
-import Core.ExuBlock.FU.MDUOpType
 import Core.{CommitIO, Config, FuInPut, FuOutPut, MicroOp}
 import chisel3._
 import chisel3.util._
@@ -12,7 +11,7 @@ import utils._
 
 
 
-class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
+class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
     val DivIdle = Input(Bool())
@@ -23,7 +22,7 @@ class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, 
 
     val ExuResult = Vec(nFu, Flipped(ValidIO(new FuOutPut)))
 
-    val out = Vec(2, ValidIO(new FuInPut))
+    val out = ValidIO(new FuInPut)
 
     val full = Output(Bool())
 
@@ -39,19 +38,16 @@ class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, 
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
-  val isDiv   = WireInit(VecInit(List.tabulate(rsSize)(i => MDUOpType.isDiv(decode(i).ctrl.funcOpType))))
-  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i))))///
-  val mulRdy  = WireInit(VecInit(List.tabulate(rsSize)(i => !isDiv(i) && instRdy(i))))
+  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i) && io.DivIdle)))
 
   val rsFull = valid.asUInt.andR
 
 
   val enqueueSelect = ParallelPriorityEncoder(valid.map(!_))
-  val nodifSelect = ParallelPriorityEncoder(instRdy)
-  val dequeueSelect = Mux(isDiv(nodifSelect) && io.DivIdle, nodifSelect, ParallelPriorityEncoder(mulRdy))
+  val dequeueSelect = ParallelPriorityEncoder(instRdy)
 
 
-  //todo: 添加选择逻辑，是除法且idle同样发射，否则选乘法指令发射
+
   //侦听执行单元结果
   for (i <- 0 until rsSize){
     for(j <- 0 until nFu){
@@ -104,22 +100,15 @@ class RS_MDU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, 
 
   val dispatchReady = instRdy(dequeueSelect)
 
-  io.out(0).bits := DontCare
-  io.out(0).valid := false.B
-  io.out(1).bits := DontCare
-  io.out(1).valid := false.B
+  io.out.bits := DontCare
+  io.out.valid := false.B
   when(dispatchReady) {
-    io.out(0).valid := dispatchReady && !isDiv(dequeueSelect)
-    io.out(0).bits.uop := decode(dequeueSelect)
-    io.out(0).bits.src(0) := src1(dequeueSelect)
-    io.out(0).bits.src(1) := src2(dequeueSelect)
+    io.out.valid := dispatchReady
+    io.out.bits.uop := decode(dequeueSelect)
+    io.out.bits.src(0) := src1(dequeueSelect)
+    io.out.bits.src(1) := src2(dequeueSelect)
     valid(dequeueSelect) := false.B
 
-    io.out(1).valid := dispatchReady && isDiv(dequeueSelect)
-    io.out(1).bits.uop := decode(dequeueSelect)
-    io.out(1).bits.src(0) := src1(dequeueSelect)
-    io.out(1).bits.src(1) := src2(dequeueSelect)
-    valid(dequeueSelect) := false.B
   }
 
   ///io.empty := rsEmpty
