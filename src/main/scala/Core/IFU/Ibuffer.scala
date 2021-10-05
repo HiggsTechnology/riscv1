@@ -1,6 +1,6 @@
 package Core.IFU
 
-import Core.{Config, Pc_Instr}
+import Core.{Config, CtrlFlow}
 import Core.Config.IBufSize
 import chisel3._
 import chisel3.util._
@@ -13,14 +13,14 @@ class IbufPtr extends CircularQueuePtr[IbufPtr](IBufSize){
 class IBufferIO extends Bundle with Config {
   val flush = Input(Bool())
   val flush_commit = Input(Bool())
-  val in    = Vec(2, Flipped(DecoupledIO(new Pc_Instr)))
-  val out   = Vec(2, DecoupledIO(new Pc_Instr))
+  val in    = Vec(2, Flipped(DecoupledIO(new CtrlFlow)))
+  val out   = Vec(2, DecoupledIO(new CtrlFlow))
 }
 
 class Ibuffer extends Module with HasCircularQueuePtrHelper {
   val io = IO(new IBufferIO)
 
-  val data  = Mem(IBufSize, new Pc_Instr)
+  val data  = Mem(IBufSize, new CtrlFlow)
   val valid = RegInit(VecInit(Seq.fill(IBufSize)(false.B)))
 
   val enq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new IbufPtr))))

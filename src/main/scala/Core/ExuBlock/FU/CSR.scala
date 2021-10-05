@@ -40,19 +40,10 @@ class CSR(
 ) extends Module with CsrRegDefine with Config{
   class CSRIO(
   ) extends Bundle {
-    class CSROutPort extends Bundle {
-      val rdata     : UInt          = Output(UInt(DATA_WIDTH))
-
-    }
-    // Todo: replace CfCtrl with FuInPut
     val in        : Valid[FuInPut] = Flipped(Valid(new FuInPut))
-//    val out_old       : Valid[CSROutPort] = Valid(new CSROutPort)
     val out       : Valid[FuOutPut] = Valid(new FuOutPut)
     val jmp       : Valid[RedirectIO]     = Valid(new RedirectIO)
     val bpu_update = ValidIO(new BPU_Update)
-//    val inst_inc  : Valid[InstInc] = Flipped(Valid(new InstInc))
-//    val clint : ClintOutPort = Flipped(new ClintOutPort)
-//    val intr_jmp  : BRU_OUTIO     = new BRU_OUTIO
   }
 
   val io : CSRIO = IO(new CSRIO())
@@ -81,10 +72,6 @@ class CSR(
   ))
   mcycle := mcycle + 1.U
 
-//  private val inst_valid = io.inst_inc.valid
-//  when (inst_valid) {
-//    minstret := minstret + io.inst_inc.bits.value
-//  }
   private val is_mret = CsrOpType.MRET === op
 //  private val is_sret = CsrOpType.SRET === op
 //  private val is_uret = CsrOpType.URET === op
@@ -157,10 +144,15 @@ class CSR(
   private val interruptValid = interruptVec.asUInt.orR()
   private val interruptNo = Mux(interruptValid, PriorityEncoder(interruptVec), 0.U)
   private val interruptCause = (interruptValid.asUInt << (XLEN - 1).U).asUInt | interruptNo
+  BoringUtils.addSource(interruptVec, "interruptVec")
+
   // --------------------------- 时钟中断 --------------------------
-  // todo: 使用BoringUtil.addSink/addSource在CSR和clint之间添加飞线解决
-//  ip.t.M := io.clint.mtip
-//  mtime := io.clint.mtime
+  val mtip = WireInit(false.B)
+  BoringUtils.addSink(mtip, "mtip")
+  BoringUtils.addSink(mtime, "mtime")
+  ip.t.M := mtip
+
+
 
   when (currentPriv === mode_m) {
     // ip.t.M:      mtip: M mode出现时钟中断
@@ -484,7 +476,6 @@ trait CsrRegDefine extends Config {
     CsrAddr.mepc        ->  mepc        ,
     CsrAddr.mcause      ->  mcause      ,
     CsrAddr.mtval       ->  mtval       ,
-    CsrAddr.mip         ->  mip         ,
     // todo map pmpcfg[0~15]
     CsrAddr.mcycle      ->  mcycle      ,
     CsrAddr.minstret    ->  minstret    ,

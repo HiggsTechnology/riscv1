@@ -118,6 +118,11 @@ trait Config {
       //    addrMap("outsize")
     )
   }
+
+  object TrapConfig {
+    def InterruptVecWidth = 12
+    def ExceptionVecWidth = 16
+  }
 }
 
 object SrcState {

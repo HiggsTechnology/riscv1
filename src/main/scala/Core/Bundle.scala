@@ -14,7 +14,7 @@ class PcInst extends Bundle with Config {
   val inst  : UInt = OutUInt(INST_WIDTH)
 }
 
-class Pc_Instr extends Bundle with Config {
+class CtrlFlow extends Bundle with Config {
   val pc    = Output(UInt(XLEN.W))
   val instr = Output(UInt(INST_WIDTH))
   val is_br = Output(Bool())
@@ -42,9 +42,11 @@ class DataSrcIO extends Bundle with Config {
 }
 
 class CfCtrl extends Bundle with Config {
-  val cf   = new Pc_Instr
+  val cf   = new CtrlFlow
   val ctrl = new CtrlSignalIO
   val data = new DataSrcIO
+  val interruptVec = Vec(TrapConfig.InterruptVecWidth, OutBool())
+  val exceptionVec = Vec(TrapConfig.ExceptionVecWidth, OutBool())
 }
 
 class ALU_OUTIO extends Bundle with Config {

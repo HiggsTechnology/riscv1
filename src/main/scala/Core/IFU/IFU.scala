@@ -3,14 +3,14 @@ package Core.IFU
 import Bus.{SimpleBus, SimpleBusParameter, SimpleReqBundle, SimpleRespBundle}
 import Core.AXI4.AXI4Parameters
 import Core.Cache.{CacheReq, CacheResp}
-import Core.{BPU_Update, Config, Pc_Instr, RedirectIO}
+import Core.{BPU_Update, Config, CtrlFlow, RedirectIO}
 import chisel3._
 import chisel3.util._
 
 
 class IFUIO extends Bundle {
   val in  = Flipped(ValidIO(new BPU_Update))  //branch
-  val out = Vec(2, DecoupledIO(new Pc_Instr))
+  val out = Vec(2, DecoupledIO(new CtrlFlow))
   val redirect = Flipped(ValidIO(new RedirectIO))
   val toMem = Vec(2, new SimpleBus)
 //  val cachereq  = Vec(2,DecoupledIO(new SimpleReqBundle))

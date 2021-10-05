@@ -1,24 +1,30 @@
 package Core.CtrlBlock.IDU
 
+import Core.Define.Exceptions
 import Core.ExuBlock.FU.CsrOpType
-import Core.{CfCtrl, Config, Pc_Instr}
+import Core.{CfCtrl, Config, CtrlFlow}
 import chisel3._
 import chisel3.util._
 import RVIInstr._
+import chisel3.util.experimental.BoringUtils
 import utils.{LookupTree, SignExt, ZeroExt}
 
 
 class IDUIO extends Bundle {
-  val in  = Flipped(Decoupled(new Pc_Instr))
+  val in  = Flipped(Decoupled(new CtrlFlow))
   val out = Decoupled(new CfCtrl)
 }
 
 class IDU extends Module with Config{
   val io : IDUIO = IO(new IDUIO)
+
+  private val interruptValid = WireInit(false.B)
   private val instr = io.in.bits.instr
   val (src1Addr, src2Addr, rdAddr) = (instr(19, 15), instr(24, 20), instr(11, 7))
-  val instrType :: funcType :: funcOpType :: src1Type :: src2Type :: Nil
-  = ListLookup(instr, RVIInstr.defaultTable, RVIInstr.table)
+  val decodeList = ListLookup(instr, RVIInstr.defaultInst, RVIInstr.table)
+  val instrType :: funcType :: funcOpType :: src1Type :: src2Type :: Nil =
+    decodeList.zip(RVIInstr.defaultInst).map{ case(decode, default) => Mux(interruptValid, default, decode)}
+  // 中断来临，插入一条默认指令，指令类型是N，是非法指令
   val uimm : UInt = instr(19, 15)
 
   io.out.valid                := io.in.valid
@@ -45,9 +51,19 @@ class IDU extends Module with Config{
     InstrJ  -> SignExt(Cat(instr(31), instr(19, 12), instr(20), instr(30, 21), 0.U(1.W)), XLEN)
   ))
 
+  val interruptVec = WireInit(0.U(TrapConfig.InterruptVecWidth.W))
+  // 中断向量从CSR模块引出
+  BoringUtils.addSink(interruptVec, "interruptVec")
+  interruptValid := interruptVec.orR()
+  io.out.bits.interruptVec := VecInit(interruptVec.asBools())
+  io.out.bits.exceptionVec.foreach(_ := false.B)
+  // 非法指令异常
+  io.out.bits.exceptionVec(Exceptions.IllegalInst) := (instrType === InstrN) && !interruptValid && io.in.valid
+
   io.out.bits.data.imm  := imm
   io.out.bits.data.uimm_ext := uimm_ext
 
-  io.in.ready := io.out.ready
+  // 中断来临，让译码阻塞
+  io.in.ready := io.out.ready && !interruptValid
 
 }

@@ -3,6 +3,7 @@ package Device
 import Bus.SimpleBus
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.BoringUtils
 import utils.{OutBool, OutUInt}
 
 class ClintOutPort extends Bundle {
@@ -13,7 +14,6 @@ class ClintOutPort extends Bundle {
 
 class ClintIO extends Bundle {
   val bus = Flipped(new SimpleBus)
-  val out = new ClintOutPort
 }
 
 class Clint extends Module {
@@ -78,7 +78,7 @@ class Clint extends Module {
   io.bus.resp.bits.data := rdata
   io.bus.resp.valid := RegNext(io.bus.req.valid)
 
-  io.out.mtip := mtime >= mtimecmp
-  io.out.mtime := mtime
-  io.out.mtimecmp := mtimecmp
+  val mtip = mtime >= mtimecmp
+  BoringUtils.addSource(mtip, "mtip")
+  BoringUtils.addSource(mtime, "mtime")
 }
