@@ -80,7 +80,10 @@ class WTMultiplier extends Module {
   //level6
   val res = Cat(branch5(1),0.U(32.W)) + Cat(0.U(32.W),branch5(0))
   io.out.bits :=  res
-  io.out.valid := io.in.valid && !io.flush
+  io.out.valid := RegNext(io.in.valid && !io.flush)
+
+//  printf("WT resU %d a %d b %d valid %d\n",res,a,b,io.out.valid)
+//  printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n")
 }
 
 class MU extends Module with Config {
@@ -88,9 +91,10 @@ class MU extends Module with Config {
   val mul  = Module(new WTMultiplier)
   val src = new MDUbit(UInt(XLEN.W))
   val funcOpType = io.in.bits.uop.ctrl.funcOpType
+  val lastOp = RegEnable(io.in.bits.uop.ctrl.funcOpType,io.in.valid)
   //val isDiv = MDUOpType.isDiv(funcOpType)
   //val isDivSign = MDUOpType.isDivSign(funcOpType)
-  val isW = MDUOpType.isW(funcOpType)
+  val isW = RegEnable(MDUOpType.isW(funcOpType),io.in.valid)
 
   val src1 = Wire(UInt(XLEN.W))
   val src2 = Wire(UInt(XLEN.W))
@@ -102,13 +106,13 @@ class MU extends Module with Config {
   mul.io.in.valid   := io.in.valid    //如果是乘法则进入
   mul.io.flush := io.flush
 
-  val (resMinus:Bool) = LookupTree(funcOpType, List(
+  val (resMinus:Bool) = RegEnable(LookupTree(funcOpType, List(
     MDUOpType.mul     ->   false.B,
     MDUOpType.mulh    ->   (isMinus(src1) ^ isMinus(src2)),
     MDUOpType.mulhsu  ->   isMinus(src1),
     MDUOpType.mulhu   ->   false.B,
     MDUOpType.mulw    ->   false.B
-  ))
+  )),io.in.valid)
 //  val (mul.io.in.bits) = LookupTree(funcOpType, List(
 //    MDUOpType.mul     ->   (src1, src2),
 //    MDUOpType.mulh    ->   (src.single(src1), src.single(src2)),
@@ -118,20 +122,20 @@ class MU extends Module with Config {
 //  ))
   mul.io.in.bits(0) := LookupTree(funcOpType, List(
     MDUOpType.mul     ->   src1,
-    MDUOpType.mulh    ->   src.single(src1),
-    MDUOpType.mulhsu  ->   src.single(src1),
+    MDUOpType.mulh    ->   src.single(src1,64),
+    MDUOpType.mulhsu  ->   src.single(src1,64),
     MDUOpType.mulhu   ->   src1,
     MDUOpType.mulw    ->   src1
   ))
   mul.io.in.bits(1) := LookupTree(funcOpType, List(
     MDUOpType.mul     ->   src2,
-    MDUOpType.mulh    ->   src.single(src2),
+    MDUOpType.mulh    ->   src.single(src2,64),
     MDUOpType.mulhsu  ->   src2,
     MDUOpType.mulhu   ->   src2,
     MDUOpType.mulw    ->   src2
   ))
   val res1 = Mux(resMinus, -mul.io.out.bits, mul.io.out.bits)
-  val res = LookupTree(funcOpType, List(
+  val res = LookupTree(lastOp, List(
     MDUOpType.mul     ->   res1(63,0),
     MDUOpType.mulh    ->   res1(127,64),
     MDUOpType.mulhsu  ->   res1(127,64),
@@ -139,7 +143,12 @@ class MU extends Module with Config {
     MDUOpType.mulw    ->   res1(31,0)
   ))
 
-  io.out.bits.res := Mux(isW, SignExt(res(31,0), 64), res)
-  io.out.bits.uop := RegNext(io.in.bits.uop)
+  io.out.bits.res := Mux(isW, SignExt(res(31,0), 64), res)//all val about out need RegEnable
+  io.out.bits.uop := RegEnable(io.in.bits.uop,io.in.valid)
   io.out.valid := mul.io.out.valid//RegNext(io.in.valid && !io.flush) && mul.io.out.valid //做了冗余
+
+//  printf("MU0v in.valid %d pc %x instr %x, io.out %d %x %x\n",io.in.valid,io.in.bits.uop.cf.pc,io.in.bits.uop.cf.instr,io.out.valid,io.out.bits.uop.cf.pc,io.out.bits.uop.cf.instr)
+//  printf("MU1in src1 %d src2 %d, funcOpType %d,lastOp %d\n",src1,src2,funcOpType,lastOp)
+//  printf("MU2S out.valid %d resU %d resS %d outres %d\n",mul.io.out.valid,mul.io.out.bits,res1,io.out.bits.res)
+//  printf("=================================================================\n")
 }
