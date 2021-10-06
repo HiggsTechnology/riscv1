@@ -42,8 +42,8 @@ class ControlBlock extends Module with Config{
 
   // Only one IDU accept interrupt
   val decoders      = Seq(
-    Module(new IDU(accept_interrupt = true)),
-    Module(new IDU(accept_interrupt = false))
+    Module(new IDU),
+    Module(new IDU)
   )
 
   val rename        = Module(new Rename)

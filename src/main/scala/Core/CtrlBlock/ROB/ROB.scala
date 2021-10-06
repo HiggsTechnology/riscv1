@@ -170,7 +170,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
       mispred(deq_vec(i).value) := false.B
     }
   }
-  when((commitReady(0) && mispred(deq_vec(0).value)) || (commitReady(1) && mispred(deq_vec(1).value))){
+  when((commitReady(0) && mispred(deq_vec(0).value)) || (commitReady(1) && mispred(deq_vec(1).value)) || RegNext(resp_interrupt)){
     io.flush_out := true.B
   }.otherwise{
     io.flush_out := false.B

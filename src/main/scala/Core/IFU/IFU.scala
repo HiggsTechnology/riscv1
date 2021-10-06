@@ -41,7 +41,7 @@ class IFU extends Module with Config {
   when(flushCnt===2.U){
     pcVec(0) := pc
   }.otherwise{
-    pcVec(0) := Mux(io.redirect.valid && mispred, io.in.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
+    pcVec(0) := Mux(io.redirect.valid && mispred, io.redirect.bits.new_pc, Mux(ifu_redirect, bpu.io.jump_pc3, Mux(bpu.io.br_taken(0) || bpu.io.br_taken(1), bpu.io.jump_pc, pc)))
   }
   for(i <- 1 until FETCH_WIDTH){
     pcVec(i) := pcVec(i-1) + 4.U

@@ -187,7 +187,7 @@ class CSR(
   io.jmp.bits.ROBIdx      := Mux(trap.interruptValid, trap.ROBIdx, io.in.bits.uop.ROBIdx)
 
   // 分支预测失败
-  io.jmp.bits.mispred     := io.in.valid & (is_jmp || trap.interruptValid)
+  io.jmp.bits.mispred     := (io.in.valid & is_jmp) || trap.interruptValid
 
   io.bpu_update.valid       := io.in.valid & is_jmp
   io.bpu_update.bits.pc     := io.in.bits.uop.cf.pc
