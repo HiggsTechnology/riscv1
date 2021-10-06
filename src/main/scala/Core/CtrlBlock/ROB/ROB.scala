@@ -5,7 +5,7 @@ import Core.ExuBlock.FU.BRUOpType
 import Core.Config.robSize
 import Core.CtrlBlock.IDU.FuncType
 import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, RedirectIO}
-import difftest.{DiffCSRStateIO, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
+import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.BoringUtils
@@ -156,6 +156,8 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   when((commitReady(0) && commitIsCsr(0)) || (commitReady(1) && commitIsCsr(1))){
     currentCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), csrState(deq_vec(0).value))
+  }.elsewhen (RegNext(resp_interrupt)) {
+    currentCsrState := csrCommitIO  // 啥问题
   }
   commitCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), Mux((commitReady(0) && commitIsCsr(0)),csrState(deq_vec(0).value),currentCsrState))
 
@@ -183,6 +185,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   trap.interruptValid := resp_interrupt
   trap.interruptVec := interruptVec
   trap.epc := data(deq_vec(0).value).cf.pc
+  trap.einst := data(deq_vec(0).value).cf.instr
   trap.ROBIdx := (deq_vec(0) - 1.U)
 
   //difftest
@@ -207,28 +210,30 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
     instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
   }
-
-    val difftestCSRState = Module(new DifftestCSRState)
-    difftestCSRState.io.clock           := clock
-    difftestCSRState.io.coreid          := 0.U
-    difftestCSRState.io.priviledgeMode  := RegNext(commitCsrState.priviledgeMode)
-    difftestCSRState.io.mstatus         := RegNext(commitCsrState.mstatus)
-    difftestCSRState.io.sstatus         := RegNext(commitCsrState.sstatus)
-    difftestCSRState.io.mepc            := RegNext(commitCsrState.mepc)
-    difftestCSRState.io.sepc            := RegNext(commitCsrState.sepc)
-    difftestCSRState.io.mtval           := RegNext(commitCsrState.mtval)
-    difftestCSRState.io.stval           := RegNext(commitCsrState.stval)
-    difftestCSRState.io.mtvec           := RegNext(commitCsrState.mtvec)
-    difftestCSRState.io.stvec           := RegNext(commitCsrState.stvec)
-    difftestCSRState.io.mcause          := RegNext(commitCsrState.mcause)
-    difftestCSRState.io.scause          := RegNext(commitCsrState.scause)
-    difftestCSRState.io.satp            := RegNext(commitCsrState.satp)
-    difftestCSRState.io.mip             := RegNext(commitCsrState.mip)
-    difftestCSRState.io.mie             := RegNext(commitCsrState.mie)
-    difftestCSRState.io.mscratch        := RegNext(commitCsrState.mscratch)
-    difftestCSRState.io.sscratch        := RegNext(commitCsrState.sscratch)
-    difftestCSRState.io.mideleg         := RegNext(commitCsrState.mideleg)
-    difftestCSRState.io.medeleg         := RegNext(commitCsrState.medeleg)
+  // DifftestInstr.valid或中断/异常 才比较CSR和regfile，以下实现保证提交的CSR始终正确
+  //                        N+1         N               N+2                                >N+1        N+3       N+2
+  val csrTrueCommit = Mux(RegNext(resp_interrupt) || RegNext(RegNext(resp_interrupt)), csrCommitIO, RegNext(commitCsrState))
+  val difftestCSRState = Module(new DifftestCSRState)
+  difftestCSRState.io.clock           := clock
+  difftestCSRState.io.coreid          := 0.U
+  difftestCSRState.io.priviledgeMode  := csrTrueCommit.priviledgeMode
+  difftestCSRState.io.mstatus         := csrTrueCommit.mstatus
+  difftestCSRState.io.sstatus         := csrTrueCommit.sstatus
+  difftestCSRState.io.mepc            := csrTrueCommit.mepc
+  difftestCSRState.io.sepc            := csrTrueCommit.sepc
+  difftestCSRState.io.mtval           := csrTrueCommit.mtval
+  difftestCSRState.io.stval           := csrTrueCommit.stval
+  difftestCSRState.io.mtvec           := csrTrueCommit.mtvec
+  difftestCSRState.io.stvec           := csrTrueCommit.stvec
+  difftestCSRState.io.mcause          := csrTrueCommit.mcause
+  difftestCSRState.io.scause          := csrTrueCommit.scause
+  difftestCSRState.io.satp            := csrTrueCommit.satp
+  difftestCSRState.io.mip             := csrTrueCommit.mip
+  difftestCSRState.io.mie             := csrTrueCommit.mie
+  difftestCSRState.io.mscratch        := csrTrueCommit.mscratch
+  difftestCSRState.io.sscratch        := csrTrueCommit.sscratch
+  difftestCSRState.io.mideleg         := csrTrueCommit.mideleg
+  difftestCSRState.io.medeleg         := csrTrueCommit.medeleg
 
   val hitTrap = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
@@ -243,6 +248,9 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
   difftestTrapEvent.io.cycleCnt := cycleCnt
   difftestTrapEvent.io.instrCnt := instrCnt
+
+
+
 
   // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)

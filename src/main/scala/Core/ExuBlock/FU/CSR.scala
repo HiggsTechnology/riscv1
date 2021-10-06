@@ -6,7 +6,7 @@ import Core._
 import chisel3._
 import chisel3.internal.firrtl.Width
 import chisel3.util._
-import difftest.{DiffCSRStateIO, DifftestCSRState}
+import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState}
 import Core.Define.Exceptions
 import chisel3.util.experimental.BoringUtils
 
@@ -225,6 +225,14 @@ class CSR(
   csrCommitIO.medeleg        := medeleg
   BoringUtils.addSource(csrCommitIO, "difftestCsrCommitIO")
 
+
+  val difftestArchEvent = Module(new DifftestArchEvent)
+  difftestArchEvent.io.clock          := clock
+  difftestArchEvent.io.coreid         := 0.U
+  difftestArchEvent.io.exceptionInst  := RegNext(trap.einst)
+  difftestArchEvent.io.exceptionPC    := RegNext(trap.epc)
+  difftestArchEvent.io.cause          := RegNext(0.U)     // Todo: commit exception
+  difftestArchEvent.io.intrNO         := RegNext(Mux(trap.interruptValid, curInterruptNo, 0.U))
 
   // Todo: check difftest commit in ROB block
 //  addSource(RegNext(io.in_old.bits.cf.pc),  "difftest_trapEvent_pc")

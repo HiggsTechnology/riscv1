@@ -177,6 +177,7 @@ class CsrCommitIO extends Bundle {
 
 class TrapIO extends Bundle with Config {
   val epc = UInt(XLEN.W)
+  val einst = UInt(XLEN.W)
   val interruptVec = UInt(TrapConfig.InterruptVecWidth.W)
   val interruptValid = Bool()
   val ROBIdx = new ROBPtr
