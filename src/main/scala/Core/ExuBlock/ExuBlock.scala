@@ -192,7 +192,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   io.bpu_update.valid := false.B
 
   //选择跳转信号,暂时不考虑csr
-  when(csr.io.out.valid){
+  when(csr.io.out.valid || csr.io.trapvalid){
     when(csr.io.jmp.valid){
       io.redirect   :=  csr.io.jmp
       io.bpu_update :=  csr.io.bpu_update
@@ -203,6 +203,8 @@ class ExuBlock extends Module with ExuBlockConfig{
       io.bpu_update :=  bru.io.bpu_update
     }
   }
+  lsu1.io.trapvalid := csr.io.trapvalid
+  lsu2.io.trapvalid := csr.io.trapvalid
 
 
 
@@ -217,6 +219,7 @@ class ExuBlock extends Module with ExuBlockConfig{
 
   lsu1.io.flush := io.redirect.valid && io.redirect.bits.mispred
   lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
+
 
   jumprs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult

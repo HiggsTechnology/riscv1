@@ -38,14 +38,19 @@ class ControlBlockIO extends Bundle{
 }
 
 class ControlBlock extends Module with Config{
-  val io           = IO(new ControlBlockIO)
-  //Instantiate Modules
-  val decoders     = Seq.fill(2)(Module(new IDU))
-  val rename       = Module(new Rename)
-  val intBusyTable = Module(new BusyTable(numReadPorts = 2 * 2, numWritePorts = ExuNum))
-  val dispatch     = Module(new Dispatch)
-  val disQueue     = Module(new DispatchQueue)
-  val rob          = Module(new ROB)
+  val io            = IO(new ControlBlockIO)
+
+  // Only one IDU accept interrupt
+  val decoders      = Seq(
+    Module(new IDU(accept_interrupt = true)),
+    Module(new IDU(accept_interrupt = false))
+  )
+
+  val rename        = Module(new Rename)
+  val intBusyTable  = Module(new BusyTable(numReadPorts = 2 * 2, numWritePorts = ExuNum))
+  val dispatch      = Module(new Dispatch)
+  val disQueue      = Module(new DispatchQueue)
+  val rob           = Module(new ROB)
   //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
   //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
   //Decoder & Backend Commit To Rename

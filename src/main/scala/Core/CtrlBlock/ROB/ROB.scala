@@ -1,5 +1,6 @@
 package Core.CtrlBlock.ROB
 
+import Core.TrapIO
 import Core.ExuBlock.FU.BRUOpType
 import Core.Config.robSize
 import Core.CtrlBlock.IDU.FuncType
@@ -21,6 +22,7 @@ class ROBIO extends Bundle {//todo:
   val flush_out = Output(Bool())
 
   val predict = Output(new ROBPtr)//预测执行的分支指令位置
+
   //todo:isbranch;br_taken用没用分支指令里的立即数；bru里面加判断是否mispredict;microop里有isbranch
   //io.in(i).bits.ctrl.funcType===FuncType.bru
 }
@@ -46,6 +48,12 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val deq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ROBPtr))))///出列的指针
 
   val validEntries = distanceBetween(enq_vec(0), deq_vec(0))
+
+  val interruptVec : UInt = WireInit(0.U(TrapConfig.InterruptVecWidth.W))
+  val interruptValid : Bool = interruptVec.orR()
+  val resp_interrupt = valid(deq_vec(0).value) && interruptValid
+  BoringUtils.addSink(interruptVec, "interruptVec")
+
 
   val bru_flush = io.redirect.valid && io.redirect.bits.mispred
   when(bru_flush){
@@ -131,11 +139,10 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
 
 
-
   //dequeue
   val commitReady = Wire(Vec(2,Bool()))
-  commitReady(0) := !bru_flush && valid(deq_vec(0).value) && wb(deq_vec(0).value)
-  commitReady(1) := !bru_flush && valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
+  commitReady(0) := !resp_interrupt && !bru_flush && valid(deq_vec(0).value) && wb(deq_vec(0).value)
+  commitReady(1) := !resp_interrupt && !bru_flush && valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
 
   val commitIsCsr = Wire(Vec(2,Bool()))
 
@@ -171,6 +178,13 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   deq_vec := VecInit(deq_vec.map(_ + PopCount(commitReady)))
 
+  val trap = WireInit(0.U.asTypeOf(new TrapIO))
+  BoringUtils.addSource(trap, "ROBTrap")
+  trap.interruptValid := resp_interrupt
+  trap.interruptVec := interruptVec
+  trap.epc := data(deq_vec(0).value).cf.pc
+  trap.ROBIdx := (deq_vec(0) - 1.U)
+
   //difftest
   val cycleCnt = RegInit(0.U(64.W))
   cycleCnt := cycleCnt + 1.U
@@ -192,8 +206,6 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     instrCommit.io.wen := RegNext(data(deq_vec(i).value).ctrl.rfWen)
     instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
     instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
-
-
   }
 
     val difftestCSRState = Module(new DifftestCSRState)
@@ -223,14 +235,14 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
     hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U && commitReady(i)
   }
 
-  val trap = Module(new DifftestTrapEvent)
-  trap.io.clock := clock
-  trap.io.coreid := 0.U
-  trap.io.valid := hitTrap(0) || hitTrap(1)
-  trap.io.code := 0.U
-  trap.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
-  trap.io.cycleCnt := cycleCnt
-  trap.io.instrCnt := instrCnt
+  val difftestTrapEvent = Module(new DifftestTrapEvent)
+  difftestTrapEvent.io.clock := clock
+  difftestTrapEvent.io.coreid := 0.U
+  difftestTrapEvent.io.valid := hitTrap(0) || hitTrap(1)
+  difftestTrapEvent.io.code := 0.U
+  difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
+  difftestTrapEvent.io.cycleCnt := cycleCnt
+  difftestTrapEvent.io.instrCnt := instrCnt
 
   // printf("ROB enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("ROB deqvalid %d %d, deq_vec %d %d\n", commitReady(0), commitReady(1), deq_vec(0).value, deq_vec(1).value)

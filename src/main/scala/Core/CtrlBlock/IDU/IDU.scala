@@ -27,7 +27,7 @@ class IDU extends Module with Config{
   // 中断来临，插入一条默认指令，指令类型是N，是非法指令
   val uimm : UInt = instr(19, 15)
 
-  io.out.valid                := io.in.valid
+  io.out.valid                := io.in.valid || interruptValid      // 插入中断指令不依赖于IFU的输出
   io.out.bits.cf              := io.in.bits
   io.out.bits.ctrl.rfSrc(0)   := Mux(src1Type === SrcType1.reg, src1Addr, 0.U)  //保证取到的地址均为有效寄存器地址，若无效则置0
   io.out.bits.ctrl.rfSrc(1)   := Mux(src2Type === SrcType2.reg, src2Addr, 0.U)
@@ -53,17 +53,15 @@ class IDU extends Module with Config{
 
   val interruptVec = WireInit(0.U(TrapConfig.InterruptVecWidth.W))
   // 中断向量从CSR模块引出
-  BoringUtils.addSink(interruptVec, "interruptVec")
-  interruptValid := interruptVec.orR()
-  io.out.bits.interruptVec := VecInit(interruptVec.asBools())
-  io.out.bits.exceptionVec.foreach(_ := false.B)
+
+  io.out.bits.ctrl.interruptVec.foreach(_ := false.B)
+  io.out.bits.ctrl.exceptionVec.foreach(_ := false.B)
   // 非法指令异常
-  io.out.bits.exceptionVec(Exceptions.IllegalInst) := (instrType === InstrN) && !interruptValid && io.in.valid
+  io.out.bits.ctrl.exceptionVec(Exceptions.IllegalInst) := (instrType === InstrN) && !interruptValid && io.in.valid
 
   io.out.bits.data.imm  := imm
   io.out.bits.data.uimm_ext := uimm_ext
 
   // 中断来临，让译码阻塞
   io.in.ready := io.out.ready && !interruptValid
-
 }

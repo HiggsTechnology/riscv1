@@ -34,6 +34,8 @@ class CtrlSignalIO extends Bundle with Config {
   val rfSrc        = Vec(2,Output(UInt(5.W))) //src regfile address//logic
   val rfrd         = Output(UInt(5.W))    //rd regfile address
   val rfWen        = Output(Bool())       //regfile write enable
+  val interruptVec = Vec(TrapConfig.InterruptVecWidth, OutBool())
+  val exceptionVec = Vec(TrapConfig.ExceptionVecWidth, OutBool())
 }
 
 class DataSrcIO extends Bundle with Config {
@@ -45,8 +47,7 @@ class CfCtrl extends Bundle with Config {
   val cf   = new CtrlFlow
   val ctrl = new CtrlSignalIO
   val data = new DataSrcIO
-  val interruptVec = Vec(TrapConfig.InterruptVecWidth, OutBool())
-  val exceptionVec = Vec(TrapConfig.ExceptionVecWidth, OutBool())
+
 }
 
 class ALU_OUTIO extends Bundle with Config {
@@ -172,4 +173,11 @@ class CsrCommitIO extends Bundle {
   val sscratch = UInt(64.W)
   val mideleg = UInt(64.W)
   val medeleg = UInt(64.W)
+}
+
+class TrapIO extends Bundle with Config {
+  val epc = UInt(XLEN.W)
+  val interruptVec = UInt(TrapConfig.InterruptVecWidth.W)
+  val interruptValid = Bool()
+  val ROBIdx = new ROBPtr
 }

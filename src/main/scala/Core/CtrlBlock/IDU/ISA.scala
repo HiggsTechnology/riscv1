@@ -166,5 +166,5 @@ object RVIInstr extends InstrType {
   val table : Array[(BitPat, List[UInt])] =
     RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++
     RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table
-  val defaultInst = List(InstrN, FuncType.alu, ALUOpType.add, SrcType1.pc, SrcType2.imm)
+  val defaultInst = List(InstrN, FuncType.csr, CsrOpType.INTERRUPT, SrcType1.uimm, SrcType2.imm)
 }

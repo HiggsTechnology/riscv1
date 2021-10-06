@@ -14,21 +14,23 @@ import chisel3.util.experimental.BoringUtils
  * CSR 操作码
  */
 object CsrOpType {
-  def RW    : UInt = "b00001".U(FuncOpType.width)
-  def RS    : UInt = "b00010".U(FuncOpType.width)
-  def RC    : UInt = "b00011".U(FuncOpType.width)
-  def RWI   : UInt = "b00101".U(FuncOpType.width)
-  def RSI   : UInt = "b00110".U(FuncOpType.width)
-  def RCI   : UInt = "b00111".U(FuncOpType.width)
-  def ECALL : UInt = "b10000".U(FuncOpType.width)
-  def EBREAK: UInt = "b10001".U(FuncOpType.width)
-  def MRET  : UInt = "b11000".U(FuncOpType.width)
-  def SRET  : UInt = "b11001".U(FuncOpType.width)
-  def URET  : UInt = "b11011".U(FuncOpType.width)
-  def isJmp(op: UInt)   : Bool = op(4).asBool()
-  def isRet(op: UInt)   : Bool = op(3).asBool()
-  def isCsri(op: UInt)  : Bool = op(2).asBool()
-  def isCall(op: UInt)  : Bool = op === ECALL
+  def RW        : UInt = "b000001".U(FuncOpType.width)
+  def RS        : UInt = "b000010".U(FuncOpType.width)
+  def RC        : UInt = "b000011".U(FuncOpType.width)
+  def RWI       : UInt = "b000101".U(FuncOpType.width)
+  def RSI       : UInt = "b000110".U(FuncOpType.width)
+  def RCI       : UInt = "b000111".U(FuncOpType.width)
+  def ECALL     : UInt = "b010000".U(FuncOpType.width)
+  def EBREAK    : UInt = "b010001".U(FuncOpType.width)
+  def MRET      : UInt = "b011000".U(FuncOpType.width)
+  def SRET      : UInt = "b011001".U(FuncOpType.width)
+  def URET      : UInt = "b011011".U(FuncOpType.width)
+  def INTERRUPT : UInt = "b100000".U(FuncOpType.width)
+  def isJmp(op: UInt)       : Bool = op(4).asBool()
+  def isRet(op: UInt)       : Bool = op(3).asBool()
+  def isCsri(op: UInt)      : Bool = op(2).asBool()
+  def isCall(op: UInt)      : Bool = op === ECALL
+  def isInterrupt(op :UInt) : Bool = op(5).asBool()
 }
 
 /**
@@ -44,6 +46,7 @@ class CSR(
     val out       : Valid[FuOutPut] = Valid(new FuOutPut)
     val jmp       : Valid[RedirectIO]     = Valid(new RedirectIO)
     val bpu_update = ValidIO(new BPU_Update)
+    val trapvalid = Output(Bool())
   }
 
   val io : CSRIO = IO(new CSRIO())
@@ -139,12 +142,17 @@ class CSR(
   }
 
   // 中断相关定义
-  private val interruptPc = real_mtvec()
+
   private val interruptVec = mie(11, 0) & mip.asUInt()(11,0) & Fill(12, mstatus.IE.M)
   private val interruptValid = interruptVec.asUInt.orR()
-  private val interruptNo = Mux(interruptValid, PriorityEncoder(interruptVec), 0.U)
-  private val interruptCause = (interruptValid.asUInt << (XLEN - 1).U).asUInt | interruptNo
   BoringUtils.addSource(interruptVec, "interruptVec")
+
+  private val trap = WireInit(0.U.asTypeOf(new TrapIO))
+  BoringUtils.addSink(trap, "ROBTrap")
+
+  private val curInterruptPc = real_mtvec()
+  private val curInterruptNo = Mux(trap.interruptValid, PriorityEncoder(trap.interruptVec), 0.U)
+  private val curInterruptCause = (trap.interruptValid.asUInt << (XLEN - 1).U).asUInt | curInterruptNo
 
   // --------------------------- 时钟中断 --------------------------
   val mtip = WireInit(false.B)
@@ -153,17 +161,16 @@ class CSR(
   ip.t.M := mtip
 
 
-
+  // --------------------------- 中断处理 --------------------------
   when (currentPriv === mode_m) {
     // ip.t.M:      mtip: M mode出现时钟中断
     // ie.t.M:      mtie: M mode允许时钟中断
     // status.IE.M: mie:  M mode允许中断
-    when(interruptValid) {
+    when(trap.interruptValid) {
       // 暂定实时响应中断
-      // todo: 以流水线运行时，记录未提交的最早pc值
-      mepc    := pc
-      mcause  := interruptCause
-      status.IE.M := false.B         // xIE设为0
+      mepc    := trap.epc
+      mcause  := curInterruptCause
+      status.IE.M := false.B         // xIE设为0，跳转过程中不响应中断
       status.PIE.M := status.IE.M
       status.MPP  := currentPriv
     }
@@ -174,11 +181,13 @@ class CSR(
   io.out.bits.res         := rdata
   io.out.bits.uop         := io.in.bits.uop
 
-  io.jmp.valid            := io.in.valid & is_jmp
-  io.jmp.bits.new_pc      := new_pc
-  io.jmp.bits.ROBIdx      := io.in.bits.uop.ROBIdx
+  io.trapvalid            := trap.interruptValid
+  io.jmp.valid            := (io.in.valid & is_jmp) || trap.interruptValid
+  io.jmp.bits.new_pc      := Mux(trap.interruptValid, real_mtvec(), new_pc)
+  io.jmp.bits.ROBIdx      := Mux(trap.interruptValid, trap.ROBIdx, io.in.bits.uop.ROBIdx)
+
   // 分支预测失败
-  io.jmp.bits.mispred     := io.in.valid & is_jmp
+  io.jmp.bits.mispred     := io.in.valid & (is_jmp || trap.interruptValid)
 
   io.bpu_update.valid       := io.in.valid & is_jmp
   io.bpu_update.bits.pc     := io.in.bits.uop.cf.pc

@@ -40,6 +40,7 @@ class LSUIO extends Bundle with Config {
   val flush = Input(Bool())
   val spec_issued = Input(Bool())
   val skip = Output(Bool())
+  val trapvalid = Input(Bool())
 }
 
 class LSU extends Module with Config {
@@ -93,7 +94,7 @@ class LSU extends Module with Config {
   ))
 
   val inst_flushed = RegInit(false.B)
-  when(io.flush && io.spec_issued && !io.toMem.resp.valid){
+  when((io.flush && io.spec_issued && !io.toMem.resp.valid) || (io.trapvalid && !io.toMem.req.ready)){
     inst_flushed := true.B
   }.elsewhen(io.toMem.resp.valid){
     inst_flushed := false.B
