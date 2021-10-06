@@ -88,8 +88,8 @@ class MU extends Module with Config {
   val mul  = Module(new WTMultiplier)
   val src = new MDUbit(UInt(XLEN.W))
   val funcOpType = io.in.bits.uop.ctrl.funcOpType
-  val isDiv = MDUOpType.isDiv(funcOpType)
-  val isDivSign = MDUOpType.isDivSign(funcOpType)
+  //val isDiv = MDUOpType.isDiv(funcOpType)
+  //val isDivSign = MDUOpType.isDivSign(funcOpType)
   val isW = MDUOpType.isW(funcOpType)
 
   val src1 = Wire(UInt(XLEN.W))

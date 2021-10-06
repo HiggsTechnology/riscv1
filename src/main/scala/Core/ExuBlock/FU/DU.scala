@@ -21,7 +21,7 @@ class DivIO(val len: Int) extends Bundle {
   val flush  = Input(Bool())
   //val sign = Input(Bool())
   val out = ValidIO(Output(UInt((len).W)))//todo: Now Quotient, don't need remainder
-  //val res1 = Output(UInt((len).W))
+  val rem = Output(UInt((len).W))
   //val res2 = Output(UInt((len).W))
   val DivIdle = Output(Bool())
 }
@@ -92,15 +92,15 @@ class Radix8Divider(len: Int = 64) extends Module {
       cnt := cnt + 3.U
     }
   }
-  val kill = state=/=s_idle && io.flush
+  val kill = (state=/=s_idle) && io.flush
   when(kill){
     state := s_idle
   }
   io.out.valid := RegNext(state) === s_compute && state === s_idle && RegNext(!io.flush)
   io.DivIdle := (state === s_idle)//todo:compare through ROBIdx
   io.out.bits := shiftReg(len-1,0)
-  //io.res1 := shiftReg(len-1,0)
-  //io.res2 := shiftReg(len*2-1,len)//remainder
+  //io.quot := shiftReg(len-1,0)
+  io.rem := shiftReg(len*2-1,len)//remainder
 
 }
 
@@ -111,7 +111,6 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   val src2 = Wire(UInt(XLEN.W))
   val funcOpType = io.in.bits.uop.ctrl.funcOpType
   val isDiv = MDUOpType.isDiv(funcOpType)
-  val isDivSign = MDUOpType.isDivSign(funcOpType)
   val isW = MDUOpType.isW(funcOpType)
   val src = new MDUbit(UInt(XLEN.W))
   val ROBIdx = Reg(new ROBPtr)
@@ -127,41 +126,42 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   div.io.in.valid := io.in.valid
   div.io.flush := io.flush
 
-  val (resMinus:Bool) = LookupTree(funcOpType, List(
+  val (quotMinus:Bool) = LookupTree(funcOpType, List(
     MDUOpType.div     ->   (isMinus64(src1) ^ isMinus64(src2)),
     MDUOpType.divu    ->   false.B,
     MDUOpType.divw    ->   (isMinus32(src1) ^ isMinus32(src2)),
     MDUOpType.divuw   ->   false.B
-  ))
+  ))//商的符号
+  val (remMinus:Bool) = LookupTree(funcOpType, List(
+    MDUOpType.rem     ->   isMinus64(src1),
+    MDUOpType.remu    ->   false.B,
+    MDUOpType.remw    ->   isMinus32(src1),
+    MDUOpType.remuw   ->   false.B
+  ))//余数符号,跟被除数相同,与除数无关
 
-//  val (div.io.in.bits) = LookupTree(funcOpType, List(
-//    MDUOpType.div     ->   (src.single(src1), src.single(src2)),
-//    MDUOpType.divu    ->   (src1, src2),
-//    MDUOpType.divw    ->   (src.half(src1), src.half(src2)),
-//    MDUOpType.divuw   ->   (src1(31,0), src2(31,0)),
-//  ))
-  div.io.in.bits(0) := LookupTree(funcOpType, List(
+  val dividend_abs = LookupTree(funcOpType, List(
     MDUOpType.div     ->   src.single(src1),
     MDUOpType.divu    ->   src1,
     MDUOpType.divw    ->   src.half(src1),
     MDUOpType.divuw   ->   src1(31,0)
   ))
-  div.io.in.bits(1) := LookupTree(funcOpType, List(
+  val divisor_abs = LookupTree(funcOpType, List(
     MDUOpType.div     ->   src.single(src2),
     MDUOpType.divu    ->   src2,
     MDUOpType.divw    ->   src.half(src2),
     MDUOpType.divuw   ->   src2(31,0)
   ))
 
-  val res = Mux(resMinus, -div.io.out.bits, div.io.out.bits)
-//  val res = LookupTree(funcOpType, List(
-//    MDUOpType.div     ->   res1(63,0),
-//    MDUOpType.divu    ->   res1(63,0),
-//    MDUOpType.divw    ->   res1(31,0),
-//    MDUOpType.divuw   ->   res1(31,0)
-//  ))
+  div.io.in.bits(0) := dividend_abs
+  div.io.in.bits(1) := divisor_abs
+  val remU = div.io.rem//Mux(quotMinus,divisor_abs - div.io.rem, div.io.rem)//错！被python骗了:若商为负，绝对值为除数绝对值减余数绝对值
+  val quot = Mux(quotMinus, -div.io.out.bits, div.io.out.bits)
+  val rem = Mux(remMinus,-remU,remU)//余数符号与被除数相同
 
-  io.out.bits.res := Mux(isW, SignExt(res(31,0), 64), res)
+
+  val quotres = Mux(isW, SignExt(quot(31,0), 64), quot)
+  val remres  = Mux(isW, SignExt(rem(31,0),64),rem)
+  io.out.bits.res := Mux(isDiv,quotres,remres)
 
   io.out.bits.uop := io.in.bits.uop
   io.out.valid    := div.io.out.valid && (!io.flush || (io.flush && isAfter(io.mispred_robPtr,ROBIdx)))
