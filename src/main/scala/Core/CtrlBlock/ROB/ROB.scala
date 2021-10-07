@@ -1,9 +1,10 @@
 package Core.CtrlBlock.ROB
 
 import Core.TrapIO
-import Core.ExuBlock.FU.BRUOpType
+import Core.ExuBlock.FU.{BRUOpType, CsrRegDefine}
 import Core.Config.robSize
 import Core.CtrlBlock.IDU.FuncType
+import Core.ExuBlock.FU
 import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, RedirectIO}
 import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
@@ -187,6 +188,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   trap.epc := data(deq_vec(0).value).cf.pc
   trap.einst := data(deq_vec(0).value).cf.instr
   trap.ROBIdx := (deq_vec(0) - 1.U)
+  trap.mstatus := RegNext(commitCsrState.mstatus)  // 中断使用待提交的mstatus状态，而不是CSR中的mstatus状态
 
   //difftest
   val cycleCnt = RegInit(0.U(64.W))

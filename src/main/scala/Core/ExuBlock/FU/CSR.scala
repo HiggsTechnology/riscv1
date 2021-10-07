@@ -147,13 +147,12 @@ class CSR(
   }
 
   // 中断相关定义
-
-  private val interruptVec = mie(11, 0) & mip.asUInt()(11,0) & Fill(12, mstatus.IE.M)
-  private val interruptValid = interruptVec.asUInt.orR()
-  BoringUtils.addSource(interruptVec, "interruptVec")
-
   private val trap = WireInit(0.U.asTypeOf(new TrapIO))
   BoringUtils.addSink(trap, "ROBTrap")
+
+  private val interruptVec = mie(11, 0) & mip.asUInt()(11,0) & Fill(12, trap.mstatus.asTypeOf(new Status).IE.M)
+  private val interruptValid = interruptVec.asUInt.orR()
+  BoringUtils.addSource(interruptVec, "interruptVec")
 
   private val curInterruptPc = real_mtvec()
   private val curInterruptNo = Mux(trap.interruptValid, PriorityEncoder(trap.interruptVec), 0.U)
@@ -504,6 +503,7 @@ trait CsrRegDefine extends Config {
     // todo map Machine Counter Setup, Debug/Trace Registers, Debug Mode Registers
   )
 }
+object CsrRegDefine extends CsrRegDefine
 
 object Privilege extends Config {
   object Level {
