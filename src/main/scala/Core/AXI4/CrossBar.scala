@@ -2,7 +2,7 @@ package Core.AXI4
 
 import Core.Config
 import chisel3._
-import chisel3.util.{Arbiter, LockingArbiter, Enum, is, switch}
+import chisel3.util._
 
 
 class CrossbarIO extends Bundle with Config{
@@ -115,16 +115,19 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   (writeArb.io.in zip io.in.map(_.aw)).foreach { case (arb, in) => arb <> in }
   private val curAWriteReq = writeArb.io.out
   private val chosenWrite = writeArb.io.chosen
+  private val writeIdxReg = RegEnable(chosenWrite, writeArb.io.out.fire())
+  private val writeIdx = Mux(writeArb.io.out.fire(), chosenWrite, writeIdxReg)
   // aw
   io.out.aw.bits <> curAWriteReq.bits
   io.out.aw.bits.id := chosenWrite
   io.out.aw.valid := curAWriteReq.valid && (wState === State.idle)
   curAWriteReq.ready := io.out.aw.ready && (wState === State.idle)
   // w
-  io.out.w.valid := io.in(chosenWrite).w.valid && (wState === State.idle)
-  io.out.w.bits <> io.in(chosenWrite).w.bits
+  // aw和w可以同时发送
+  io.out.w.valid := io.in(writeIdx).w.valid && (wState === State.idle) || (wState === State.trans)
+  io.out.w.bits <> io.in(writeIdx).w.bits
   io.in.foreach(_.w.ready := false.B)
-  io.in(chosenWrite).w.ready := io.out.w.ready && (wState === State.idle)
+  io.in(writeIdx).w.ready := io.out.w.ready && (wState === State.idle) || (wState === State.trans)
   // b
   io.in.foreach(_.b.valid := false.B)
   io.in.foreach(_.b.bits := io.out.b.bits)
@@ -155,12 +158,17 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
 
   switch(wState) {
     is(State.idle) {
-      when(curAWriteReq.fire()) {
+      // aw 和 w 同时到来 Todo: 支持的aw 和 w 同时到来burst
+      when(curAWriteReq.fire() && io.out.w.fire() && io.out.w.bits.last) {
+        wState := State.resp
+      }
+      // aw 先握手，然后 w 才握手，只要不是last，无所谓w有没有握手
+      .elsewhen(curAWriteReq.fire()) {
         wState := State.trans
       }
     }
     is(State.trans) {
-      when(io.out.w.bits.last) {
+      when(io.out.w.fire() && io.out.w.bits.last) {
         wState := State.resp
       }
     }
