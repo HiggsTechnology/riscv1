@@ -11,7 +11,7 @@ import utils.ParallelOperation
 
 
 sealed trait CacheConfig extends AXIParameter{
-  def TotalSize = 4 //Kb
+  def TotalSize = 32 //Kb
   def Ways = 4
   def LineSize = 64 // byte
   def Sets = TotalSize * 1024 / LineSize / Ways

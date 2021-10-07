@@ -11,16 +11,18 @@ import utils._
 
 
 
-class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
+class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
+    val DivIdle = Input(Bool())
+
     val in = Flipped(ValidIO(new MicroOp))
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
     val ExuResult = Vec(ExuNum, Flipped(ValidIO(new FuOutPut)))
 
-    val out = ValidIO(Flipped(new FuInPut))
+    val out = DecoupledIO(new FuInPut)
 
     val full = Output(Bool())
 
@@ -36,7 +38,7 @@ class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
-  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i))))///
+  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i) && io.DivIdle)))
 
   val rsFull = valid.asUInt.andR
 
@@ -106,6 +108,7 @@ class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name
     io.out.bits.src(0) := src1(dequeueSelect)
     io.out.bits.src(1) := src2(dequeueSelect)
     valid(dequeueSelect) := false.B
+
   }
 
   ///io.empty := rsEmpty

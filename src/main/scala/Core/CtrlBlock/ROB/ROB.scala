@@ -11,12 +11,12 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 import utils._
 
-class ROBIO extends Bundle {//todo:
+class ROBIO extends Bundle with Config {//todo:
   val in  = Vec(2, Flipped(ValidIO(new MicroOp)))
   val enqPtr = Vec(2, Output(new ROBPtr))
   val can_allocate = Output(Bool())
 
-  val exuCommit = Vec(6,Flipped(ValidIO(new ExuCommit)))
+  val exuCommit = Vec(ExuNum,Flipped(ValidIO(new ExuCommit)))
   val redirect = Flipped(ValidIO(new RedirectIO))//BRU告诉ROB
   val commit = Vec(2,ValidIO(new CommitIO))
   val flush_out = Output(Bool())
@@ -119,7 +119,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   enq_vec := Mux(bru_flush, VecInit((1 until 3).map(io.redirect.bits.ROBIdx + _.U)) ,VecInit(enq_vec.map(_ + PopCount(vaild_enq))))
 
   //writeback
-  for(i <- 0 until 6){
+  for(i <- 0 until ExuNum){
     when(io.exuCommit(i).valid){
       wb(io.exuCommit(i).bits.ROBIdx.value) := true.B
       skip(io.exuCommit(i).bits.ROBIdx.value) := io.exuCommit(i).bits.skip
