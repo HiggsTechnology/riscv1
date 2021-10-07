@@ -60,13 +60,13 @@ trait Config {
   }
   def IBufSize  = 16
 
-  def nALU : Int = 2
+  def nALU: Int = 2
 
-  def nBRU : Int = 1
+  def nBRU: Int = 1
 
-  def nCSR : Int = 1
+  def nCSR: Int = 1
 
-  def nLSU : Int = 2
+  def nLSU: Int = 2
 
   def nMDU : Int = 2//1 MU and 1 DU
 
@@ -74,7 +74,7 @@ trait Config {
 
   def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, BRU and CSR connect to 1 RS
 
-  def rsSize :Int = 8
+  def rsSize: Int = 8
 
   def PhyRegIdxWidth : Int = 7
 
@@ -115,8 +115,8 @@ trait Config {
     val activateAddrMap = List(
       addrMap("mem"),
       addrMap("clint"),
-      addrMap("uart16550")
-      //    addrMap("outsize")
+      addrMap("uart16550"),
+      addrMap("outside")
     )
   }
 
