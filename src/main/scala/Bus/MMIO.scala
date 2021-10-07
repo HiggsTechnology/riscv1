@@ -86,8 +86,7 @@ class SimpleBus extends Bundle {
   }
 }
 
-// Todo: Support multi-master
-class MMIO(num_master: Int, num_slave: Int) extends Module {
+class MMIO(num_master: Int, num_slave: Int, is_sim: Boolean) extends Module {
   class MMIO_IO extends Bundle {
     val master : Vec[SimpleBus] = Vec(num_master, Flipped(new SimpleBus))
     val slave : Vec[SimpleBus] = Vec(num_slave, new SimpleBus)
@@ -95,7 +94,12 @@ class MMIO(num_master: Int, num_slave: Int) extends Module {
   }
   val io : MMIO_IO = IO(new MMIO_IO)
 
-  val crossbar = Module(new MMIOCrossbar(num_master = num_master, num_slave = num_slave, addrConfig = MMIOConfig.activateAddrMap))
+  val crossbar = Module(new MMIOCrossbar(
+    num_master = num_master, num_slave = num_slave,
+    addrConfig = if(is_sim) MMIOConfig.simAddrMap else MMIOConfig.realAddrMap,
+    is_sim = is_sim
+  ))
+
   (crossbar.io.in zip io.master).foreach{ case(cb_in, io_master) => cb_in <> io_master }
   (crossbar.io.out zip io.slave).foreach{ case(cb_out, io_slave) => cb_out <> io_slave }
 
@@ -104,7 +108,7 @@ class MMIO(num_master: Int, num_slave: Int) extends Module {
   io.difftest_skip := skip
 }
 
-class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Long), Boolean)]) extends Module {
+class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Long), Boolean)], is_sim: Boolean) extends Module {
   class MMIOCrossbarIO extends Bundle {
     val in : Vec[SimpleBus] = Vec(num_master, Flipped(new SimpleBus))
     val out : Vec[SimpleBus] = Vec(num_slave, new SimpleBus)
@@ -113,18 +117,26 @@ class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Lon
 
   val cb1toN = Seq.fill(num_master)(Module(new MMIOCrossbar1toN(addrConfig)))
   val cbNto1forClint = Module(new MMIOCrossbarNto1(num_master))
-  val cbNto1forSimUart = Module(new MMIOCrossbarNto1(num_master))
+  val cbNto1forSimUart = if (is_sim) Module(new MMIOCrossbarNto1(num_master)) else null
   val cbNto1forAXI4 = Module(new MMIOCrossbarNto1(num_master))
 
   (cb1toN zip io.in).foreach { case (cb, io_in) => cb.io.in <> io_in }
   cb1toN(0).io.out(0) <> io.out(0)    // DCache in(0)
   cb1toN(1).io.out(0) <> io.out(1)    // DCache in(1)
-  (cb1toN zip cbNto1forClint.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(1) <> cb_in }
-  cbNto1forClint.io.out <> io.out(2)  // Clint
-  (cb1toN zip cbNto1forSimUart.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(2) <> cb_in }
-  cbNto1forSimUart.io.out <> io.out(3)// SimUart
-  (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(3) <> cb_in }
-  cbNto1forAXI4.io.out <> io.out(4) // AXI4
+  if (is_sim) {
+    (cb1toN zip cbNto1forClint.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(1) <> cb_in }
+    cbNto1forClint.io.out <> io.out(2)  // Clint
+    (cb1toN zip cbNto1forSimUart.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(2) <> cb_in }
+    cbNto1forSimUart.io.out <> io.out(3)// SimUart
+    (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(3) <> cb_in }
+    cbNto1forAXI4.io.out <> io.out(4) // AXI4
+  }
+  else {
+    (cb1toN zip cbNto1forClint.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(1) <> cb_in }
+    cbNto1forClint.io.out <> io.out(2)  // Clint
+    (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(2) <> cb_in }
+    cbNto1forAXI4.io.out <> io.out(3) // AXI4
+  }
 
 }
 

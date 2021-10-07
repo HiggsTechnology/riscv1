@@ -35,7 +35,7 @@ class SimTop extends Module {
   val simUart   = Module(new SimUart)
   // master:  2;  2 lsu
   // slave:   5;  2 DataCache, 1 clint, 1 SimUart, 1 AXI4Crossbar write straightly
-  val mmio     = Module(new MMIO(num_master = 2, num_slave = 5))
+  val mmio     = Module(new MMIO(num_master = 2, num_slave = 5, is_sim = true))
 
   io.memAXI_0 <> crossbar.io.out
 

@@ -7,7 +7,7 @@ import Core.Cache.DCache
 import Core.CtrlBlock.ControlBlock
 import Core.ExuBlock.ExuBlock
 import Core.IFU.{IFU, Ibuffer}
-import Device.{Clint, SimUart}
+import Device.Clint
 import chisel3._
 
 class CoreTopIO extends Bundle {
@@ -25,16 +25,15 @@ class CoreTop extends Module {
   val dcache = Module(new DCache(cacheNum = 1))
   val crossbar  = Module(new CROSSBAR_Nto1(1,2))
   val clint     = Module(new Clint)
-  val simUart   = Module(new SimUart)
   // master:  2;  2 lsu
   // slave:   4;  2 DataCache, 1 clint, 1 AXI4Crossbar write straightly
-  val mmio     = Module(new MMIO(num_master = 2, num_slave = 4))
+  val mmio     = Module(new MMIO(num_master = 2, num_slave = 4, is_sim = false))
 
   io.axi4 <> crossbar.io.out
 
   crossbar.io.in(0) <> icache.io.to_rw
   crossbar.io.in(1) <> dcache.io.to_rw
-  crossbar.io.in(2) <> mmio.io.slave(4).toAXI4
+  crossbar.io.in(2) <> mmio.io.slave(3).toAXI4
 
   icache.io.bus <> ifu.io.toMem
 
