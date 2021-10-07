@@ -14,7 +14,7 @@ import utils._
 class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
-    val DivIdle = Input(Bool())
+    //val DivIdle = Input(Bool())
 
     val in = Flipped(ValidIO(new MicroOp))
 
@@ -38,7 +38,7 @@ class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, n
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
-  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i) && io.DivIdle)))
+  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i) && io.out.ready)))
 
   val rsFull = valid.asUInt.andR
 

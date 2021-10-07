@@ -13,7 +13,7 @@ class DUIO extends Bundle {
   val out = ValidIO(new FuOutPut)
   val flush = Input(Bool())//l/d会改变数据，所以必须确认存在分支的位置，需要补充一个predict.ROBIdx，而其它EXU只需关注是否在mispred.ROBIdx之后
   val mispred_robPtr = Input(new ROBPtr)
-  val DivIdle = Output(Bool())
+  //val DivIdle = Output(Bool())
 }
 
 class DivIO(val len: Int) extends Bundle {
@@ -23,7 +23,6 @@ class DivIO(val len: Int) extends Bundle {
   val out = ValidIO(Output(UInt((len).W)))//todo: Now Quotient, don't need remainder
   val rem = Output(UInt((len).W))
   //val res2 = Output(UInt((len).W))
-  val DivIdle = Output(Bool())
 }
 
 class Radix8Divider(len: Int = 64) extends Module {
@@ -100,15 +99,14 @@ class Radix8Divider(len: Int = 64) extends Module {
   }
   io.in.ready := (state === s_idle)
   io.out.valid := RegNext(state) === s_compute && state === s_idle && RegNext(!io.flush)
-  io.DivIdle := (state === s_idle)//todo:rm DivIdle
   io.out.bits := shiftReg(len-1,0)
   //io.quot := shiftReg(len-1,0)
   io.rem := shiftReg(len*2-1,len)//remainder
 
-  printf("R8D in.valid %d state %d, a %d b %x\n",io.in.valid,state,a,b)
-  printf("R8D out.valid %d, out %d rem %d\n",io.out.valid,io.out.bits,io.rem)
-  printf("R8D cnt %d\n",cnt)
-  printf("????????????????????????????????????????????????????????????????????\n")
+  //  printf("R8D in.valid %d state %d, a %d b %x\n",io.in.valid,state,a,b)
+  //  printf("R8D out.valid %d, out %d rem %d\n",io.out.valid,io.out.bits,io.rem)
+  //  printf("R8D cnt %d, in.ready %d\n",cnt,io.in.ready)
+  //  printf("????????????????????????????????????????????????????????????????????\n")
 }
 
 class DU extends Module with Config with HasCircularQueuePtrHelper {
@@ -120,6 +118,7 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   val isDiv = RegInit(false.B)
   val isW = RegInit(false.B)
   val isDivSign = RegInit(false.B)
+  val isRem = RegInit(false.B)
   val src = new MDUbit(UInt(XLEN.W))
   //val ROBIdx = Reg(new ROBPtr)
   val uop  = RegEnable(io.in.bits.uop,io.in.fire())
@@ -127,6 +126,7 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
     isDiv := MDUOpType.isDiv(funcOpType)
     isW   := MDUOpType.isW(funcOpType)
     isDivSign := MDUOpType.isDivSign(funcOpType)
+    isRem := MDUOpType.isRem(funcOpType)
   }
   //in RS_DU, ensure that when io.in.valid, last is done
 
@@ -136,23 +136,23 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   def isMinus32(x:UInt):Bool = x(32-1)
 
   div.io.in.valid := io.in.valid
-  div.io.flush := io.flush
+  div.io.flush := io.flush && isAfter(uop.ROBIdx,io.mispred_robPtr)
 
   val quotMinus = RegInit(false.B)
   val remMinus = RegInit(false.B)
   when(io.in.fire()){
-  quotMinus := LookupTree(funcOpType, List(
-    MDUOpType.div     ->   (isMinus64(src1) ^ isMinus64(src2)),
-    MDUOpType.divu    ->   false.B,
-    MDUOpType.divw    ->   (isMinus32(src1) ^ isMinus32(src2)),
-    MDUOpType.divuw   ->   false.B
-  ))//商的符号
-  remMinus := LookupTree(funcOpType, List(
-    MDUOpType.rem     ->   isMinus64(src1),
-    MDUOpType.remu    ->   false.B,
-    MDUOpType.remw    ->   isMinus32(src1),
-    MDUOpType.remuw   ->   false.B
-  ))//余数符号,跟被除数相同,与除数无关
+    quotMinus := LookupTree(funcOpType, List(
+      MDUOpType.div     ->   (isMinus64(src1) ^ isMinus64(src2)),
+      MDUOpType.divu    ->   false.B,
+      MDUOpType.divw    ->   (isMinus32(src1) ^ isMinus32(src2)),
+      MDUOpType.divuw   ->   false.B
+    ))//商的符号
+    remMinus := LookupTree(funcOpType, List(
+      MDUOpType.rem     ->   isMinus64(src1),
+      MDUOpType.remu    ->   false.B,
+      MDUOpType.remw    ->   isMinus32(src1),
+      MDUOpType.remuw   ->   false.B
+    ))//余数符号,跟被除数相同,与除数无关
   }//一开始错在没有把looktree写在Regenable里面
 
   val divInputFunc = (x: UInt) => Mux(isW, Mux(isDivSign, SignExt(x(31,0), XLEN), ZeroExt(x(31,0), XLEN)), x)
@@ -192,18 +192,17 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   val quotres = Mux(isW, SignExt(quot(31,0), 64), quot)
   val remres  = Mux(isW, SignExt(rem(31,0),64),rem)
   //io.out.bits.res := Mux(div0w0,res0w0,Mux(divby0 && !div0w0,divby0res,Mux(isDiv,quotres,remres)))
-  io.out.bits.res := Mux(divby0,divby0res,Mux(isDiv,quotres,remres))
+  io.out.bits.res := Mux(divby0,divby0res,Mux(isRem,remres,quotres))
 
   io.out.bits.uop := uop
-  io.out.valid    := div.io.out.valid && (!io.flush || (io.flush && isAfter(io.mispred_robPtr,uop.ROBIdx)))
+  io.out.valid    := div.io.out.valid
   //是flush当拍直接kill，不会给出div.io.out.valid
-  io.DivIdle    := RegNext(div.io.DivIdle)
-  io.in.ready   := RegNext(div.io.DivIdle)//为了以防万一，停一拍
+  io.in.ready   := div.io.in.ready//为了以防万一，停一拍
 
-//  printf("DU0v in.valid %d uop %x instr %x,  \nDU0v io.out %d %x %x\n",io.in.valid,io.in.bits.uop.cf.pc,io.in.bits.uop.cf.instr,io.out.valid,io.out.bits.uop.cf.pc,io.out.bits.uop.cf.instr)
-//  printf("DU1in src1 %d src2 %d, funcOpType %d, divby0 %d, divby0res %x,iores %x,isW %d,isDiv %d\n",src1,src2,funcOpType,divby0,divby0res,io.out.bits.res,isW,isDiv)
-//  printf("DU2S remU %d quotU %d quotS %d quotMinus %d remMinus %d\n",remU,div.io.out.bits,quot,quotMinus,remMinus)
-//  printf("DUres dividend_abs %d %d res %d rem %d state %d\n",dividend_abs,divisor_abs,quotres,remres,io.DivIdle)
+  //  printf("DU0v in.valid %d uop %x instr %x,  \nDU0v io.out %d %x %x\n",io.in.valid,io.in.bits.uop.cf.pc,io.in.bits.uop.cf.instr,io.out.valid,io.out.bits.uop.cf.pc,io.out.bits.uop.cf.instr)
+  //  printf("DU1in src1 %d src2 %d, funcOpType %d, divby0 %d, divby0res %x,iores %x,isW %d,isDiv %d\n",src1,src2,funcOpType,divby0,divby0res,io.out.bits.res,isW,isDiv)
+  //  printf("DU2S remU %d quotU %d quotS %d quotMinus %d remMinus %d\n",remU,div.io.out.bits,quot,quotMinus,remMinus)
+  //  printf("DUres dividend_abs %d %d res %d rem %d state %d\n",dividend_abs,divisor_abs,quotres,remres,io.in.ready)
 }
 
 
