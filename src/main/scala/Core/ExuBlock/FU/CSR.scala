@@ -95,8 +95,8 @@ class CSR(
         status.MPRV  :=  mstatus_new.MPRV
         status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
       }
-      status.IE.M := mstatus_new.IE.M
-      status.PIE.M := mstatus_new.PIE.M
+      status.IE := mstatus_new.IE
+      status.PIE := mstatus_new.PIE
       status.FS     := mstatus_new.FS
     }.elsewhen(addr === CsrAddr.medeleg) {
       medeleg   := wdata
@@ -233,6 +233,7 @@ class CSR(
   val difftestArchEvent = Module(new DifftestArchEvent)
   difftestArchEvent.io.clock          := clock
   difftestArchEvent.io.coreid         := 0.U
+  difftestArchEvent.io.exceptionInst  := RegNext(trap.einst)
   difftestArchEvent.io.exceptionPC    := RegNext(trap.epc)
   difftestArchEvent.io.cause          := RegNext(0.U)     // Todo: commit exception
   difftestArchEvent.io.intrNO         := RegNext(Mux(trap.interruptValid, curInterruptNo, 0.U))
