@@ -67,7 +67,7 @@ class ExuBlock extends Module with ExuBlockConfig{
 
 
   //读寄存器数据选择通路src1、src2
-  //lq//RS应该需要侦听当前入队指令的物理寄存器
+
   for(i <- 0 until 2){
     preg.io.read(2*i).addr := io.in(i).bits.psrc(0)
     preg.io.read(2*i+1).addr := io.in(i).bits.psrc(1)
