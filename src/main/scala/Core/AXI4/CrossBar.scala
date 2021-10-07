@@ -44,10 +44,12 @@ class Crossbar extends Module with Config {
     }
   }
 
-  switch (rState) {
-    is(State.idle) { when(curAReadReq.fire()) { rState := State.resp } }
-    is(State.resp) { when(io.out.r.fire() && io.out.r.bits.last) { rState := State.idle } }
+  when(rState === State.idle) {
+    when(curAReadReq.fire()) { rState := State.resp }
+  }.elsewhen(rState === State.resp) {
+    when(io.out.r.fire() && io.out.r.bits.last) { rState := State.idle }
   }
+  
 
   io.out.aw <> io.in(1).aw
   io.out.w  <> io.in(1).w

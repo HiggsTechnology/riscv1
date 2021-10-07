@@ -1,14 +1,14 @@
 package Core.ExuBlock
 
 
-import Bus.{SimpleReqBundle, SimpleRespBundle, SimpleBus}
-import Core.ExuBlock.FU.{ALU, BRU, CSR, LSU, MU}
+import Bus.{SimpleBus, SimpleReqBundle, SimpleRespBundle}
+import Core.ExuBlock.FU.{ALU, BRU, CSR, DU, LSU, MU}
 import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.Mem.LSQ
 import Core.ExuBlock.MemReg.Regfile
-import Core.ExuBlock.RS.{RS, RsInorder}
-import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RedirectIO}
+import Core.ExuBlock.RS.{RS, RS_DU, RsInorder}
+import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RSType, RedirectIO}
 import chisel3._
 import chisel3.util._
 import difftest.DifftestArchIntRegState

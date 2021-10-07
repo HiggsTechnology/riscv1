@@ -70,7 +70,7 @@ class Clint extends Module {
   }.otherwise {
     rdata := MuxLookup(addr, (BigInt(Long.MaxValue) * 2 + 1).U, Array(
       Addr.mtime -> mtime,
-      Addr.mtimecmp -> mtimecmp,
+      Addr.mtimecmp -> mtimecmp
     ))
   }
 

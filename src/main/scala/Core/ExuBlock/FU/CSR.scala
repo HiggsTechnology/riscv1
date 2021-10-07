@@ -88,33 +88,38 @@ class CSR(
   when(ena && !is_jmp) {
     new_pc := 0.U
     trap_valid := false.B
-    switch(addr) {
-      is(CsrAddr.mstatus)    {
-        val mstatus_new = WireInit(wdata.asTypeOf(new Status))
-        // todo 分别把各特权级允许写的字段一一连线
-        if (supportUser) {
-          status.MPRV  :=  mstatus_new.MPRV
-          status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
-        }
-        status.IE     := mstatus_new.IE
-        status.PIE    := mstatus_new.PIE
-        status.FS     := mstatus_new.FS
-
+    when(addr === CsrAddr.mstatus) {
+      val mstatus_new = WireInit(wdata.asTypeOf(new Status))
+      // todo 分别把各特权级允许写的字段一一连线
+      if (supportUser) {
+        status.MPRV  :=  mstatus_new.MPRV
+        status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
       }
-      is(CsrAddr.medeleg)   { medeleg   := wdata  }
-      is(CsrAddr.mideleg)   { mideleg   := wdata  }
-      is(CsrAddr.mie)       {  ie       := wdata.asTypeOf(new InterruptField) }
-      is(CsrAddr.mtvec)     { mtvec     := wdata  }
-      is(CsrAddr.mcounteren){ mcounteren:= wdata  }
-      is(CsrAddr.mscratch)  { mscratch  := wdata  }
-      is(CsrAddr.mepc)      { mepc      := wdata  }
-      is(CsrAddr.mcause)    { mcause    := wdata  }
-      is(CsrAddr.mtval)     { mtval     := wdata  }
-      // todo map pmpcfg[0~15]
-      is(CsrAddr.mcycle)    { mcycle    := wdata  }
-      is(CsrAddr.minstret)  { minstret  := wdata  }
-      // todo map mhpmcounter[3~31]
-      // todo map Machine Counter Setup, Debug/Trace Registers, Debug Mode Registers
+      status.IE.M := mstatus_new.IE.M
+      status.PIE.M := mstatus_new.PIE.M
+      status.FS     := mstatus_new.FS
+    }.elsewhen(addr === CsrAddr.medeleg) {
+      medeleg   := wdata
+    }.elsewhen(addr === CsrAddr.mideleg) {
+      mideleg   := wdata
+    }.elsewhen(addr === CsrAddr.mie) {
+      ie       := wdata.asTypeOf(new InterruptField)
+    }.elsewhen(addr === CsrAddr.mtvec) {
+      mtvec   := wdata
+    }.elsewhen(addr === CsrAddr.mcounteren) {
+      mcounteren   := wdata
+    }.elsewhen(addr === CsrAddr.mscratch) {
+      mscratch   := wdata
+    }.elsewhen(addr === CsrAddr.mepc) {
+      mepc   := wdata
+    }.elsewhen(addr === CsrAddr.mcause) {
+      mcause   := wdata
+    }.elsewhen(addr === CsrAddr.mtval) {
+      mtval   := wdata
+    }.elsewhen(addr === CsrAddr.mcycle) {
+      mcycle   := wdata
+    }.elsewhen(addr === CsrAddr.minstret) {
+      minstret   := wdata
     }
   }.elsewhen(ena && is_jmp){
     // handle output
@@ -229,7 +234,6 @@ class CSR(
   val difftestArchEvent = Module(new DifftestArchEvent)
   difftestArchEvent.io.clock          := clock
   difftestArchEvent.io.coreid         := 0.U
-  difftestArchEvent.io.exceptionInst  := RegNext(trap.einst)
   difftestArchEvent.io.exceptionPC    := RegNext(trap.epc)
   difftestArchEvent.io.cause          := RegNext(0.U)     // Todo: commit exception
   difftestArchEvent.io.intrNO         := RegNext(Mux(trap.interruptValid, curInterruptNo, 0.U))
@@ -255,7 +259,7 @@ class CSR(
 
   def real_epc () : UInt = {
     MuxLookup(currentPriv, 0.U, Array(
-    mode_m -> mepc,
+    mode_m -> mepc
     // todo: add mode s&u
     ))
   }
@@ -460,7 +464,7 @@ trait CsrRegDefine extends Config {
     CsrAddr.marchid     ->  marchid     ,
     CsrAddr.mimpid      ->  mimpid      ,
     CsrAddr.mhartid     ->  mhartid     ,
-    CsrAddr.mip         ->  mip         ,
+    CsrAddr.mip         ->  mip         
   )
 
   val mstatus = WireInit(0.U.asTypeOf(new Status))
@@ -495,7 +499,7 @@ trait CsrRegDefine extends Config {
     CsrAddr.mtval       ->  mtval       ,
     // todo map pmpcfg[0~15]
     CsrAddr.mcycle      ->  mcycle      ,
-    CsrAddr.minstret    ->  minstret    ,
+    CsrAddr.minstret    ->  minstret    
     // todo map mhpmcounter[3~31]
     // todo map Machine Counter Setup, Debug/Trace Registers, Debug Mode Registers
   )

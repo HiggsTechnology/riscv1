@@ -52,7 +52,7 @@ object RV32I_ALUInstr extends InstrType {
     SRA            -> List(InstrR, FuncType.alu, ALUOpType.sra  , SrcType1.reg, SrcType2.reg),
 
     AUIPC          -> List(InstrU, FuncType.alu, ALUOpType.add  , SrcType1.pc , SrcType2.imm),
-    LUI            -> List(InstrU, FuncType.alu, ALUOpType.lui  , SrcType1.pc , SrcType2.imm),
+    LUI            -> List(InstrU, FuncType.alu, ALUOpType.lui  , SrcType1.pc , SrcType2.imm)
   )
 }
 
@@ -75,7 +75,7 @@ object RV32I_BRUInstr extends InstrType {
     BLT            -> List(InstrB, FuncType.bru, BRUOpType.blt  , SrcType1.reg, SrcType2.reg),
     BGE            -> List(InstrB, FuncType.bru, BRUOpType.bge  , SrcType1.reg, SrcType2.reg),
     BLTU           -> List(InstrB, FuncType.bru, BRUOpType.bltu , SrcType1.reg, SrcType2.reg),
-    BGEU           -> List(InstrB, FuncType.bru, BRUOpType.bgeu , SrcType1.reg, SrcType2.reg),
+    BGEU           -> List(InstrB, FuncType.bru, BRUOpType.bgeu , SrcType1.reg, SrcType2.reg)
   )
 }
 
@@ -97,7 +97,7 @@ object RV32I_LSUInstr extends InstrType {
     LHU            -> List(InstrI, FuncType.lsu, LSUOpType.lhu, SrcType1.reg, SrcType2.imm),
     SB             -> List(InstrS, FuncType.lsu, LSUOpType.sb , SrcType1.reg, SrcType2.reg),
     SH             -> List(InstrS, FuncType.lsu, LSUOpType.sh , SrcType1.reg, SrcType2.reg),
-    SW             -> List(InstrS, FuncType.lsu, LSUOpType.sw , SrcType1.reg, SrcType2.reg),
+    SW             -> List(InstrS, FuncType.lsu, LSUOpType.sw , SrcType1.reg, SrcType2.reg)
   )
 }
 
@@ -129,7 +129,7 @@ object RV64IInstr extends InstrType {
 
     LWU            -> List(InstrI, FuncType.lsu, LSUOpType.lwu  , SrcType1.reg, SrcType2.imm),
     LD             -> List(InstrI, FuncType.lsu, LSUOpType.ld   , SrcType1.reg, SrcType2.imm),
-    SD             -> List(InstrS, FuncType.lsu, LSUOpType.sd   , SrcType1.reg, SrcType2.reg),
+    SD             -> List(InstrS, FuncType.lsu, LSUOpType.sd   , SrcType1.reg, SrcType2.reg)
   )
 }
 
@@ -158,7 +158,7 @@ object RV64I_CSRInstr extends InstrType {
     CSRRWI        ->  List( InstrI, FuncType.csr, CsrOpType.RWI   , SrcType1.uimm , SrcType2.imm ),
     CSRRSI        ->  List( InstrI, FuncType.csr, CsrOpType.RSI   , SrcType1.uimm , SrcType2.imm ),
     CSRRCI        ->  List( InstrI, FuncType.csr, CsrOpType.RCI   , SrcType1.uimm , SrcType2.imm ),
-    MRET          ->  List( InstrI, FuncType.csr, CsrOpType.MRET  , SrcType1.reg  , SrcType2.imm ),
+    MRET          ->  List( InstrI, FuncType.csr, CsrOpType.MRET  , SrcType1.reg  , SrcType2.imm )
   )
 }
 

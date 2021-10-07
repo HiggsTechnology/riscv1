@@ -1,4 +1,4 @@
-package Sim
+package top
 
 import Core.SimTop
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
