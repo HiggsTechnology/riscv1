@@ -9,6 +9,7 @@ import chisel3.util._
 import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState}
 import Core.Define.Exceptions
 import chisel3.util.experimental.BoringUtils
+import utils.OutBool
 
 /**
  * CSR 操作码
@@ -46,7 +47,8 @@ class CSR(
     val out       : Valid[FuOutPut] = Valid(new FuOutPut)
     val jmp       : Valid[RedirectIO]     = Valid(new RedirectIO)
     val bpu_update = ValidIO(new BPU_Update)
-    val trapvalid = Output(Bool())
+    val trapvalid = OutBool()
+    val skip = OutBool()
   }
 
   val io : CSRIO = IO(new CSRIO())
@@ -57,14 +59,14 @@ class CSR(
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
   private val src = io.in.bits.src(0)
   // 读写CSR的地址
-  private val addr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
+  private val csrAddr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
   private val pc = io.in.bits.uop.cf.pc
   private val ena = io.in.valid
   // 为了用Enum，被迫下划线命名枚举。。。bullshxt
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
 
-  private val rdata = MuxLookup(addr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
+  private val rdata = MuxLookup(csrAddr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
   private val wdata = MuxLookup(op, 0.U, Array(
     CsrOpType.RW  ->  src,
     CsrOpType.RWI ->  src,
@@ -88,39 +90,43 @@ class CSR(
   when(ena && !is_jmp) {
     new_pc := 0.U
     trap_valid := false.B
-    when(addr === CsrAddr.mstatus) {
-      val mstatus_new = WireInit(wdata.asTypeOf(new Status))
-      // todo 分别把各特权级允许写的字段一一连线
-      if (supportUser) {
-        status.MPRV  :=  mstatus_new.MPRV
-        status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
-      }
-      status.IE := mstatus_new.IE
-      status.PIE := mstatus_new.PIE
-      status.FS     := mstatus_new.FS
-    }.elsewhen(addr === CsrAddr.medeleg) {
+    when(csrAddr===CsrAddr.mstatus) {
+        val mstatus_new = WireInit(wdata.asTypeOf(new Status))
+        // todo 分别把各特权级允许写的字段一一连线
+        if (supportUser) {
+          status.MPRV  :=  mstatus_new.MPRV
+          status.MPP   :=  legalizePrivilege(mstatus_new.MPP)
+        }
+        status.IE     := mstatus_new.IE
+        status.PIE    := mstatus_new.PIE
+        status.FS     := mstatus_new.FS
+
+    }.elsewhen(csrAddr === CsrAddr.medeleg){
       medeleg   := wdata
-    }.elsewhen(addr === CsrAddr.mideleg) {
+    }.elsewhen(csrAddr === CsrAddr.mideleg){
       mideleg   := wdata
-    }.elsewhen(addr === CsrAddr.mie) {
+    }.elsewhen(csrAddr === CsrAddr.mie){
       ie       := wdata.asTypeOf(new InterruptField)
-    }.elsewhen(addr === CsrAddr.mtvec) {
-      mtvec   := wdata
-    }.elsewhen(addr === CsrAddr.mcounteren) {
-      mcounteren   := wdata
-    }.elsewhen(addr === CsrAddr.mscratch) {
-      mscratch   := wdata
-    }.elsewhen(addr === CsrAddr.mepc) {
-      mepc   := wdata
-    }.elsewhen(addr === CsrAddr.mcause) {
-      mcause   := wdata
-    }.elsewhen(addr === CsrAddr.mtval) {
-      mtval   := wdata
-    }.elsewhen(addr === CsrAddr.mcycle) {
-      mcycle   := wdata
-    }.elsewhen(addr === CsrAddr.minstret) {
-      minstret   := wdata
+    }.elsewhen(csrAddr === CsrAddr.mtvec){
+      mtvec     := wdata
+    }.elsewhen(csrAddr === CsrAddr.mcounteren){
+      mcounteren:= wdata
+    }.elsewhen(csrAddr === CsrAddr.mscratch){
+      mscratch  := wdata
+    }.elsewhen(csrAddr === CsrAddr.mepc){
+      mepc      := wdata
+    }.elsewhen(csrAddr === CsrAddr.mcause){
+      mcause    := wdata
+    }.elsewhen(csrAddr === CsrAddr.mtval){
+      mtval     := wdata
+    }.elsewhen(csrAddr === CsrAddr.mcycle){
+      // todo map pmpcfg[0~15]
+      mcycle    := wdata
+    }.elsewhen(csrAddr === CsrAddr.minstret){
+      minstret  := wdata
     }
+      // todo map mhpmcounter[3~31]
+      // todo map Machine Counter Setup, Debug/Trace Registers, Debug Mode Registers
   }.elsewhen(ena && is_jmp){
     // handle output
     trap_valid := true.B
@@ -184,6 +190,7 @@ class CSR(
   io.out.valid            := io.in.valid
   io.out.bits.res         := rdata
   io.out.bits.uop         := io.in.bits.uop
+  io.skip                 := csrAddr === CsrAddr.mcycle
 
   io.trapvalid            := trap.interruptValid
   io.jmp.valid            := (io.in.valid & is_jmp) || trap.interruptValid
@@ -463,8 +470,9 @@ trait CsrRegDefine extends Config {
     CsrAddr.mvendorid   ->  mvendorid   ,
     CsrAddr.marchid     ->  marchid     ,
     CsrAddr.mimpid      ->  mimpid      ,
-    CsrAddr.mhartid     ->  mhartid     ,
-    CsrAddr.mip         ->  mip         
+    CsrAddr.mhartid     ->  mhartid
+//  不可读mip，避免difftest错误，mip仅仅CPU内部使用，对软件不可见
+//    CsrAddr.mip         ->  mip         ,
   )
 
   val mstatus = WireInit(0.U.asTypeOf(new Status))
@@ -499,7 +507,7 @@ trait CsrRegDefine extends Config {
     CsrAddr.mtval       ->  mtval       ,
     // todo map pmpcfg[0~15]
     CsrAddr.mcycle      ->  mcycle      ,
-    CsrAddr.minstret    ->  minstret    
+    CsrAddr.minstret    ->  minstret
     // todo map mhpmcounter[3~31]
     // todo map Machine Counter Setup, Debug/Trace Registers, Debug Mode Registers
   )
