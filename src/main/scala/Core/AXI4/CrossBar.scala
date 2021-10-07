@@ -2,7 +2,8 @@ package Core.AXI4
 
 import Core.Config
 import chisel3._
-import chisel3.util.{Arbiter, LockingArbiter, Enum, is, switch}
+import chisel3.util._
+//import chisel3.util.{Arbiter, LockingArbiter, Enum, is, switch}
 
 
 class CrossbarIO extends Bundle with Config{
@@ -111,7 +112,7 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   val lockWriteFun = ((x: AXI4BundleA) => x.isBurst)
 
   private val wState = RegInit(State.idle)
-  private val writeArb = Module(new LockingArbiter(chiselTypeOf(io.in(0).aw.bits), ro_num + rw_num, 8, Some(lockWriteFun)))
+  private val writeArb = Module(new Arbiter(chiselTypeOf(io.in(0).aw.bits), ro_num + rw_num))
   (writeArb.io.in zip io.in.map(_.aw)).foreach { case (arb, in) => arb <> in }
   private val curAWriteReq = writeArb.io.out
   private val chosenWrite = writeArb.io.chosen
@@ -121,10 +122,19 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   io.out.aw.valid := curAWriteReq.valid && (wState === State.idle)
   curAWriteReq.ready := io.out.aw.ready && (wState === State.idle)
   // w
-  io.out.w.valid := io.in(chosenWrite).w.valid && (wState === State.idle)
-  io.out.w.bits <> io.in(chosenWrite).w.bits
+  val writeWayReg = RegEnable(chosenWrite, io.out.aw.fire())
+  val writeCnt = RegInit(0.U(10.W))
+  val writeWay = Mux(wState === State.idle, chosenWrite, writeWayReg)
+  when(io.out.aw.fire() && !io.in(writeWay).w.valid){
+    writeCnt := io.out.aw.bits.len + 1.U
+  }.elsewhen((io.out.w.fire() || writeCnt =/= 0.U) && wState === State.resp){
+    writeCnt := writeCnt - 1.U
+  }
+
+  io.out.w.valid := io.in(writeWay).w.valid && (writeCnt =/= 0.U || wState === State.idle)
+  io.out.w.bits <> io.in(writeWay).w.bits
   io.in.foreach(_.w.ready := false.B)
-  io.in(chosenWrite).w.ready := io.out.w.ready && (wState === State.idle)
+  io.in(writeWay).w.ready := io.out.w.ready && (writeCnt =/= 0.U || wState === State.idle)
   // b
   io.in.foreach(_.b.valid := false.B)
   io.in.foreach(_.b.bits := io.out.b.bits)
