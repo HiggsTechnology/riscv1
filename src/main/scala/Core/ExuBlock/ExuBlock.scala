@@ -1,7 +1,7 @@
 package Core.ExuBlock
 
 
-import Bus.{SimpleBus, SimpleReqBundle, SimpleRespBundle}
+import Bus.{SimpleReqBundle, SimpleRespBundle, SimpleBus}
 import Core.ExuBlock.FU.{ALU, BRU, CSR, DU, LSU, MU}
 import Core.CtrlBlock.IDU.{FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
@@ -24,14 +24,14 @@ object ExuBlockConfig extends ExuBlockConfig
 
 class ExuBlockIO extends Bundle with Config {
   val in = Vec(2, Flipped(ValidIO(new MicroOp)))///此模块里，DispatchQueue在外部，给到OrderQueue
-  val rs_num_in = Vec(2, Input(UInt(log2Up(RSNum).W)))///此模块里，给到rs的序号，OrderQueueBook//-1: bru/csr -> jumprs
+  val rs_num_in = Vec(2, Input(UInt(log2Up(RSNum+1).W)))///此模块里，给到rs的序号，OrderQueueBook//-1: bru/csr -> jumprs
   val busytablein = Vec(4,Input(Bool()))///0、1、3、4两条指令一个Commit、发射出来指令的物理地址到Busytable
 
   val predict_robPtr = Input(new ROBPtr)
   val redirect  = ValidIO(new RedirectIO)///BRU可能Redirect_OUTIO,与朱航他们讨论
   val bpu_update = ValidIO(new BPU_Update)
   val exuCommit = Vec(ExuNum,ValidIO(new ExuCommit))
-  ///能用上val rs_emptySize = Vec(ExuNum,Output(UInt(log2Up(rsSize).W)))
+
   val rs_can_allocate = Vec(RSNum,Output(Bool()))
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
@@ -107,7 +107,6 @@ class ExuBlock extends Module with ExuBlockConfig{
   durs.io.in := DontCare
   durs.io.in.valid := false.B
   durs.io.SrcIn := DontCare
-  //durs.io.DivIdle := du.io.DivIdle//
 
   //  printf("rs_num_in0 %d in1 %d\n",io.rs_num_in(0),io.rs_num_in(1))
   //  printf("ExuBlock io.in(0) %d %x %x, io.in(1) %d %x %x\n",io.in(0).valid,io.in(0).bits.cf.pc,io.in(0).bits.cf.instr,io.in(1).valid,io.in(1).bits.cf.pc,io.in(1).bits.cf.instr)
@@ -209,7 +208,6 @@ class ExuBlock extends Module with ExuBlockConfig{
   ExuResult(5) := du.io.out
   ExuResult(6) := lsu1.io.out
   ExuResult(7) := lsu2.io.out
-  //  printf("mu_out_valid %d du_out_valid %d\n",mu.io.out.valid,du.io.out.valid)
 
   lsq.io.lsu_out(0) := lsu1.io.out
   lsq.io.lsu_out(1) := lsu2.io.out
@@ -254,8 +252,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
   mu.io.flush := io.redirect.valid && io.redirect.bits.mispred
   du.io.flush := io.redirect.valid && io.redirect.bits.mispred
-  du.io.mispred_robPtr := io.redirect.bits.ROBIdx//du是未知多周期，所以需要补充指针判断
-
+  du.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
   jumprs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult
@@ -285,8 +282,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   io.rs_can_allocate(2) := !alu2rs.io.full
   io.rs_can_allocate(3) := lsq.io.can_allocate
   io.rs_can_allocate(4) := !murs.io.full
-  io.rs_can_allocate(5) := !durs.io.full//rs_num和rs_can_allocate按顺序加，ExuResult在LSU之前插入
-
+  io.rs_can_allocate(5) := !durs.io.full
 
 
   for ((rport, rat) <- preg.io.debug_read.zip(io.debug_int_rat)) {
