@@ -94,7 +94,7 @@ class LSU extends Module with Config {
   ))
 
   val inst_flushed = RegInit(false.B)
-  when((io.flush && io.spec_issued && !io.toMem.resp.valid) || (io.trapvalid && !io.toMem.req.ready)){
+  when(io.flush && io.spec_issued && !io.toMem.resp.valid){
     inst_flushed := true.B
   }.elsewhen(io.toMem.resp.valid){
     inst_flushed := false.B

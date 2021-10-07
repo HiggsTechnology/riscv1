@@ -168,7 +168,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
     when(io.lsu_in(i).valid && io.cache_ready(i)){issued(deq_vec(i).value) := true.B}
   }
   for(i <- 0 until 2){
-    io.lsu_spec_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value) && isAfter(decode(deq_vec(i).value).ROBIdx,io.predict_robPtr)
+    io.lsu_spec_issued(i) := valid(deq_vec(i).value) && issued(deq_vec(i).value) && isAfter(decode(deq_vec(i).value).ROBIdx,io.mispred_robPtr)
   }
   //等待写回
   val needresp = Wire(Vec(2,Bool()))
