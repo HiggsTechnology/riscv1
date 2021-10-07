@@ -3,6 +3,7 @@ package Core
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.MemReg.RegWriteIO
+import Core.ExuBlock.FU.CsrRegDefine
 import chisel3._
 import utils.{OutBool, OutUInt}
 
@@ -180,5 +181,7 @@ class TrapIO extends Bundle with Config {
   val einst = UInt(XLEN.W)
   val interruptVec = UInt(TrapConfig.InterruptVecWidth.W)
   val interruptValid = Bool()
+
+  val mstatus = UInt(MXLEN.W)
   val ROBIdx = new ROBPtr
 }
