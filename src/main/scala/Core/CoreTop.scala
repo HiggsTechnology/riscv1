@@ -1,28 +1,21 @@
-
-// mill -i __.test.runMain core.TopMain -td ./build
 package Core
 
+
 import Bus.MMIO
-import Core.CtrlBlock.{ControlBlock, ControlBlockOUT}
+import Core.AXI4.{AXI4IO, CROSSBAR_Nto1}
+import Core.Cache.DCache
+import Core.CtrlBlock.ControlBlock
 import Core.ExuBlock.ExuBlock
 import Core.IFU.{IFU, Ibuffer}
-import chisel3._
-import chisel3.util.ValidIO
-import difftest._
-import Core.Cache.DCache
-import Core.AXI4.{AXI4IO, Crossbar}
 import Device.{Clint, SimUart}
+import chisel3._
 
-class SimTopIO extends Bundle {
-  val logCtrl = new LogCtrlIO
-  val perfInfo = new PerfInfoIO
-  val uart = new UARTIO
-  val memAXI_0 = new AXI4IO
+class CoreTopIO extends Bundle {
+  val axi4 = new AXI4IO()
 }
 
-class SimTop extends Module {
-  val io       = IO(new SimTopIO)
-
+class CoreTop extends Module {
+  val io = IO(new CoreTopIO)
 
   val ifu      = Module(new IFU)
   val ibf      = Module(new Ibuffer)
@@ -30,17 +23,18 @@ class SimTop extends Module {
   val exublock = Module(new ExuBlock)
   val icache = Module(new DCache(cacheNum = 0))
   val dcache = Module(new DCache(cacheNum = 1))
-  val crossbar  = Module(new Crossbar)
+  val crossbar  = Module(new CROSSBAR_Nto1(1,2))
   val clint     = Module(new Clint)
   val simUart   = Module(new SimUart)
   // master:  2;  2 lsu
-  // slave:   5;  2 DataCache, 1 clint, 1 SimUart, 1 AXI4Crossbar write straightly
+  // slave:   4;  2 DataCache, 1 clint, 1 AXI4Crossbar write straightly
   val mmio     = Module(new MMIO(num_master = 2, num_slave = 4))
 
-  io.memAXI_0 <> crossbar.io.out
+  io.axi4 <> crossbar.io.out
 
   crossbar.io.in(0) <> icache.io.to_rw
   crossbar.io.in(1) <> dcache.io.to_rw
+  crossbar.io.in(2) <> mmio.io.slave(4).toAXI4
 
   icache.io.bus <> ifu.io.toMem
 
@@ -50,8 +44,7 @@ class SimTop extends Module {
   dcache.io.bus(0)  <> mmio.io.slave(0)
   dcache.io.bus(1)  <> mmio.io.slave(1)
   clint.io.bus      <> mmio.io.slave(2)
-  simUart.io.bus    <> mmio.io.slave(3)
-  io.uart           <> simUart.io.uart
+
 
   ifu.io.redirect                 :=  exublock.io.redirect
   ifu.io.in                       :=  exublock.io.bpu_update
@@ -70,12 +63,4 @@ class SimTop extends Module {
   exublock.io.predict_robPtr := ctrlblock.io.out.predict_robPtr
 
   exublock.io.debug_int_rat := ctrlblock.io.out.debug_int_rat
-
-  dontTouch(ifu.io)
-  dontTouch(ibf.io)
-  dontTouch(ctrlblock.io)
-  dontTouch(exublock.io)
-  //    io.valid     := withClock(clock){
-  //    ~reset.asBool()
-  //    }
 }
