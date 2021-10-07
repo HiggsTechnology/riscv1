@@ -1,7 +1,7 @@
 package Core.CtrlBlock
 
 import Core.{Config, ExuCommit, MicroOp, CtrlFlow, RedirectIO}
-import Core.Config.{ExuNum, PhyRegIdxWidth, RsNum}
+import Core.Config.{ExuNum, PhyRegIdxWidth, RSNum}
 import Core.CtrlBlock.DISPATCH.{Dispatch, DispatchQueue}
 import Core.CtrlBlock.IDU.IDU
 import Core.CtrlBlock.ROB.{ROB, ROBPtr}
@@ -20,7 +20,7 @@ import utils._
 
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new CtrlFlow)))
-  val rs_can_allocate = Vec(RsNum, Input(Bool()))
+  val rs_can_allocate = Vec(RSNum, Input(Bool()))
   val exuCommit = Vec(ExuNum, Flipped(ValidIO(new ExuCommit)))
   val redirect  = Flipped(ValidIO(new RedirectIO))
 }

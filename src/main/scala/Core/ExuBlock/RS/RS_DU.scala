@@ -11,16 +11,18 @@ import utils._
 
 
 
-class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
+class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name: String = "unnamedRS") extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new Bundle {
     //in
+    //val DivIdle = Input(Bool())
+
     val in = Flipped(ValidIO(new MicroOp))
 
     val SrcIn = Vec(2,Input(UInt(XLEN.W)))
 
-    val ExuResult = Vec(8, Flipped(ValidIO(new FuOutPut)))
+    val ExuResult = Vec(ExuNum, Flipped(ValidIO(new FuOutPut)))
 
-    val out = ValidIO(Flipped(new FuInPut))
+    val out = DecoupledIO(new FuInPut)
 
     val full = Output(Bool())
 
@@ -36,7 +38,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
   val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
   val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
 
-  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i))))///
+  val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i) && io.out.ready)))
 
   val rsFull = valid.asUInt.andR
 
@@ -48,7 +50,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
 
   //侦听执行单元结果
   for (i <- 0 until rsSize){
-    for(j <- 0 until 8){
+    for(j <- 0 until ExuNum){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -73,7 +75,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     src2(enqueueSelect) := io.SrcIn(1)
 
     //入列指令侦听当拍执行单元
-    for(i <- 0 until 8){
+    for(i <- 0 until ExuNum){
       val exurfWen    = io.ExuResult(i).bits.uop.ctrl.rfWen
       val psrc1Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(0)
       val psrc2Rdy = io.ExuResult(i).bits.uop.pdest === io.in.bits.psrc(1)
@@ -106,6 +108,7 @@ class RS(size: Int = 2, rsNum: Int = 0, nFu: Int = 5, dispatchSize: Int =2, name
     io.out.bits.src(0) := src1(dequeueSelect)
     io.out.bits.src(1) := src2(dequeueSelect)
     valid(dequeueSelect) := false.B
+
   }
 
   ///io.empty := rsEmpty

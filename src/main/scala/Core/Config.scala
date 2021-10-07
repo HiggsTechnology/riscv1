@@ -68,10 +68,11 @@ trait Config {
 
   def nLSU: Int = 2
 
-  def ExuNum: Int = nALU + nBRU + nCSR + nLSU
+  def nMDU : Int = 2//1 MU and 1 DU
 
-  // 保留站和队列的数量之和，jmpRs，aluRs，lsq
-  def RsNum: Int = 1 + nALU + 1
+  def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
+
+  def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, BRU and CSR connect to 1 RS
 
   def rsSize: Int = 8
 
@@ -123,6 +124,18 @@ trait Config {
     def InterruptVecWidth = 12
     def ExceptionVecWidth = 16
   }
+}
+
+object RSType {
+  def typeSize  = 6
+  def jumprs: UInt = 0.U//csr,bru -> jumprs
+  def alurs: UInt  = 1.U//alu1rs, alu2rs
+  def alurs2: UInt = 2.U
+  def lsurs: UInt  = 3.U
+  def murs: UInt   = 4.U
+  def durs: UInt   = 5.U
+  def width     = log2Up(typeSize).W
+  def uwidth    = UInt(width)
 }
 
 object SrcState {
