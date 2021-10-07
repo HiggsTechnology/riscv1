@@ -75,7 +75,7 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
 
   // todo: 使用LockingArbiter支持burst模式的总线独占，并处理可能的相邻周期的争用冲突，因为master发送请求需要不止一个周期
   object State {
-    val idle :: resp :: Nil = Enum(2)
+    val idle :: trans :: resp :: Nil = Enum(3)
   }
 
   private val rState = RegInit(State.idle)
@@ -156,6 +156,11 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   switch(wState) {
     is(State.idle) {
       when(curAWriteReq.fire()) {
+        wState := State.trans
+      }
+    }
+    is(State.trans) {
+      when(io.out.w.bits.last) {
         wState := State.resp
       }
     }
