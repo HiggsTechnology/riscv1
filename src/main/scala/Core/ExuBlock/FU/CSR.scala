@@ -181,7 +181,7 @@ class CSR(
   io.out.valid            := io.in.valid
   io.out.bits.res         := rdata
   io.out.bits.uop         := io.in.bits.uop
-  io.skip                 := csrAddr === CsrAddr.mcycle
+  io.skip                 := io.in.valid && csrAddr === CsrAddr.mcycle
 
   io.trapvalid            := trap.interruptValid
   io.jmp.valid            := (io.in.valid & is_jmp) || trap.interruptValid

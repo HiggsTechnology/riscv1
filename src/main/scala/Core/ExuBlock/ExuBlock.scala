@@ -276,7 +276,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   }
   io.exuCommit(6).bits.skip := lsu1.io.skip
   io.exuCommit(7).bits.skip := lsu2.io.skip
-  io.exuCommit(0).bits.skip := csr.io.skip
+  io.exuCommit(0).bits.skip := RegNext(csr.io.skip)
 
   io.rs_can_allocate(0) := !jumprs.io.full///can_allocate
   io.rs_can_allocate(1) := !alu1rs.io.full
