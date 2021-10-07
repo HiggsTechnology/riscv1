@@ -168,7 +168,10 @@ class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module
 
   //  printf("req_valid: %b, outSelVec: %b\n", io.in.valid, outSelVec.asUInt())
 
-  assert(!io.in.req.valid || outSelVec.asUInt.orR, "address decode error, bad addr = 0x%x\n", inAddr)
+  when (!(!io.in.req.valid || outSelVec.asUInt.orR)) {
+    printf("Warning: address decode error, bad addr = 0x%x\n", inAddr)
+  }
+//  assert(!io.in.req.valid || outSelVec.asUInt.orR, "address decode error, bad addr = 0x%x\n", inAddr)
   assert(!(io.in.req.valid && outSelVec.asUInt.andR), "address decode error, bad addr = 0x%x\n", inAddr)
 
   // bind out.req channel
@@ -178,7 +181,7 @@ class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module
     out.resp.ready := v
   }}
 
-  io.in.resp.valid  := outSelResp.resp.fire()
+  io.in.resp.valid  := outSelResp.resp.fire() || RegNext(!(!io.in.req.valid || outSelVec.asUInt.orR))
   io.in.resp.bits   <> outSelResp.resp.bits
   outSelResp.resp.ready := io.in.resp.ready
   io.in.req.ready   := outSel.req.ready
