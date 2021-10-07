@@ -29,7 +29,7 @@ class Clint extends Module {
   private val rdata = WireInit(0.U)
 
   private val mtime     = RegInit(0.U(64.W))
-  private val mtimecmp  = RegInit(1000.U(64.W))
+  private val mtimecmp  = RegInit(20.U(64.W))
   object Addr {
     val mtime     = 0x0200bff8L.U
     val mtimecmp  = 0x02004000L.U

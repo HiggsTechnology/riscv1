@@ -9,6 +9,7 @@ import chisel3.util._
 import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState}
 import Core.Define.Exceptions
 import chisel3.util.experimental.BoringUtils
+import utils.OutBool
 
 /**
  * CSR 操作码
@@ -46,7 +47,8 @@ class CSR(
     val out       : Valid[FuOutPut] = Valid(new FuOutPut)
     val jmp       : Valid[RedirectIO]     = Valid(new RedirectIO)
     val bpu_update = ValidIO(new BPU_Update)
-    val trapvalid = Output(Bool())
+    val trapvalid = OutBool()
+    val skip = OutBool()
   }
 
   val io : CSRIO = IO(new CSRIO())
@@ -57,14 +59,14 @@ class CSR(
   // 写CSR用的数据，如果是CSRR[SCW]I则使用立即数零拓展，否则使用寄存器数，多路选择器在IDUtoEXU中完成
   private val src = io.in.bits.src(0)
   // 读写CSR的地址
-  private val addr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
+  private val csrAddr = io.in.bits.uop.data.imm(CSR_ADDR_LEN - 1, 0)
   private val pc = io.in.bits.uop.cf.pc
   private val ena = io.in.valid
   // 为了用Enum，被迫下划线命名枚举。。。bullshxt
   private val mode_u::mode_s::mode_h::mode_m::Nil = Enum(4)
   private val currentPriv = RegInit(UInt(2.W), mode_m)
 
-  private val rdata = MuxLookup(addr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
+  private val rdata = MuxLookup(csrAddr, 0.U(MXLEN.W), readOnlyMap++readWriteMap).asUInt
   private val wdata = MuxLookup(op, 0.U, Array(
     CsrOpType.RW  ->  src,
     CsrOpType.RWI ->  src,
@@ -88,7 +90,7 @@ class CSR(
   when(ena && !is_jmp) {
     new_pc := 0.U
     trap_valid := false.B
-    switch(addr) {
+    switch(csrAddr) {
       is(CsrAddr.mstatus)    {
         val mstatus_new = WireInit(wdata.asTypeOf(new Status))
         // todo 分别把各特权级允许写的字段一一连线
@@ -179,6 +181,7 @@ class CSR(
   io.out.valid            := io.in.valid
   io.out.bits.res         := rdata
   io.out.bits.uop         := io.in.bits.uop
+  io.skip                 := csrAddr === CsrAddr.mcycle
 
   io.trapvalid            := trap.interruptValid
   io.jmp.valid            := (io.in.valid & is_jmp) || trap.interruptValid
@@ -459,7 +462,8 @@ trait CsrRegDefine extends Config {
     CsrAddr.marchid     ->  marchid     ,
     CsrAddr.mimpid      ->  mimpid      ,
     CsrAddr.mhartid     ->  mhartid     ,
-    CsrAddr.mip         ->  mip         ,
+//  不可读mip，避免difftest错误，mip仅仅CPU内部使用，对软件不可见
+//    CsrAddr.mip         ->  mip         ,
   )
 
   val mstatus = WireInit(0.U.asTypeOf(new Status))
