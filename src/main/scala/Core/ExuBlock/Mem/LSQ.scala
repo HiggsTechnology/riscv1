@@ -99,7 +99,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   //flush
   when(io.flush){
     for(i <- 0 until lsqSize) {
-      when(isBefore(io.mispred_robPtr,decode(i).ROBIdx)){
+      when(isAfter(decode(i).ROBIdx,io.mispred_robPtr)){
         valid(i) := false.B//todo:置到最后一个
         flushed(i) := valid(i)//当拍的值赋给flushed
       }
@@ -180,8 +180,8 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
     when(io.lsu_out(i).valid){resp(deq_vec(i).value) := true.B}
   }
 
-  val deq0_bfflush = isBefore(decode(deq_vec(0).value).ROBIdx,io.predict_robPtr)
-  val deq1_bfflush = isBefore(decode(deq_vec(1).value).ROBIdx,io.predict_robPtr)
+  val deq0_bfflush = !isAfter(decode(deq_vec(0).value).ROBIdx,io.mispred_robPtr) //isBefore(decode(deq_vec(0).value).ROBIdx,io.predict_robPtr)
+  val deq1_bfflush = !isAfter(decode(deq_vec(1).value).ROBIdx,io.mispred_robPtr)//isBefore(decode(deq_vec(1).value).ROBIdx,io.predict_robPtr)
   val check_flush = (!io.flush || deq0_bfflush)
   when(needresp(0)===true.B && (needresp(1)===false.B || valid(deq_vec(1).value) === false.B)){
     when((io.lsu_out(0).valid || resp(deq_vec(0).value)) && check_flush){
@@ -224,9 +224,10 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   // printf("LSQ enqvalid %d %d, enq_vec %d %d\n", io.in(0).valid && allowEnq, io.in(1).valid && allowEnq, enq_vec(0).value, enq_vec(1).value)
   // printf("LSQ deqvalid %d %d, deq_vec %d %d\n", needresp(0)===true.B && (io.lsu_out(0).valid || resp(deq_vec(0).value)), needresp(0)===true.B && needresp(1)===true.B && (io.lsu_out(0).valid || resp(deq_vec(0).value)) && (io.lsu_out(1).valid || resp(deq_vec(1).value)), deq_vec(0).value, deq_vec(1).value)
   // printf("LSQ to LSU valid %d %d\n",io.lsu_in(0).valid,io.lsu_in(1).valid)
+  // printf("LSQ flush %d, Flush ROBIdx %d\n",io.flush,io.mispred_robPtr.value)
   // //printf("deq0 %d %d %d\n",needresp(0)===true.B && (needresp(1)===false.B || valid(deq_vec(1).value) === false.B), (io.lsu_out(0).valid && resp(deq_vec(0).value)),(!io.flush || isBefore(decode(deq_vec(0).value).ROBIdx,io.predict_robPtr)))
   // for(i <- 0 until lsqSize){
-  //   printf("LSQ %d: valid %d, pc %x, inst %x, issued %d, resp %d, addr %x\n",i.U, valid(i),decode(i).cf.pc,decode(i).cf.instr, issued(i), resp(i), addr(i))
+  //   printf("LSQ %d: valid %d, pc %x, inst %x, issued %d, resp %d, addr %x, ROBIdx %d\n",i.U, valid(i),decode(i).cf.pc,decode(i).cf.instr, issued(i), resp(i), addr(i), decode(i).ROBIdx.value)
   // }
 
 

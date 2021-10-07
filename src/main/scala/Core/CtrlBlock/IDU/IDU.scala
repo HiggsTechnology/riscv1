@@ -18,16 +18,16 @@ class IDUIO extends Bundle {
 class IDU extends Module with Config{
   val io : IDUIO = IO(new IDUIO)
 
-  private val interruptValid = WireInit(false.B)
+  //private val interruptValid = WireInit(false.B)
   private val instr = io.in.bits.instr
   val (src1Addr, src2Addr, rdAddr) = (instr(19, 15), instr(24, 20), instr(11, 7))
   val decodeList = ListLookup(instr, RVIInstr.defaultInst, RVIInstr.table)
-  val instrType :: funcType :: funcOpType :: src1Type :: src2Type :: Nil =
-    decodeList.zip(RVIInstr.defaultInst).map{ case(decode, default) => Mux(interruptValid, default, decode)}
+  val instrType :: funcType :: funcOpType :: src1Type :: src2Type :: Nil = decodeList
+    //decodeList.zip(RVIInstr.defaultInst).map{ case(decode, default) => Mux(interruptValid, default, decode)}
   // 中断来临，插入一条默认指令，指令类型是N，是非法指令
   val uimm : UInt = instr(19, 15)
 
-  io.out.valid                := io.in.valid || interruptValid      // 插入中断指令不依赖于IFU的输出
+  io.out.valid                := io.in.valid //|| interruptValid      // 插入中断指令不依赖于IFU的输出
   io.out.bits.cf              := io.in.bits
   io.out.bits.ctrl.rfSrc(0)   := Mux(src1Type === SrcType1.reg, src1Addr, 0.U)  //保证取到的地址均为有效寄存器地址，若无效则置0
   io.out.bits.ctrl.rfSrc(1)   := Mux(src2Type === SrcType2.reg, src2Addr, 0.U)
@@ -51,17 +51,17 @@ class IDU extends Module with Config{
     InstrJ  -> SignExt(Cat(instr(31), instr(19, 12), instr(20), instr(30, 21), 0.U(1.W)), XLEN)
   ))
 
-  val interruptVec = WireInit(0.U(TrapConfig.InterruptVecWidth.W))
+  //val interruptVec = WireInit(0.U(TrapConfig.InterruptVecWidth.W))
   // 中断向量从CSR模块引出
 
   io.out.bits.ctrl.interruptVec.foreach(_ := false.B)
   io.out.bits.ctrl.exceptionVec.foreach(_ := false.B)
   // 非法指令异常
-  io.out.bits.ctrl.exceptionVec(Exceptions.IllegalInst) := (instrType === InstrN) && !interruptValid && io.in.valid
+  io.out.bits.ctrl.exceptionVec(Exceptions.IllegalInst) := (instrType === InstrN) && io.in.valid
 
   io.out.bits.data.imm  := imm
   io.out.bits.data.uimm_ext := uimm_ext
 
   // 中断来临，让译码阻塞
-  io.in.ready := io.out.ready && !interruptValid
+  io.in.ready := io.out.ready 
 }
