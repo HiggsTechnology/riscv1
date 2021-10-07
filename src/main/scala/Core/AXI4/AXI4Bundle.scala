@@ -21,6 +21,8 @@ class AXI4BundleA(val idBits: Int) extends Bundle {
   val qos     : UInt = OutUInt(AXI4Parameters.qosBits)           // 0=no QoS, bigger = higher priority
   val region  : UInt = OutUInt(AXI4Parameters.regionBits)        // optional
   override def toPrintable: Printable = p"addr = 0x${Hexadecimal(addr)}, id = $id, len = $len, size = $size"
+
+  def isBurst : Bool = (len > 0.U)
 }
 
 // id ... removed in AXI4

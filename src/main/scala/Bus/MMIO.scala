@@ -1,5 +1,7 @@
 package Bus
 
+import Core.AXI4.AXI4Parameters.AXI_PROT
+import Core.AXI4.{AXI4IO, AXI4Parameters}
 import Core.Cache.{CacheReq, CacheResp}
 import chisel3._
 import chisel3.util._
@@ -43,6 +45,45 @@ class SimpleRespBundle extends Bundle {
 class SimpleBus extends Bundle {
   val req : DecoupledIO[SimpleReqBundle] = Decoupled(new SimpleReqBundle)
   val resp : DecoupledIO[SimpleRespBundle] = Flipped(Decoupled(new SimpleRespBundle))
+
+  def toAXI4 : AXI4IO = {
+    val axi4 = Wire(new AXI4IO())
+    axi4.aw.valid         := req.valid && req.bits.isWrite
+    axi4.aw.bits.addr     := req.bits.addr
+    axi4.aw.bits.prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
+    axi4.aw.bits.id       := 0.U
+    axi4.aw.bits.user     := 0.U
+    axi4.aw.bits.len      := 0.U
+    axi4.aw.bits.size     := req.bits.size
+    axi4.aw.bits.burst    := AXI4Parameters.BURST_INCR
+    axi4.aw.bits.lock     := 0.U
+    axi4.aw.bits.cache    := 0.U
+    axi4.aw.bits.qos      := 0.U
+    axi4.aw.bits.region   := 0.U
+    axi4.w.valid          := req.valid && req.bits.isWrite
+    axi4.w.bits.data      := req.bits.data
+    axi4.w.bits.strb      := req.bits.wmask
+    axi4.w.bits.last      := true.B
+    axi4.w.bits.user      := 0.U
+    axi4.b.ready          := resp.ready
+    axi4.ar.valid         := req.valid && !req.bits.isWrite
+    axi4.ar.bits.addr     := req.bits.addr
+    axi4.ar.bits.prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
+    axi4.ar.bits.id       := 0.U
+    axi4.ar.bits.user     := 0.U
+    axi4.ar.bits.len      := 0.U
+    axi4.ar.bits.size     := req.bits.size
+    axi4.ar.bits.burst    := AXI4Parameters.BURST_INCR
+    axi4.ar.bits.lock     := 0.U
+    axi4.ar.bits.cache    := 0.U
+    axi4.ar.bits.qos      := 0.U
+    axi4.ar.bits.region   := 0.U
+    axi4.r.ready          := resp.ready
+    req.ready             := (axi4.ar.ready && !req.bits.isWrite) || (axi4.aw.ready && req.bits.isWrite)
+    resp.valid            := axi4.r.valid || axi4.b.valid // 难以区分，除非约定req是同步的
+    resp.bits.data        := axi4.r.bits.data
+    axi4
+  }
 }
 
 // Todo: Support multi-master
@@ -73,7 +114,7 @@ class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Lon
   val cb1toN = Seq.fill(num_master)(Module(new MMIOCrossbar1toN(addrConfig)))
   val cbNto1forClint = Module(new MMIOCrossbarNto1(num_master))
   val cbNto1forSimUart = Module(new MMIOCrossbarNto1(num_master))
-//  val cbNto1forAXI4 = Module(new MMIOCrossbarNto1(num_master))
+  val cbNto1forAXI4 = Module(new MMIOCrossbarNto1(num_master))
 
   (cb1toN zip io.in).foreach { case (cb, io_in) => cb.io.in <> io_in }
   cb1toN(0).io.out(0) <> io.out(0)    // DCache in(0)
@@ -82,8 +123,8 @@ class MMIOCrossbar(num_master: Int, num_slave: Int, addrConfig: List[((Long, Lon
   cbNto1forClint.io.out <> io.out(2)  // Clint
   (cb1toN zip cbNto1forSimUart.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(2) <> cb_in }
   cbNto1forSimUart.io.out <> io.out(3)// SimUart
-//  (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(3) <> cb_in }
-//  cbNto1forAXI4.io.out <> io.out(4) // AXI4
+  (cb1toN zip cbNto1forAXI4.io.in).foreach{ case (cb_out, cb_in) => cb_out.io.out(3) <> cb_in }
+  cbNto1forAXI4.io.out <> io.out(4) // AXI4
 
 }
 

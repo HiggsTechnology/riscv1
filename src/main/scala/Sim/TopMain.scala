@@ -1,6 +1,6 @@
 package top
 
-import Core.SimTop
+import Sim.SimTop
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 object TopMain extends App {
