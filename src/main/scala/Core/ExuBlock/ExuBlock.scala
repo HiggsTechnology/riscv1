@@ -11,7 +11,7 @@ import Core.ExuBlock.RS.{RS, RS_DU, RsInorder}
 import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RSType, RedirectIO}
 import chisel3._
 import chisel3.util._
-import difftest.DifftestArchIntRegState
+//import difftest.DifftestArchIntRegState
 import utils._
 
 
@@ -289,10 +289,10 @@ class ExuBlock extends Module with ExuBlockConfig{
   for ((rport, rat) <- preg.io.debug_read.zip(io.debug_int_rat)) {
     rport.addr := rat
   }
-  val difftest = Module(new DifftestArchIntRegState)
-  difftest.io.clock := clock
-  difftest.io.coreid := 0.U
-  difftest.io.gpr := VecInit(preg.io.debug_read.map(_.data))
+//  val difftest = Module(new DifftestArchIntRegState)
+//  difftest.io.clock := clock
+//  difftest.io.coreid := 0.U
+//  difftest.io.gpr := VecInit(preg.io.debug_read.map(_.data))
 
 
 

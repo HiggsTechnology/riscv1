@@ -112,10 +112,15 @@ trait Config {
       "mem"       ->  ((0x80000000L, 0xffffffffL), false  ), // "dcache/mem"
       "outside"   ->  ((0x10002000L, 0x7fffffffL), false  )  // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间"
     )
-    val activateAddrMap = List(
+    val simAddrMap = List(
       addrMap("mem"),
       addrMap("clint"),
       addrMap("uart16550"),
+      addrMap("outside")
+    )
+    val realAddrMap = List(
+      addrMap("mem"),
+      addrMap("clint"),
       addrMap("outside")
     )
   }
