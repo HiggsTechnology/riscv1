@@ -237,7 +237,7 @@ class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module
   io.in.resp.valid  := outSelResp.resp.fire() || RegNext(!(!io.in.req.valid || outSelVec.asUInt.orR))
   io.in.resp.bits   <> outSelResp.resp.bits
   outSelResp.resp.ready := io.in.resp.ready
-  io.in.req.ready   := outSel.req.ready
+  io.in.req.ready   := outSel.req.ready && (state === State.idle)
 
   switch (state) {
     is (State.idle)       { when (outSel.req.fire()) { state := State.wait_resp } }

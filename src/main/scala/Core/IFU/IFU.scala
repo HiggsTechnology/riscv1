@@ -51,8 +51,7 @@ class IFU extends Module with Config {
     pc := pcVec(0) + 8.U
     when(io.redirect.valid && mispred){
       flushCnt := 1.U
-    }
-    when(flushCnt =/= 0.U){
+    }.elsewhen(flushCnt =/= 0.U){
       flushCnt := flushCnt - 1.U
     }
   }.elsewhen(io.redirect.valid && mispred){
