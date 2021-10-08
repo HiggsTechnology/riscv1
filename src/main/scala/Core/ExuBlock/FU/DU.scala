@@ -183,6 +183,7 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   val divby0 = RegEnable(divisor_abs===0.U,io.in.fire())
   //val div0w0 = RegEnable((dividend_abs===0.U)&&(divisor_abs===0.U),io.in.fire())
   val divby0res = SignExt("b1111".U, 64)
+  val divby0rem = RegEnable(io.in.bits.src(0),io.in.fire())
   //val res0w0 = Mux(isW,divby0res,Cat(ZeroExt("b00".U,32),SignExt("b1111".U,32)))
   val remU = div.io.rem//Mux(quotMinus,divisor_abs - div.io.rem, div.io.rem)//错！被python骗了:若商为负，绝对值为除数绝对值减余数绝对值
   val quot = Mux(quotMinus, -div.io.out.bits, div.io.out.bits)
@@ -192,7 +193,7 @@ class DU extends Module with Config with HasCircularQueuePtrHelper {
   val quotres = Mux(isW, SignExt(quot(31,0), 64), quot)
   val remres  = Mux(isW, SignExt(rem(31,0),64),rem)
   //io.out.bits.res := Mux(div0w0,res0w0,Mux(divby0 && !div0w0,divby0res,Mux(isDiv,quotres,remres)))
-  io.out.bits.res := Mux(divby0,divby0res,Mux(isRem,remres,quotres))
+  io.out.bits.res := Mux(divby0,Mux(isRem,divby0rem,divby0res),Mux(isRem,remres,quotres))
 
   io.out.bits.uop := uop
   io.out.valid    := div.io.out.valid
