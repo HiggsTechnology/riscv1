@@ -11,7 +11,7 @@ import Core.ExuBlock.RS.{RS, RS_DU, RsInorder}
 import Core.{BPU_Update, Config, ExuCommit, FuOutPut, MicroOp, RSType, RedirectIO}
 import chisel3._
 import chisel3.util._
-//import difftest.DifftestArchIntRegState
+import difftest.DifftestArchIntRegState
 import utils._
 
 
@@ -42,7 +42,7 @@ class ExuBlockIO extends Bundle with Config {
 ///1,,写到orderqueue,保留站,指针给保留站
 ///2,,orderq控制指令的发射
 ///3,,做执行单元运算，写回结果，包括写回保留站、重命名(包括busytable)、寄存器
-class ExuBlock extends Module with ExuBlockConfig{
+class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   val io  = IO(new ExuBlockIO)
   val jumprs = Module(new RsInorder(slave_num = JumpRsSlaveNum, size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
@@ -50,7 +50,7 @@ class ExuBlock extends Module with ExuBlockConfig{
   val murs   = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "MURS"))
   val durs   = Module(new RS_DU(size = rsSize, rsNum = 5, nFu = ExuNum, name = "DURS"))
   val lsq = Module(new LSQ)
-  val csr = Module(new CSR)   // ExuRes 0
+  val csr = Module(new CSR(is_sim = is_sim))   // ExuRes 0
   val bru = Module(new BRU)   // ExuRes 1
   val alu1 = Module(new ALU)  // ExuRes 2
   val alu2 = Module(new ALU)  // ExuRes 3
@@ -289,10 +289,12 @@ class ExuBlock extends Module with ExuBlockConfig{
   for ((rport, rat) <- preg.io.debug_read.zip(io.debug_int_rat)) {
     rport.addr := rat
   }
-//  val difftest = Module(new DifftestArchIntRegState)
-//  difftest.io.clock := clock
-//  difftest.io.coreid := 0.U
-//  difftest.io.gpr := VecInit(preg.io.debug_read.map(_.data))
+  if (is_sim) {
+    val difftest = Module(new DifftestArchIntRegState)
+    difftest.io.clock := clock
+    difftest.io.coreid := 0.U
+    difftest.io.gpr := VecInit(preg.io.debug_read.map(_.data))
+  }
 
 
 

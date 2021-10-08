@@ -37,7 +37,7 @@ class ControlBlockIO extends Bundle{
   val out             = new ControlBlockOUT
 }
 
-class ControlBlock extends Module with Config{
+class ControlBlock(is_sim: Boolean) extends Module with Config{
   val io           = IO(new ControlBlockIO)
   // Only one IDU accept interrupt
   val decoders      = Seq(
@@ -49,7 +49,7 @@ class ControlBlock extends Module with Config{
   val intBusyTable  = Module(new BusyTable(numReadPorts = 2 * 2, numWritePorts = ExuNum))
   val dispatch      = Module(new Dispatch)
   val disQueue      = Module(new DispatchQueue)
-  val rob           = Module(new ROB)
+  val rob           = Module(new ROB(is_sim = is_sim))
   //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
   //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
   //Decoder & Backend Commit To Rename

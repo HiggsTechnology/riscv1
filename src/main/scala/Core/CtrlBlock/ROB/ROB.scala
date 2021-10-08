@@ -6,7 +6,7 @@ import Core.Config.robSize
 import Core.CtrlBlock.IDU.FuncType
 import Core.ExuBlock.FU
 import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, RedirectIO}
-//import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
+import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.BoringUtils
@@ -34,7 +34,7 @@ class ROBPtr extends CircularQueuePtr[ROBPtr](robSize) with HasCircularQueuePtrH
 }
 
 
-class ROB extends Module with Config with HasCircularQueuePtrHelper {
+class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new ROBIO)//todo:根据错误预测的分支指令是否提交给IBF信号能否输出
 
   val skip      = RegInit(VecInit(Seq.fill(robSize)(false.B)))
@@ -132,7 +132,7 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
 
   val currentCsrState = RegInit(csrCommitIO)
 
-//  BoringUtils.addSink(csrCommitIO, "difftestCsrCommitIO")
+  BoringUtils.addSink(csrCommitIO, "difftestCsrCommitIO")
   when(io.exuCommit(0).valid){
     csrState(io.exuCommit(0).bits.ROBIdx.value) := csrCommitIO
     //printf("wb csr idx %d, mtvec %x\n",io.exuCommit(0).bits.ROBIdx.value, csrCommitIO.mtvec)
@@ -196,60 +196,69 @@ class ROB extends Module with Config with HasCircularQueuePtrHelper {
   val instrCnt = RegInit(0.U(64.W))
   instrCnt := instrCnt + PopCount(commitReady)
 
-//  for(i <- 0 until 2) {
-//    val instrCommit = Module(new DifftestInstrCommit)
-//    instrCommit.io.clock := clock
-//    instrCommit.io.coreid := 0.U
-//    instrCommit.io.index := i.U
-//    instrCommit.io.skip := RegNext(skip(deq_vec(i).value))
-//    instrCommit.io.isRVC := false.B
-//    instrCommit.io.scFailed := false.B
-//
-//    instrCommit.io.valid := RegNext(commitReady(i))
-//    instrCommit.io.pc := RegNext(data(deq_vec(i).value).cf.pc)
-//    instrCommit.io.instr := RegNext(data(deq_vec(i).value).cf.instr)
-//    instrCommit.io.wen := RegNext(data(deq_vec(i).value).ctrl.rfWen)
-//    instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
-//    instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
-//  }
+  if(is_sim) {
+    for(i <- 0 until 2) {
+      val instrCommit = Module(new DifftestInstrCommit)
+      instrCommit.io.clock := clock
+      instrCommit.io.coreid := 0.U
+      instrCommit.io.index := i.U
+      instrCommit.io.skip := RegNext(skip(deq_vec(i).value))
+      instrCommit.io.isRVC := false.B
+      instrCommit.io.scFailed := false.B
+
+      instrCommit.io.valid := RegNext(commitReady(i))
+      instrCommit.io.pc := RegNext(data(deq_vec(i).value).cf.pc)
+      instrCommit.io.instr := RegNext(data(deq_vec(i).value).cf.instr)
+      instrCommit.io.wen := RegNext(data(deq_vec(i).value).ctrl.rfWen)
+      instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
+      instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
+    }
+  }
+
   // DifftestInstr.valid或中断/异常 才比较CSR和regfile，以下实现保证提交的CSR始终正确
   //                        N+1         N               N+2                                >N+1        N+3       N+2
   val csrTrueCommit = Mux(RegNext(resp_interrupt) || RegNext(RegNext(resp_interrupt)), csrCommitIO, RegNext(commitCsrState))
-//  val difftestCSRState = Module(new DifftestCSRState)
-//  difftestCSRState.io.clock           := clock
-//  difftestCSRState.io.coreid          := 0.U
-//  difftestCSRState.io.priviledgeMode  := csrTrueCommit.priviledgeMode
-//  difftestCSRState.io.mstatus         := csrTrueCommit.mstatus
-//  difftestCSRState.io.sstatus         := csrTrueCommit.sstatus
-//  difftestCSRState.io.mepc            := csrTrueCommit.mepc
-//  difftestCSRState.io.sepc            := csrTrueCommit.sepc
-//  difftestCSRState.io.mtval           := csrTrueCommit.mtval
-//  difftestCSRState.io.stval           := csrTrueCommit.stval
-//  difftestCSRState.io.mtvec           := csrTrueCommit.mtvec
-//  difftestCSRState.io.stvec           := csrTrueCommit.stvec
-//  difftestCSRState.io.mcause          := csrTrueCommit.mcause
-//  difftestCSRState.io.scause          := csrTrueCommit.scause
-//  difftestCSRState.io.satp            := csrTrueCommit.satp
-//  difftestCSRState.io.mip             := csrTrueCommit.mip
-//  difftestCSRState.io.mie             := csrTrueCommit.mie
-//  difftestCSRState.io.mscratch        := csrTrueCommit.mscratch
-//  difftestCSRState.io.sscratch        := csrTrueCommit.sscratch
-//  difftestCSRState.io.mideleg         := csrTrueCommit.mideleg
-//  difftestCSRState.io.medeleg         := csrTrueCommit.medeleg
+
+  if (is_sim) {
+    val difftestCSRState = Module(new DifftestCSRState)
+    difftestCSRState.io.clock := clock
+    difftestCSRState.io.coreid := 0.U
+    difftestCSRState.io.priviledgeMode := csrTrueCommit.priviledgeMode
+    difftestCSRState.io.mstatus := csrTrueCommit.mstatus
+    difftestCSRState.io.sstatus := csrTrueCommit.sstatus
+    difftestCSRState.io.mepc := csrTrueCommit.mepc
+    difftestCSRState.io.sepc := csrTrueCommit.sepc
+    difftestCSRState.io.mtval := csrTrueCommit.mtval
+    difftestCSRState.io.stval := csrTrueCommit.stval
+    difftestCSRState.io.mtvec := csrTrueCommit.mtvec
+    difftestCSRState.io.stvec := csrTrueCommit.stvec
+    difftestCSRState.io.mcause := csrTrueCommit.mcause
+    difftestCSRState.io.scause := csrTrueCommit.scause
+    difftestCSRState.io.satp := csrTrueCommit.satp
+    difftestCSRState.io.mip := csrTrueCommit.mip
+    difftestCSRState.io.mie := csrTrueCommit.mie
+    difftestCSRState.io.mscratch := csrTrueCommit.mscratch
+    difftestCSRState.io.sscratch := csrTrueCommit.sscratch
+    difftestCSRState.io.mideleg := csrTrueCommit.mideleg
+    difftestCSRState.io.medeleg := csrTrueCommit.medeleg
+  }
+
 
   val hitTrap = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
     hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U && commitReady(i)
   }
 
-//  val difftestTrapEvent = Module(new DifftestTrapEvent)
-//  difftestTrapEvent.io.clock := clock
-//  difftestTrapEvent.io.coreid := 0.U
-//  difftestTrapEvent.io.valid := hitTrap(0) || hitTrap(1)
-//  difftestTrapEvent.io.code := 0.U
-//  difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
-//  difftestTrapEvent.io.cycleCnt := cycleCnt
-//  difftestTrapEvent.io.instrCnt := instrCnt
+  if (is_sim) {
+    val difftestTrapEvent = Module(new DifftestTrapEvent)
+    difftestTrapEvent.io.clock := clock
+    difftestTrapEvent.io.coreid := 0.U
+    difftestTrapEvent.io.valid := hitTrap(0) || hitTrap(1)
+    difftestTrapEvent.io.code := 0.U
+    difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
+    difftestTrapEvent.io.cycleCnt := cycleCnt
+    difftestTrapEvent.io.instrCnt := instrCnt
+  }
 
 
 

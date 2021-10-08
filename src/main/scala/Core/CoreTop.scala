@@ -15,12 +15,14 @@ class CoreTopIO extends Bundle {
 }
 
 class CoreTop extends Module {
+  val is_sim = false
+
   val io = IO(new CoreTopIO)
 
   val ifu      = Module(new IFU)
   val ibf      = Module(new Ibuffer)
-  val ctrlblock = Module(new ControlBlock)
-  val exublock = Module(new ExuBlock)
+  val ctrlblock = Module(new ControlBlock(is_sim = is_sim))
+  val exublock = Module(new ExuBlock(is_sim = is_sim))
   val icache = Module(new DCache(cacheNum = 0))
   val dcache = Module(new DCache(cacheNum = 1))
   val crossbar  = Module(new CROSSBAR_Nto1(1,2))
