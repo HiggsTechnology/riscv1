@@ -1,9 +1,9 @@
 package Core.Cache
 
-import Bus.{SimpleBusParameter, SimpleBus, SimpleReqBundle, SimpleRespBundle}
-import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE, dataBits}
+import Bus.{SimpleBus, SimpleBusParameter, SimpleReqBundle, SimpleRespBundle}
+import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE}
 import Core.AXI4.{AXI4IO, AXI4Parameters, AXIParameter}
-import Core.Config
+import Core.{Config, cohResp}
 import chisel3._
 import chisel3.util._
 import utils.ParallelOperation
@@ -20,6 +20,7 @@ sealed trait CacheConfig extends AXIParameter{
   def TagBits = 64 - OffsetBits - IndexBits
   def CacheDataBits = LineSize*8
   def axiDataBits = 64
+  def cacheCatNum  = 4
   def retTimes = CacheDataBits/axiDataBits
   def addrBundle = new Bundle {
     val tag        = UInt(TagBits.W)
@@ -55,10 +56,9 @@ class CacheResp extends Bundle with Config with CacheConfig {
 
 class CacheIO extends Bundle with Config {
   val bus = Flipped(new SimpleBus)
-  val bus = Vec(2, Flipped(new SimpleBus))
-//  val req   = Vec(2,Flipped(DecoupledIO(new SimpleReqBundle)))
-//  val resp  = Vec(2,ValidIO(new SimpleRespBundle))
   val to_rw   = new AXI4IO   //
+  val cohreq = Flipped(ValidIO(UInt(XLEN.W)))
+  val cohresp = ValidIO(new cohResp)
 }
 
 class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with AXIParameter {
@@ -67,15 +67,18 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val s_idle :: s_lookUp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(6)
   val state: UInt = RegInit(s_idle)
 
-  val valid       = Seq.fill(Ways)(RegInit(VecInit(Seq.fill(Sets)(false.B))))
-  val dirty       = Seq.fill(Ways)(RegInit(VecInit(Seq.fill(Sets)(false.B))))
-  val tagArray    = Seq.fill(Ways)(Mem(Sets, UInt(TagBits.W)))
-  val dataArray   = Seq.fill(Ways)(Mem(Sets, Vec(LineSize, UInt(8.W))))
-  val cacheUseTab = Seq.fill(Ways)(RegInit(VecInit(Seq.fill(Sets)(0.U(32.W)))))
-  val readReg     = Reg(Vec(LineSize, UInt(8.W)))
-  val writeMem    = Reg(UInt((LineSize * 8).W))
+//  val valid       = Seq.fill(Ways)(RegInit(VecInit(Seq.fill(Sets)(false.B))))
+//  val dirty       = Seq.fill(Ways)(RegInit(VecInit(Seq.fill(Sets)(false.B))))
+//  val tagArray    = Seq.fill(Ways)(Mem(Sets, UInt(TagBits.W)))
+//  val dataArray   = Seq.fill(Ways)(Mem(Sets, Vec(LineSize, UInt(8.W))))
+//  val readReg     = Reg(Vec(LineSize, UInt(8.W)))
+  val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
+  val dirty         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
+  val tagArray      = Mem(Sets, UInt(TagBits.W))
+  val dataArray     = Seq.fill(cacheCatNum)(Mem(Sets, Vec(LineSize/cacheCatNum, UInt(8.W))))
+  val readReg       = Wire(Vec(cacheCatNum,Vec(LineSize/cacheCatNum,UInt(8.W))))// 128bit * 4
+  val writeMem      = Reg(UInt((LineSize * 8).W))
 
-  //stage1 拆信号 判断hitvec
   val addr = io.bus.req.bits.addr.asTypeOf(addrBundle)
   val storeEn = io.bus.req.valid && (state === s_idle || state === s_lookUp)
   val reqValid = Reg(Bool())
@@ -89,99 +92,56 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     addrReg   := addr
     writeReg  := io.bus.req.bits
   }
-  val tagHitVec = Wire(Vec(Ways, Bool()))
-  for (i <- 0 until Ways) {
-    tagHitVec(i) := io.bus.req.valid && valid(i)(addr.index) && tagArray(i).read(addr.index) === addr.tag && ((state === s_idle) || (state === s_lookUp))
-  }
   val hit = Wire(Bool())
-  hit:= tagHitVec.asUInt.orR
-//  val hitReg = Reg(Bool())
-//  when(storeEn) {
-//    hitReg := hit
-//  }
+  hit := io.bus.req.valid && valid(addr.index) && tagArray.read(addr.index) === addr.tag && ((state === s_idle) || (state === s_lookUp))
+
   val needRefill = Reg(Bool())
   when(storeEn) {
     needRefill := io.bus.req.valid && !hit
   }
-  //store the meta&data to the readReg or writeReg
-  for (i <- 0 until Ways) {
-    when(tagHitVec(i)) { //whatever hit write or hit read will clear the cacheUseTable(hit)
-      readReg := dataArray(i).read(addr.index)
-      cacheUseTab(i)(addr.index) := 0.U
-    }.elsewhen(hit && !tagHitVec(i)) {
-      cacheUseTab(i)(addr.index) := cacheUseTab(i)(addr.index) + 1.U
-    }
-  }
+
 
   //for refill done state hit match
-  val tagHitVec_done = Wire(Vec(Ways, Bool()))
+  val tagHitVec_done = Wire(Bool())
 
-  for (i <- 0 until Ways) {
-    when(state === s_refill_done){
-      tagHitVec_done(i) := tagArray(i).read(addrReg.index) === addrReg.tag
-    }.otherwise{
-      tagHitVec_done(i) := false.B
-    }
+  when(state === s_refill_done){
+    tagHitVec_done := tagArray.read(addrReg.index) === addrReg.tag
+  }.otherwise{
+    tagHitVec_done := false.B
   }
-
   //hitwrite  is dirty
+  val readIdx = Mux(state===s_refill_done,addrReg.index,addr.index)
+  for(i <- 0 until cacheCatNum){
+    readReg(i) := dataArray(i).read(RegNext(readIdx))
+  }
 
-  when(reqValid && writeReg.isWrite && (state === s_lookUp || state ===s_refill_done)) {
-    for (i <- 0 until Ways) {
-      val writeWay = RegNext(tagHitVec(i)) || tagHitVec_done(i)
-      when(writeWay) {
-        val wdata = dataArray(i).read(addrReg.index)
-        for (k <- 0 until XLEN / 8) {
-          when(writeReg.wmask(k)) {
-            wdata(addrReg.Offset + k.U) := writeReg.data(k * 8 + 7, k * 8)
-          }
+  for (i <- 0 until cacheCatNum) {
+    when(reqValid && writeReg.isWrite && (state === s_lookUp) && addrReg.Offset(5,4) === i.U) {
+      for (k <- 0 until XLEN / 8) {
+        when(writeReg.wmask(k)) {
+          readReg(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
         }
-        dataArray(i).write(addrReg.index,wdata)
-        dirty(i)(addrReg.index) := true.B
       }
+      dataArray(i)(addrReg.index) := readReg(i)
+      dirty(addrReg.index) := true.B
     }
   }
+
+
 
   io.to_rw := DontCare
-
   //s_miss
-  class select extends Bundle {
-    val cnt = UInt(32.W)
-    val addr = UInt(log2Up(Ways).W)
-  }
 
-  def compare(a: select, b: select): select = {
-    Mux(a.cnt > b.cnt, a, b)
-  }
+  val needWriteBack = dirty(addrReg.index) && valid(addrReg.index)
+  val wb_tag        = tagArray.read(addrReg.index)
 
-  val changevec = Wire(Vec(Ways, new select))
-  val dirtyVec  = Wire(Vec(Ways, Bool()))
-  val validVec  = Wire(Vec(Ways, Bool()))
-  for (i <- 0 until Ways) {
-    changevec(i).cnt := cacheUseTab(i)(addrReg.index)
-    changevec(i).addr := i.U
-    dirtyVec(i) := dirty(i)(addrReg.index)
-    validVec(i) := valid(i)(addrReg.index)
-  }
 
-  val selectWay = Wire(UInt(log2Up(Ways).W))
-  val needWriteBack = Wire(Bool())
-  val wb_tag = Wire( UInt(XLEN.W))
-  wb_tag := DontCare
-  selectWay := ParallelOperation(changevec, compare).addr
-  needWriteBack := dirtyVec(selectWay) && validVec(selectWay)
-  for(i <- 0 until Ways){
-    when(i.U === selectWay){
-      wb_tag := tagArray(i).read(addrReg.index)
-    }
-  }
   val writeDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(axiDataBits.W))))
   val writeMemCnt  = Reg(UInt(log2Up(retTimes + 1).W))
-  for (i <- 0 until Ways) {
-    when(i.U === selectWay && (state === s_miss)) {
-      for (k <- 0 until retTimes) {
-        writeDataReg(k) := dataArray(i)(addrReg.index).asUInt >> (k.U * axiDataBits.U)
-      }
+  for (i <- 0 until cacheCatNum) {
+    when(state === s_miss) {
+      writeDataReg(2*i) := dataArray(i)(addrReg.index).asUInt
+      writeDataReg(2*i+1) := dataArray(i)(addrReg.index).asUInt >> 64.U
     }
   }
   when(state === s_miss) {
@@ -207,11 +167,10 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     }
   }
 
-  for(i <- 0 until Ways){
-    when(i.U===selectWay && writeMemCnt === (retTimes-1).U && io.to_rw.w.fire){
-      dirty(i)(addrReg.index) := false.B
-    }
+  when( writeMemCnt === (retTimes-1).U && io.to_rw.w.fire){
+    dirty(addrReg.index) := false.B
   }
+
   io.to_rw.b.ready := (state === s_replace || state === s_refill) && (writeMemCnt === retTimes.U)
 
   //replace
@@ -236,36 +195,46 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       readMemCnt := readMemCnt + 1.U
     }
   }
-
-  val mem_wb = Wire(Vec(LineSize, UInt(8.W)))
-  for( i <- 0 until  Ways){
-    when(i.U===selectWay && state === s_refill && readMemCnt === retTimes.U){
-      mem_wb := readDataReg.asTypeOf(mem_wb)
-      tagArray(i).write(addrReg.index,addrReg.tag)
-      valid(i)(addrReg.index)     := true.B
-      dataArray(i)(addrReg.index) := mem_wb
-    }.otherwise{
-      mem_wb := DontCare
-    }
-    when(i.U===selectWay && state === s_refill && readMemCnt === retTimes.U){
-      cacheUseTab(i)(addrReg.index) := 0.U
-    }.elsewhen(i.U=/=selectWay && state === s_refill && readMemCnt === retTimes.U) {
-      cacheUseTab(i)(addrReg.index) := cacheUseTab(i)(addrReg.index) + 1.U
+  val mem_wb = Seq.fill(cacheCatNum)(Wire(Vec(LineSize/cacheCatNum, UInt(8.W))))
+  for(i <- 0 until  cacheCatNum){
+    mem_wb(i) := readDataReg.asUInt()(128*i+127,128*i).asTypeOf(mem_wb(i))
+  }
+  for( i <- 0 until cacheCatNum){
+    when(state === s_refill && readMemCnt === retTimes.U){
+      when(reqValid && writeReg.isWrite && addrReg.Offset(5,4) === i.U ) {
+        for (k <- 0 until XLEN / 8) {
+          when(writeReg.wmask(k)) {
+            mem_wb(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
+          }
+        }
+      }
+      tagArray.write(addrReg.index,addrReg.tag)
+      valid(addrReg.index)     := true.B
+      dataArray(i)(addrReg.index) := mem_wb(i)
     }
   }
 
   //s_refill_done
 
 
-  for (i <- 0 until Ways) {
-    when(tagHitVec_done(i)) { //whatever hit write or hit read will clear the cacheUseTable(hit)
-      readReg := dataArray(i).read(addrReg.index)
-    }
-  }
-
   io.bus.req.ready  := (state ===s_idle) || (state ===s_lookUp)
   io.bus.resp.bits.data := readReg.asUInt >> addrReg.Offset * 8.U
   io.bus.resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid
+
+  val cohaddr = io.cohreq.bits.asTypeOf(addrBundle)
+  io.cohresp.bits.needforward := io.cohreq.valid && cohaddr.tag === tagArray(cohaddr.index) && valid(cohaddr.index) && dirty(cohaddr.index)
+  when(io.cohreq.valid && (!io.cohresp.bits.needforward)){
+    io.cohresp.valid := true.B
+    io.cohresp.bits.forward := DontCare
+  }.elsewhen(io.cohreq.valid && state===s_idle && !io.bus.req.valid){
+    io.cohresp.valid := RegNext(io.cohreq.valid && state===s_idle && !io.bus.req.valid)
+    for(i <- 0 until 4) {
+      io.cohresp.bits.forward(i) := RegNext(dataArray(i)(cohaddr.index).asUInt())
+    }
+  }.otherwise{
+    io.cohresp.valid := false.B
+    io.cohresp.bits.forward := DontCare
+  }
 
   //-------------------------------------状态机------------------------------------------------
   switch(state) {

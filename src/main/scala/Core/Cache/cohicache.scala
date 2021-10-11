@@ -3,7 +3,7 @@ package Core.Cache
 import Bus.SimpleBus
 import Core.AXI4.AXI4Parameters.{AXI_PROT, AXI_SIZE, dataBits}
 import Core.AXI4.{AXI4IO, AXI4Parameters, AXIParameter}
-import Core.Config
+import Core.{Config, cohResp}
 import chisel3._
 import chisel3.util._
 
@@ -30,17 +30,13 @@ trait ICacheConfig extends AXIParameter{
 class ICacheIO extends Bundle with Config {
   val bus = Vec(2,Flipped(new SimpleBus))
   val to_rw   = new AXI4IO   //
+  val cohreq = ValidIO(UInt(XLEN.W))
+  val cohresp = Flipped(ValidIO(new cohResp))
 }
 
 class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig with AXIParameter {
   val io = IO(new ICacheIO)
   io.to_rw := DontCare
-//  io.cohreq(0).bits.cohAddr := io.req(0).bits.addr
-//  io.cohreq(1).bits.cohAddr := io.req(1).bits.addr
-//  io.cohreq(0).valid        := io.req(0).valid
-//  io.cohreq(1).valid        := io.req(1).valid
-//  val forwardinst = io.cohresp.map(_.forwardInst)
-//  val forwarden   = io.cohreq.map(_.ready)
 
   val s_idle :: s_lookUp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(6)
   val state: UInt   = RegInit(s_idle)
@@ -88,7 +84,17 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
   for (i <- 0 until 2) {
     validVec(i) := valid(addrReg(i).index)
   }
+  io.cohreq.valid := state === s_miss
+  io.cohreq.bits := Mux(needRefill(0),addrReg(0).asUInt(),addrReg(1).asUInt())
 
+  for( i <- 0 until  cacheCatNum){
+    val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
+    when(state === s_miss && io.cohresp.valid && io.cohresp.bits.needforward){
+      tagArray.write(refill_idx,Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag))
+      valid(refill_idx)     := true.B
+      dataArray(i).write(refill_idx,io.cohresp.bits.forward(i).asTypeOf(Vec(LineSize/cacheCatNum, UInt(8.W))))
+    }
+  }
   //replace
 
   when(state === s_replace){
@@ -184,7 +190,14 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
       }
     }
     is(s_miss) {
-      when(needRefill(0) || needRefill(1)){
+      when(io.cohresp.valid && io.cohresp.bits.needforward && needRefill(0) && needRefill(1)){
+        state := s_miss
+        needRefill(0) := false.B
+      }.elsewhen(io.cohresp.valid && io.cohresp.bits.needforward && ((needRefill(0) && !needRefill(1)) || (!needRefill(0) && needRefill(1)))){
+        state := s_refill_done
+        needRefill(0) := false.B
+        needRefill(1) := false.B
+      }.elsewhen(io.cohresp.valid && !io.cohresp.bits.needforward && (needRefill(0) || needRefill(1))){
         state := s_replace
         val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
         valid(refill_idx)     := false.B

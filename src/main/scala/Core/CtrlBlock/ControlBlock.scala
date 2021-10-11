@@ -58,26 +58,53 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   intBusyTable.io.flush          := rob.io.flush_out
   for(i <- 0 until 2){
     decoders(i).io.in              <> io.in.pcinstr(i)
-    rename.io.in.cfctrl(i)         <> decoders(i).io.out
     //rename.io.out.microop(i).ready := true.B
   }
+  val validReg1A = RegInit(false.B)
+  when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
+    validReg1A := decoders(0).io.out.valid
+  }
+  val validReg1B = RegEnable(decoders(1).io.out.valid, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
+  val dataReg1A  = RegEnable(decoders(0).io.out.bits, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
+  val dataReg1B  = RegEnable(decoders(1).io.out.bits, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
+  decoders(0).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
+  decoders(1).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
+
+  rename.io.in.cfctrl(0).valid := validReg1A && !flush
+  rename.io.in.cfctrl(1).valid := validReg1B && !flush
+  rename.io.in.cfctrl(0).bits  := dataReg1A
+  rename.io.in.cfctrl(1).bits  := dataReg1B
+
+
   rename.io.in.commit         := rob.io.commit
 
-  //ROB && Dispatch Ready
-  rename.io.out.microop(0).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
-  rename.io.out.microop(1).ready := disQueue.io.out.can_allocate && rob.io.can_allocate
-  //Rename To ROB
-  for(i <- 0 until 2){
-    rob.io.in(i).valid := rename.io.out.microop(i).valid && disQueue.io.out.can_allocate
-    rob.io.in(i).bits := rename.io.out.microop(i).bits
+  val ready3 = disQueue.io.out.can_allocate && rob.io.can_allocate
+  val validReg2A = RegInit(false.B)
+  when((validReg2A && ready3) || !validReg2A || flush){
+    validReg2A := rename.io.out.microop(0).valid
   }
+  val validReg2B = RegEnable(rename.io.out.microop(1).valid, (validReg2A && ready3) || !validReg2A || flush)
+  val dataReg2A  = RegEnable(rename.io.out.microop(0).bits, (validReg2A && ready3) || !validReg2A || flush)
+  val dataReg2B  = RegEnable(rename.io.out.microop(1).bits, (validReg2A && ready3) || !validReg2A || flush)
+  //ROB && Dispatch Ready
+  rename.io.out.microop(0).ready := (validReg2A && ready3) || !validReg2A || flush
+  rename.io.out.microop(1).ready := (validReg2A && ready3) || !validReg2A || flush
+  //Rename To ROB
+  rob.io.in(0).valid := validReg2A && !flush && disQueue.io.out.can_allocate
+  rob.io.in(1).valid := validReg2B && !flush && disQueue.io.out.can_allocate
+  rob.io.in(0).bits := dataReg2A
+  rob.io.in(1).bits := dataReg2B
+
   rob.io.exuCommit := io.in.exuCommit
   rob.io.redirect := io.in.redirect
   io.out.predict_robPtr := rob.io.predict
   //Rename To Dispatch
+  dispatch.io.in.microop_in(0).valid := validReg2A && !flush && rob.io.can_allocate
+  dispatch.io.in.microop_in(1).valid := validReg2B && !flush && rob.io.can_allocate
+  dispatch.io.in.microop_in(0).bits  := dataReg2A
+  dispatch.io.in.microop_in(1).bits  := dataReg2B
+
   for(i <- 0 until 2){
-    dispatch.io.in.microop_in(i).valid := rename.io.out.microop(i).valid && rob.io.can_allocate
-    dispatch.io.in.microop_in(i).bits      := rename.io.out.microop(i).bits
     dispatch.io.in.microop_in(i).bits.ROBIdx := rob.io.enqPtr(i)
   }
 

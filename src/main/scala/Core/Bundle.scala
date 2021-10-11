@@ -1,5 +1,6 @@
 package Core
 
+import Core.Cache.{CacheConfig, ICacheConfig}
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.MemReg.RegWriteIO
@@ -184,4 +185,9 @@ class TrapIO extends Bundle with Config {
 
   val mstatus = UInt(MXLEN.W)
   val ROBIdx = new ROBPtr
+}
+
+class cohResp extends Bundle with ICacheConfig {
+  val forward = Vec(cacheCatNum,UInt((LineSize/cacheCatNum*8).W))
+  val needforward = Bool()
 }
