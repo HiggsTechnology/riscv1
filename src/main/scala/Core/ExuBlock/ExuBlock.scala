@@ -36,7 +36,7 @@ class ExuBlockIO extends Bundle with Config {
 
   val debug_int_rat = Vec(32, Input(UInt(PhyRegIdxWidth.W)))
 
-  val toMem = Vec(2, new SimpleBus)
+  val toMem = new SimpleBus
 }
 
 ///1,,写到orderqueue,保留站,指针给保留站
@@ -177,12 +177,12 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
 
   //rs to exu
   //执行单元运算，有decouple，直接连接
-  bru.io.in <> jumprs.io.out(JumpRsBruNo)
-  csr.io.in <> jumprs.io.out(JumpRsCsrNo)
+  bru.io.in  <> jumprs.io.out(JumpRsBruNo)
+  csr.io.in  <> jumprs.io.out(JumpRsCsrNo)
   alu1.io.in <> alu1rs.io.out
   alu2.io.in <> alu2rs.io.out
-  mu.io.in  <> murs.io.out
-  du.io.in  <> durs.io.out
+  mu.io.in   <> murs.io.out
+  du.io.in   <> durs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)
   lsu2.io.in <> lsq.io.lsu_in(1)
   lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)

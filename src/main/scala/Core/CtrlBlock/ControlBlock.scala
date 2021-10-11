@@ -111,4 +111,9 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   io.out.debug_int_rat := rename.io.out.debug_int_rat
 
   //printf("CtrlBlock io.valid %d %d, decode.valid %d %d, rename.valid %d %d\n", io.in.pcinstr(0).valid, io.in.pcinstr(1).valid, decoders(0).io.out.valid, decoders(1).io.out.valid, rename.io.out.microop(0).valid, rename.io.out.microop(1).valid)
+//  for(i <- 0 until ExuNum){
+//    when(io.in.exuCommit(i).valid){
+//      printf("CTRL BLOCK: exu %d commit res is %x \n",i.U, io.in.exuCommit(i).bits.res)
+//    }
+//  }
 }
