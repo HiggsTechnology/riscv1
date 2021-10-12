@@ -38,7 +38,7 @@ class SimTop extends Module {
   // slave:   5;  2 DataCache, 1 clint, 1 SimUart, 1 AXI4Crossbar write straightly
   //val mmio     = Module(new MMIO(num_master = 1, num_slave = 4))
 
-  val mmio = Module(new MMIOCrossbar1toN(MMIOConfig.activateAddrMap))
+  val mmio = Module(new MMIOCrossbar1toN(MMIOConfig.simAddrMap))
   io.memAXI_0 <> crossbar.io.out
 
   crossbar.io.in(0) <> icache.io.to_rw

@@ -19,9 +19,10 @@ sealed trait CacheConfig extends AXIParameter{
   def IndexBits = log2Up(Sets)
   def TagBits = 64 - OffsetBits - IndexBits
   def CacheDataBits = LineSize*8
-  def axiDataBits = 64
-  def cacheCatNum  = 4
-  def retTimes = CacheDataBits/axiDataBits
+  def AxiDataBits = 64
+  def CacheCatNum  = 4
+  def CacheCatWidth = log2Up(CacheCatNum)
+  def RetTimes = CacheDataBits/AxiDataBits
   def addrBundle = new Bundle {
     val tag        = UInt(TagBits.W)
     val index      = UInt(IndexBits.W)
@@ -75,8 +76,13 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val dirty         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val tagArray      = Mem(Sets, UInt(TagBits.W))
-  val dataArray     = Seq.fill(cacheCatNum)(Mem(Sets, Vec(LineSize/cacheCatNum, UInt(8.W))))
-  val readReg       = Wire(Vec(cacheCatNum,Vec(LineSize/cacheCatNum,UInt(8.W))))// 128bit * 4
+  val dataArray     = Seq.fill(CacheCatNum)(Mem(Sets, Vec(LineSize/CacheCatNum, UInt(8.W))))//(new 100)
+
+
+  val SRam_read  = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
+  val SRam_write = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
+
+  val readReg       = Wire(Vec(CacheCatNum,Vec(LineSize/CacheCatNum,UInt(8.W))))// 128bit * 4
   val writeMem      = Reg(UInt((LineSize * 8).W))
 
   val addr = io.bus.req.bits.addr.asTypeOf(addrBundle)
@@ -111,18 +117,20 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
   //hitwrite  is dirty
   val readIdx = Mux(state===s_refill_done,addrReg.index,addr.index)
-  for(i <- 0 until cacheCatNum){
-    readReg(i) := dataArray(i).read(RegNext(readIdx))
+  //for (i <- 0 until CacheCatNum) {
+  for (i <- 0 until CacheCatNum) {
+    readReg(i) := SRam_read(i) //dataArray(i).read(RegNext(readIdx))
   }
 
-  for (i <- 0 until cacheCatNum) {
-    when(reqValid && writeReg.isWrite && (state === s_lookUp) && addrReg.Offset(5,4) === i.U) {
+  for (i <- 0 until CacheCatNum) {
+    when(reqValid && writeReg.isWrite && (state === s_lookUp) && addrReg.Offset(OffsetBits-1,OffsetBits-2) === i.U) {
       for (k <- 0 until XLEN / 8) {
         when(writeReg.wmask(k)) {
           readReg(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
         }
       }
-      dataArray(i)(addrReg.index) := readReg(i)
+      SRam_write(i) := readReg(i)
+      //dataArray(i)(addrReg.index) := readReg(i)
       dirty(addrReg.index) := true.B
     }
   }
@@ -136,12 +144,12 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val wb_tag        = tagArray.read(addrReg.index)
 
 
-  val writeDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(axiDataBits.W))))
-  val writeMemCnt  = Reg(UInt(log2Up(retTimes + 1).W))
-  for (i <- 0 until cacheCatNum) {
-    when(state === s_miss) {
-      writeDataReg(2*i) := dataArray(i)(addrReg.index).asUInt
-      writeDataReg(2*i+1) := dataArray(i)(addrReg.index).asUInt >> 64.U
+  val writeDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(AxiDataBits.W))))
+  val writeMemCnt  = Reg(UInt(log2Up(RetTimes + 1).W))
+  for (i <- 0 until CacheCatNum) {
+    when(RegNext(state === s_miss)) {
+      writeDataReg(2*i)   := SRam_read(i).asUInt()//dataArray(i)(addrReg.index).asUInt
+      writeDataReg(2*i+1) := SRam_read(i).asUInt() >> 64.U//dataArray(i)(addrReg.index).asUInt >> 64.U
     }
   }
   when(state === s_miss) {
@@ -153,28 +161,28 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
   //write to mem
-  io.to_rw.w.valid  := (state === s_replace || state === s_refill ) && needRefill
-  when(writeMemCnt < retTimes.U) {
+  io.to_rw.w.valid  := RegNext((state === s_replace || state === s_refill )) && needRefill
+  when(writeMemCnt < RetTimes.U) {
     io.to_rw.w.bits.data := writeDataReg(writeMemCnt)
     io.to_rw.w.bits.strb := 0xffffffffL.U
     when(io.to_rw.w.fire){
       writeMemCnt := writeMemCnt + 1.U
     }
-    when(writeMemCnt === (retTimes-1).U){
+    when(writeMemCnt === (RetTimes-1).U){
       io.to_rw.w.bits.last := true.B
     }.otherwise{
       io.to_rw.w.bits.last := false.B
     }
   }
 
-  when( writeMemCnt === (retTimes-1).U && io.to_rw.w.fire){
+  when( writeMemCnt === (RetTimes-1).U && io.to_rw.w.fire){
     dirty(addrReg.index) := false.B
   }
 
-  io.to_rw.b.ready := (state === s_replace || state === s_refill) && (writeMemCnt === retTimes.U)
+  io.to_rw.b.ready := (state === s_replace || state === s_refill) && (writeMemCnt === RetTimes.U)
 
   //replace
-  val readMemCnt = Reg(UInt(log2Up(retTimes+1).W))
+  val readMemCnt = Reg(UInt(log2Up(RetTimes+1).W))
   when(state === s_replace){
     readMemCnt := 0.U
   }
@@ -185,9 +193,9 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
   //refill
-  io.to_rw.r.ready := (state === s_refill) && (readMemCnt < retTimes.U)
-  val readDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(axiDataBits.W))))
-  when(readMemCnt < retTimes.U && state === s_refill){
+  io.to_rw.r.ready := (state === s_refill) && (readMemCnt < RetTimes.U)
+  val readDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(AxiDataBits.W))))
+  when(readMemCnt < RetTimes.U && state === s_refill){
     when(needRefill) {
       readDataReg(readMemCnt) := io.to_rw.r.bits.data
     }
@@ -195,12 +203,12 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       readMemCnt := readMemCnt + 1.U
     }
   }
-  val mem_wb = Seq.fill(cacheCatNum)(Wire(Vec(LineSize/cacheCatNum, UInt(8.W))))
-  for(i <- 0 until  cacheCatNum){
+  val mem_wb = Seq.fill(CacheCatNum)(Wire(Vec(LineSize/CacheCatNum, UInt(8.W))))
+  for(i <- 0 until  CacheCatNum){
     mem_wb(i) := readDataReg.asUInt()(128*i+127,128*i).asTypeOf(mem_wb(i))
   }
-  for( i <- 0 until cacheCatNum){
-    when(state === s_refill && readMemCnt === retTimes.U){
+  for( i <- 0 until CacheCatNum){
+    when(state === s_refill && readMemCnt === RetTimes.U){
       when(reqValid && writeReg.isWrite && addrReg.Offset(5,4) === i.U ) {
         for (k <- 0 until XLEN / 8) {
           when(writeReg.wmask(k)) {
@@ -211,7 +219,8 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       }
       tagArray.write(addrReg.index,addrReg.tag)
       valid(addrReg.index)     := true.B
-      dataArray(i)(addrReg.index) := mem_wb(i)
+      SRam_write(i) := mem_wb(i)
+      //dataArray(i)(addrReg.index) := mem_wb(i)
     }
   }
 
@@ -230,13 +239,31 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }.elsewhen(io.cohreq.valid && state===s_idle && !io.bus.req.valid){
     io.cohresp.valid := RegNext(io.cohreq.valid && state===s_idle && !io.bus.req.valid)
     for(i <- 0 until 4) {
-      io.cohresp.bits.forward(i) := RegNext(dataArray(i)(cohaddr.index).asUInt())
+      io.cohresp.bits.forward(i) := SRam_read(i).asUInt()//RegNext(dataArray(i)(cohaddr.index).asUInt())
     }
   }.otherwise{
     io.cohresp.valid := false.B
     io.cohresp.bits.forward := DontCare
   }
 
+  val hit_read = state===s_refill_done || io.bus.req.valid
+  val refill_read = state === s_miss
+  val fw_read = io.cohreq.valid && state===s_idle && !io.bus.req.valid
+  val hit_write = reqValid && writeReg.isWrite && (state === s_lookUp)
+  val refill_write = state === s_refill && readMemCnt === RetTimes.U
+  val SRamArray     = Seq.fill(CacheCatNum)(Module(new SRam))
+  // linesize = 512 bit
+  // sram width = 128 bit
+  // idx = addr(11,6)
+  // en  = addr(5,4) === i.U
+  for(i<- 0 until CacheCatNum){
+    SRam_read(i) := SRamArray(i).io.rData.asTypeOf(SRam_read(i))
+    SRamArray(i).io.idx := Mux(fw_read, cohaddr.index, Mux(refill_read || refill_write || hit_write, addrReg.index, readIdx))
+    SRamArray(i).io.wMask := VecInit(Seq.fill(128)(true.B)).asUInt() //wmask had been done
+    SRamArray(i).io.wData := SRam_write(i).asUInt()
+    SRamArray(i).io.en := (hit_read && Mux(state===s_refill_done,addrReg.Offset(5,4) === i.U,addr.Offset(5,4) === i.U)) || (hit_write && addrReg.Offset(5,4) === i.U) || refill_read || refill_write || fw_read
+    SRamArray(i).io.wen := (hit_write && addrReg.Offset(5,4) === i.U) || refill_write
+  }
   //-------------------------------------状态机------------------------------------------------
   switch(state) {
     is(s_idle) {
@@ -264,7 +291,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       }
     }
     is(s_refill) {
-      when((readMemCnt === retTimes.U) && (!needWriteBack) && needRefill){
+      when((readMemCnt === RetTimes.U) && (!needWriteBack) && needRefill){
         state := s_refill_done
         needRefill := false.B
       }

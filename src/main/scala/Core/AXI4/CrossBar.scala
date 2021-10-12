@@ -132,7 +132,7 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   val writeWay = Mux(wState === State.idle, chosenWrite, writeWayReg)
   when(io.out.aw.fire() && !io.in(writeWay).w.valid){
     writeCnt := io.out.aw.bits.len + 1.U
-  }.elsewhen((io.out.w.fire() || writeCnt =/= 0.U) && wState === State.resp){
+  }.elsewhen((io.out.w.fire() && writeCnt =/= 0.U) && wState === State.resp){
     writeCnt := writeCnt - 1.U
   }
 

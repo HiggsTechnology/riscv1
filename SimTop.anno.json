@@ -19,73 +19,121 @@
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|PreDecode",
     "duplicate":"~SimTop|SimTop/ifu:IFU/preDecVec_0:PreDecode",
-    "index":0.07142857142857142
+    "index":0.06
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|PreDecode_1",
     "duplicate":"~SimTop|SimTop/ifu:IFU/preDecVec_1:PreDecode",
-    "index":0.09523809523809523
+    "index":0.08
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|IDU",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/decoders_0:IDU",
-    "index":0.16666666666666666
+    "index":0.14
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|IDU_1",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/decoders_1:IDU",
-    "index":0.19047619047619047
+    "index":0.16
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|DifftestInstrCommit",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/rob:ROB/instrCommit:DifftestInstrCommit",
-    "index":0.35714285714285715
+    "index":0.3
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|DifftestInstrCommit_1",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/rob:ROB/instrCommit_1:DifftestInstrCommit",
-    "index":0.38095238095238093
+    "index":0.32
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|RS",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu1rs:RS",
-    "index":0.5238095238095238
+    "index":0.44
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|RS_1",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu2rs:RS",
-    "index":0.5476190476190477
+    "index":0.46
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|ALU",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu1:ALU",
-    "index":0.6666666666666666
+    "index":0.56
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|ALU_1",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu2:ALU",
-    "index":0.6904761904761905
+    "index":0.58
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.7
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam",
+    "index":0.72
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_1",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.74
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_1",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam",
+    "index":0.76
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_2",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.78
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_2",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam",
+    "index":0.8
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_3",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_3:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.82
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_3",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_3:SRam",
+    "index":0.84
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|Arbiter",
     "duplicate":"~SimTop|SimTop/crossbar:CROSSBAR_Nto1/readArb:Arbiter",
-    "index":0.8571428571428571
+    "index":0.88
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|Arbiter_1",
     "duplicate":"~SimTop|SimTop/crossbar:CROSSBAR_Nto1/writeArb:Arbiter",
-    "index":0.8809523809523809
+    "index":0.9
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
@@ -2230,6 +2278,11 @@
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
     "target":"~SimTop|Clint>mtip"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxResourceAnno",
+    "target":"SimTop.S011HD1P_X32Y2D128_BW",
+    "resourceId":"/vsrc/ysyxRam.v"
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",

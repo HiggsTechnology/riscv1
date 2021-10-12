@@ -21,22 +21,22 @@ class CoreTop extends Module {
 
   val io       = IO(new CoreTopIO)
 
-  val ifu      = Module(new IFU)
-  val ibf      = Module(new Ibuffer)
+  val ifu       = Module(new IFU)
+  val ibf       = Module(new Ibuffer)
   val ctrlblock = Module(new ControlBlock(is_sim = is_sim))
-  val exublock = Module(new ExuBlock(is_sim = is_sim))
-  val icache = Module(new ICache(cacheNum = 0))
-  val dcache = Module(new DCache(cacheNum = 1))
+  val exublock  = Module(new ExuBlock(is_sim = is_sim))
+  val icache    = Module(new ICache(cacheNum = 0))
+  val dcache    = Module(new DCache(cacheNum = 1))
   val crossbar  = Module(new CROSSBAR_Nto1(1,2))
   val clint     = Module(new Clint)
 
 
-  val mmio = Module(new MMIOCrossbar1toN(MMIOConfig.activateAddrMap))
+  val mmio = Module(new MMIOCrossbar1toN(MMIOConfig.realAddrMap))
   io.axi4<> crossbar.io.out
 
   crossbar.io.in(0) <> icache.io.to_rw
   crossbar.io.in(1) <> dcache.io.to_rw
-  crossbar.io.in(2) <> mmio.io.out(3).toAXI4
+  crossbar.io.in(2) <> mmio.io.out(2).toAXI4
 
   dcache.io.cohreq  <> icache.io.cohreq
   icache.io.cohresp <> dcache.io.cohresp
@@ -48,9 +48,7 @@ class CoreTop extends Module {
   dcache.io.bus     <> mmio.io.out(0)
   // dcache.io.bus(1)  <> mmio.io.slave(1)
   clint.io.bus      <> mmio.io.out(1)
-  if(!is_sim){
-    mmio.io.out(2) := DontCare //TODO add is_sim changes
-  }
+
 
   ifu.io.redirect                 :=  exublock.io.redirect
   ifu.io.in                       :=  exublock.io.bpu_update

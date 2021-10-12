@@ -1,79 +1,127 @@
 [
   {
     "class":"firrtl.transforms.CombinationalPath",
-    "sink":"~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_b_ready",
+    "sink":"~riscv_cpu|ysyx_210062_riscv_cpu>io_master_rready",
     "sources":[
-      "~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_b_valid",
-      "~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_b_bits_id"
+      "~riscv_cpu|ysyx_210062_riscv_cpu>io_master_rvalid",
+      "~riscv_cpu|ysyx_210062_riscv_cpu>io_master_rid"
     ]
   },
   {
     "class":"firrtl.transforms.CombinationalPath",
-    "sink":"~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_r_ready",
+    "sink":"~riscv_cpu|ysyx_210062_riscv_cpu>io_master_bready",
     "sources":[
-      "~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_r_valid",
-      "~riscv_cpu|ysyx_210062_riscv_cpu>io_mem_r_bits_id"
+      "~riscv_cpu|ysyx_210062_riscv_cpu>io_master_bvalid",
+      "~riscv_cpu|ysyx_210062_riscv_cpu>io_master_bid"
     ]
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|PreDecode",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/ifu:ysyx_210062_IFU/preDecVec_0:ysyx_210062_PreDecode",
-    "index":0.08333333333333333
+    "index":0.06818181818181818
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|PreDecode_1",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/ifu:ysyx_210062_IFU/preDecVec_1:ysyx_210062_PreDecode",
-    "index":0.1111111111111111
+    "index":0.09090909090909091
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|IDU",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/ctrlblock:ysyx_210062_ControlBlock/decoders_0:ysyx_210062_IDU",
-    "index":0.19444444444444445
+    "index":0.1590909090909091
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|IDU_1",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/ctrlblock:ysyx_210062_ControlBlock/decoders_1:ysyx_210062_IDU",
-    "index":0.2222222222222222
+    "index":0.18181818181818182
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|RS",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/exublock:ysyx_210062_ExuBlock/alu1rs:ysyx_210062_RS",
-    "index":0.5
+    "index":0.4090909090909091
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|RS_1",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/exublock:ysyx_210062_ExuBlock/alu2rs:ysyx_210062_RS",
-    "index":0.5277777777777778
+    "index":0.4318181818181818
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|ALU",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/exublock:ysyx_210062_ExuBlock/alu1:ysyx_210062_ALU",
-    "index":0.6388888888888888
+    "index":0.5227272727272727
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|ALU_1",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/exublock:ysyx_210062_ExuBlock/alu2:ysyx_210062_ALU",
-    "index":0.6666666666666666
+    "index":0.5454545454545454
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|S011HD1P_X32Y2D128_BW",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_0:ysyx_210062_SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.6590909090909091
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|SRam",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_0:ysyx_210062_SRam",
+    "index":0.6818181818181818
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|S011HD1P_X32Y2D128_BW_1",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_1:ysyx_210062_SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.7045454545454546
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|SRam_1",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_1:ysyx_210062_SRam",
+    "index":0.7272727272727273
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|S011HD1P_X32Y2D128_BW_2",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_2:ysyx_210062_SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.75
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|SRam_2",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_2:ysyx_210062_SRam",
+    "index":0.7727272727272727
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|S011HD1P_X32Y2D128_BW_3",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_3:ysyx_210062_SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.7954545454545454
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~riscv_cpu|SRam_3",
+    "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/dcache:ysyx_210062_DCache/SRamArray_3:ysyx_210062_SRam",
+    "index":0.8181818181818182
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|Arbiter",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/crossbar:ysyx_210062_CROSSBAR_Nto1/readArb:ysyx_210062_Arbiter",
-    "index":0.8333333333333334
+    "index":0.8636363636363636
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~riscv_cpu|Arbiter_1",
     "duplicate":"~riscv_cpu|ysyx_210062_riscv_cpu/core:ysyx_210062_CoreTop/crossbar:ysyx_210062_CROSSBAR_Nto1/writeArb:ysyx_210062_Arbiter",
-    "index":0.8611111111111112
+    "index":0.8863636363636364
   },
   {
     "class":"Sim.ModulePrefixAnnotation",
@@ -86,6 +134,11 @@
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
     "target":"~riscv_cpu|ysyx_210062_Clint>mtip"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxResourceAnno",
+    "target":"riscv_cpu.S011HD1P_X32Y2D128_BW",
+    "resourceId":"/vsrc/ysyxRam.v"
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
