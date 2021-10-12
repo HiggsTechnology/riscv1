@@ -193,9 +193,9 @@ class IFU extends Module with Config {
   // printf("ifu_redirect %d, ifu_redirect3 %d\n",ifu_redirect,ifu_redirect3)
   // printf("--------one cycle--------\n\n")
   // }
-  when(io.out(0).valid && io.out(1).valid){
-    printf("IFU: out valid \n pc out 1 is %x, 2 is %x, inst out 1 is %x out 2 is %x \n",io.out(0).bits.pc,io.out(1).bits.pc,io.out(0).bits.instr,io.out(1).bits.instr)
-  }
+//  when(io.out(0).valid && io.out(1).valid){
+//    printf("IFU: out valid \n pc out 1 is %x, 2 is %x, inst out 1 is %x out 2 is %x \n",io.out(0).bits.pc,io.out(1).bits.pc,io.out(0).bits.instr,io.out(1).bits.instr)
+//  }
 
 
 }

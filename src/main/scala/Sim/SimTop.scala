@@ -22,22 +22,21 @@ class SimTopIO extends Bundle {
 
 class SimTop extends Module {
   val is_sim = true
-
   val io       = IO(new SimTopIO)
 
 
-  val ifu      = Module(new IFU)
-  val ibf      = Module(new Ibuffer)
+  val ifu       = Module(new IFU)
+  val ibf       = Module(new Ibuffer)
   val ctrlblock = Module(new ControlBlock(is_sim = is_sim))
-  val exublock = Module(new ExuBlock(is_sim = is_sim))
-  val icache = Module(new ICache(cacheNum = 0))
-  val dcache = Module(new DCache(cacheNum = 1))
+  val exublock  = Module(new ExuBlock(is_sim = is_sim))
+  val icache    = Module(new ICache(cacheNum = 0))
+  val dcache    = Module(new DCache(cacheNum = 1))
   val crossbar  = Module(new CROSSBAR_Nto1(1,2))
   val clint     = Module(new Clint)
   val simUart   = Module(new SimUart)
   // master:  2;  2 lsu
   // slave:   5;  2 DataCache, 1 clint, 1 SimUart, 1 AXI4Crossbar write straightly
-  val mmio     = Module(new MMIO(num_master = 1, num_slave = 4))
+  //val mmio     = Module(new MMIO(num_master = 1, num_slave = 4))
 
   val mmio = Module(new MMIOCrossbar1toN(MMIOConfig.activateAddrMap))
   io.memAXI_0 <> crossbar.io.out

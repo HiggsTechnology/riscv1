@@ -9,7 +9,7 @@ class RAMHelper extends BlackBox {
 
     val rIdx = Input(UInt(64.W))
     val rdata = Output(UInt(64.W))
-    
+
     val wIdx = Input(UInt(64.W))
     val wdata = Input(UInt(64.W))
     val wmask = Input(UInt(64.W))

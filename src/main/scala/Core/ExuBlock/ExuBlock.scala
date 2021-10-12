@@ -299,7 +299,4 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
     difftest.io.coreid := 0.U
     difftest.io.gpr := VecInit(preg.io.debug_read.map(_.data))
   }
-
-
-
 }
