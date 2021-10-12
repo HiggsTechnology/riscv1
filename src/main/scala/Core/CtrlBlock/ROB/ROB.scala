@@ -55,6 +55,13 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   val resp_interrupt = valid(deq_vec(0).value) && interruptValid
   BoringUtils.addSink(interruptVec, "interruptVec")
 
+  val respInter_reg = RegInit(false.B)
+  when(resp_interrupt){
+    respInter_reg := true.B
+  }.otherwise{
+    respInter_reg := false.B
+  }
+
 
   val bru_flush = io.redirect.valid && io.redirect.bits.mispred
   when(bru_flush){
@@ -157,7 +164,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
 
   when((commitReady(0) && commitIsCsr(0)) || (commitReady(1) && commitIsCsr(1))){
     currentCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), csrState(deq_vec(0).value))
-  }.elsewhen (RegNext(resp_interrupt)) {
+  }.elsewhen (respInter_reg) {
     currentCsrState := csrCommitIO  // 啥问题
   }
   commitCsrState := Mux((commitReady(1) && commitIsCsr(1)), csrState(deq_vec(1).value), Mux((commitReady(0) && commitIsCsr(0)),csrState(deq_vec(0).value),currentCsrState))
@@ -173,7 +180,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
       mispred(deq_vec(i).value) := false.B
     }
   }
-  when((commitReady(0) && mispred(deq_vec(0).value)) || (commitReady(1) && mispred(deq_vec(1).value)) || RegNext(resp_interrupt)){
+  when((commitReady(0) && mispred(deq_vec(0).value)) || (commitReady(1) && mispred(deq_vec(1).value)) || respInter_reg){
     io.flush_out := true.B
   }.otherwise{
     io.flush_out := false.B

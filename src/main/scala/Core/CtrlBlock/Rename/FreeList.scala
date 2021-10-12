@@ -71,8 +71,8 @@ class FreeList extends Module with Config with HasCircularQueuePtrHelper {
   val headPtrAllocate = headPtr + PopCount(io.req.allocReqs)
   val freeRegs = Wire(UInt())
   val headPtrNext = Mux(io.req.canAlloc && io.req.doAlloc, headPtrAllocate, headPtr)
-  freeRegs := distanceBetween(tailPtr, headPtrNext)
-  io.req.canAlloc := RegNext(freeRegs >= 2.U)
+  freeRegs := distanceBetween(tailPtr, headPtr)
+  io.req.canAlloc := (freeRegs >= 4.U)
 
   // 非冲刷则输出
   headPtr := Mux(io.flush,FreeListPtr(!tailPtrNext.flag, tailPtrNext.value),headPtrNext)

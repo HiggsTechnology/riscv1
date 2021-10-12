@@ -47,17 +47,17 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   val jumprs = Module(new RsInorder(slave_num = JumpRsSlaveNum, size = rsSize, rsNum = 0, nFu = ExuNum, name = "JUMPRS"))
   val alu1rs = Module(new RS(size = rsSize, rsNum = 1, nFu = ExuNum, name = "ALU1RS"))///nFu,循环判断是否为
   val alu2rs = Module(new RS(size = rsSize, rsNum = 2, nFu = ExuNum, name = "ALU2RS"))
-  val murs   = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "MURS"))
-  val durs   = Module(new RS_DU(size = rsSize, rsNum = 5, nFu = ExuNum, name = "DURS"))
+  //val murs   = Module(new RS(size = rsSize, rsNum = 4, nFu = ExuNum, name = "MURS"))
+  //val durs   = Module(new RS_DU(size = rsSize, rsNum = 5, nFu = ExuNum, name = "DURS"))
   val lsq = Module(new LSQ)
   val csr = Module(new CSR(is_sim = is_sim))   // ExuRes 0
   val bru = Module(new BRU)   // ExuRes 1
   val alu1 = Module(new ALU)  // ExuRes 2
   val alu2 = Module(new ALU)  // ExuRes 3
-  val mu   = Module(new MU)
-  val du   = Module(new DU)
-  val lsu1 = Module(new LSU)  // ExuRes 4
-  val lsu2 = Module(new LSU)  // ExuRes 5
+  //val mu   = Module(new MU)   // ExuRes 4
+  //val du   = Module(new DU)   // ExuRes 5
+  val lsu1 = Module(new LSU)  // ExuRes 6
+ // val lsu2 = Module(new LSU)
   // 双发射，2*2读端口，6个执行单元，6个写端口，Todo: 限制写端口数量简化布线
   val preg = Module(new Regfile(numReadPorts = 4,numWritePorts = ExuNum,numPreg = 128))///新写
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
@@ -132,20 +132,20 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
       //寄存器的输入
       alu2rs.io.SrcIn := src_in(i)
     }
-    when(io.rs_num_in(i)===RSType.murs && io.in(i).valid){
-      murs.io.in := io.in(i) //in orderqueue rs  读寄存器
-      murs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
-      murs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
-      //寄存器的输入
-      murs.io.SrcIn := src_in(i)
-    }
-    when(io.rs_num_in(i)===RSType.durs && io.in(i).valid){
-      durs.io.in := io.in(i) //in orderqueue rs  读寄存器
-      durs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
-      durs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
-      //寄存器的输入
-      durs.io.SrcIn := src_in(i)
-    }
+//    when(io.rs_num_in(i)===RSType.murs && io.in(i).valid){
+//      murs.io.in := io.in(i) //in orderqueue rs  读寄存器
+//      murs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
+//      murs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
+//      //寄存器的输入
+//      murs.io.SrcIn := src_in(i)
+//    }
+//    when(io.rs_num_in(i)===RSType.durs && io.in(i).valid){
+//      durs.io.in := io.in(i) //in orderqueue rs  读寄存器
+//      durs.io.in.bits.srcState(0) := io.busytablein(2*i) || (io.in(i).bits.ctrl.src1Type =/= SrcType1.reg)
+//      durs.io.in.bits.srcState(1) := io.busytablein(2*i+1) || (io.in(i).bits.ctrl.src2Type =/= SrcType2.reg)
+//      //寄存器的输入
+//      durs.io.SrcIn := src_in(i)
+//    }
   }
   when((io.rs_num_in(0)===RSType.lsurs && io.in(0).valid) && !(io.rs_num_in(1)===RSType.lsurs && io.in(1).valid)){
     lsq.io.in(0) := io.in(0) //in orderqueue rs  读寄存器
@@ -181,8 +181,8 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   csr.io.in  <> jumprs.io.out(JumpRsCsrNo)
   alu1.io.in <> alu1rs.io.out
   alu2.io.in <> alu2rs.io.out
-  mu.io.in   <> murs.io.out
-  du.io.in   <> durs.io.out
+//  mu.io.in   <> murs.io.out
+//  du.io.in   <> durs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)
 //  lsu2.io.in <> lsq.io.lsu_in(1)
   lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
@@ -201,15 +201,17 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   //先找到输出为有效的功能单元（通知保留站），要把有效的位变成rs序号，比较orderqueuePtr的大小，顺序写回寄存器，再按顺序通过commitIO输出
   //并行通知保留站、寄存器
 
-  ExuResult(0) := RegNext(csr.io.out)
+  val csr_out_reg = RegInit(0.U.asTypeOf(ValidIO(new FuOutPut)))
+  csr_out_reg := csr.io.out
+  ExuResult(0) := csr_out_reg
   ExuResult(1) := bru.io.out
   ExuResult(2) := alu1.io.out
   ExuResult(3) := alu2.io.out
-  ExuResult(4) := mu.io.out//when add EXU, need before lsu1/lsu2
-  ExuResult(5) := du.io.out
-  ExuResult(6) := lsu1.io.out
-  ExuResult(7) := DontCare//lsu2.io.out
-  ExuResult(7).valid := false.B
+//  ExuResult(4) := mu.io.out//when add EXU, need before lsu1/lsu2
+//  ExuResult(5) := du.io.out
+  ExuResult(4) := lsu1.io.out
+  //ExuResult(7) := DontCare//lsu2.io.out
+  //ExuResult(7).valid := false.B
 
   lsq.io.lsu_out(0) := lsu1.io.out
   lsq.io.lsu_out(1) := DontCare//lsu2.io.out //todo: delete redundant lines, don't use DontCare
@@ -243,18 +245,18 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   alu1rs.io.mispred_robPtr := io.redirect.bits.ROBIdx
   alu2rs.io.flush := io.redirect.valid && io.redirect.bits.mispred
   alu2rs.io.mispred_robPtr := io.redirect.bits.ROBIdx
-  murs.io.flush  := io.redirect.valid && io.redirect.bits.mispred
-  murs.io.mispred_robPtr := io.redirect.bits.ROBIdx
-  durs.io.flush  := io.redirect.valid && io.redirect.bits.mispred
-  durs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+//  murs.io.flush  := io.redirect.valid && io.redirect.bits.mispred
+//  murs.io.mispred_robPtr := io.redirect.bits.ROBIdx
+//  durs.io.flush  := io.redirect.valid && io.redirect.bits.mispred
+//  durs.io.mispred_robPtr := io.redirect.bits.ROBIdx
   lsq.io.flush := io.redirect.valid && io.redirect.bits.mispred
   lsq.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
   lsu1.io.flush := io.redirect.valid && io.redirect.bits.mispred
 //  lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
-  mu.io.flush := io.redirect.valid && io.redirect.bits.mispred
-  du.io.flush := io.redirect.valid && io.redirect.bits.mispred
-  du.io.mispred_robPtr := io.redirect.bits.ROBIdx
+//  mu.io.flush := io.redirect.valid && io.redirect.bits.mispred
+//  du.io.flush := io.redirect.valid && io.redirect.bits.mispred
+//  du.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
   jumprs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult
@@ -276,16 +278,16 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
     io.exuCommit(i).bits.res := ExuResult(i).bits.res
     io.exuCommit(i).bits.skip := false.B
   }
-  io.exuCommit(6).bits.skip := lsu1.io.skip
-  io.exuCommit(7).bits.skip := false.B
+  io.exuCommit(4).bits.skip := lsu1.io.skip
+  //io.exuCommit(7).bits.skip := false.B
   io.exuCommit(0).bits.skip := csr.io.skip
 
   io.rs_can_allocate(0) := !jumprs.io.full///can_allocate
   io.rs_can_allocate(1) := !alu1rs.io.full
   io.rs_can_allocate(2) := !alu2rs.io.full
   io.rs_can_allocate(3) := lsq.io.can_allocate
-  io.rs_can_allocate(4) := !murs.io.full
-  io.rs_can_allocate(5) := !durs.io.full
+//  io.rs_can_allocate(4) := !murs.io.full
+//  io.rs_can_allocate(5) := !durs.io.full
 
 
   for ((rport, rat) <- preg.io.debug_read.zip(io.debug_int_rat)) {

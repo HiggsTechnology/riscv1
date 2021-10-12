@@ -66,13 +66,13 @@ trait Config {
 
   def nCSR: Int = 1
 
-  def nLSU: Int = 2
+  def nLSU: Int = 1
 
-  def nMDU : Int = 2//1 MU and 1 DU
+ // def nMDU : Int = 0//1 MU and 1 DU
 
   def ExuNum :Int = nALU + nBRU + nCSR + nLSU
 
-  def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, BRU and CSR connect to 1 RS
+  def RSNum :Int = ExuNum - 1// nLSU = 1 conect to 1 LSQ regarded as RS,BRU and CSR connect to 1 RS,thus tot is 6
 
   def rsSize: Int = 8
 
