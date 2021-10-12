@@ -33,8 +33,8 @@ class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
 
-  val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
-  val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
+  val src1 = RegInit(VecInit(Seq.fill(rsSize)(0.U(XLEN.W))))//Reg(Vec(rsSize, UInt(XLEN.W)))
+  val src2 = RegInit(VecInit(Seq.fill(rsSize)(0.U(XLEN.W))))//Reg(Vec(rsSize, UInt(XLEN.W)))
 
   val instRdy = WireInit(VecInit(List.tabulate(rsSize)(i => srcState1(i) && srcState2(i) && valid(i))))///
 

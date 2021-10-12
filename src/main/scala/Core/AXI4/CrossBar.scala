@@ -124,7 +124,10 @@ class CROSSBAR_Nto1(ro_num : Int, rw_num : Int) extends Module with Config {
   io.out.aw.valid := curAWriteReq.valid && (wState === State.idle)
   curAWriteReq.ready := io.out.aw.ready && (wState === State.idle)
   // w
-  val writeWayReg = RegEnable(chosenWrite, io.out.aw.fire())
+  val writeWayReg = RegInit(chosenWrite)
+  when(io.out.aw.fire()){
+    writeWayReg := chosenWrite
+  }
   val writeCnt = RegInit(0.U(10.W))
   val writeWay = Mux(wState === State.idle, chosenWrite, writeWayReg)
   when(io.out.aw.fire() && !io.in(writeWay).w.valid){

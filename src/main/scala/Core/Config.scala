@@ -70,7 +70,7 @@ trait Config {
 
   def nMDU : Int = 2//1 MU and 1 DU
 
-  def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
+  def ExuNum :Int = nALU + nBRU + nCSR + nLSU
 
   def RSNum :Int = ExuNum - 2//LSQ regarded as RS, 2 LSU connect to 1 LSQ, BRU and CSR connect to 1 RS
 

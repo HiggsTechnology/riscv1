@@ -36,17 +36,17 @@ class LSQIO extends Bundle with Config {
 class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   val io = IO(new LSQIO)//todo:小于isbranch的robIdx才能发射，ROB传来一个信号
 
-  val decode  = Mem(lsqSize, new MicroOp)
-  val valid   = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
+  val decode    = Mem(lsqSize, new MicroOp)
+  val valid     = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
   val addrState = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
   val dataState = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
-  val addr = Reg(Vec(lsqSize, UInt(XLEN.W)))
-  val data = Reg(Vec(lsqSize, UInt(XLEN.W)))
-  val is_store = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
-
-  val issued = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
-  val resp = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
-
+  val addr      = RegInit(VecInit(Seq.fill(lsqSize)(0.U(XLEN.W))))
+  val data      = RegInit(VecInit(Seq.fill(lsqSize)(0.U(XLEN.W))))
+//  val addr = Reg(Vec(lsqSize, UInt(XLEN.W)))
+//  val data = Reg(Vec(lsqSize, UInt(XLEN.W)))
+  val is_store  = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
+  val issued    = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
+  val resp      = RegInit(VecInit(Seq.fill(lsqSize)(false.B)))
   //val lsqPtr = RegInit(VecInit((0 until lsqSize).map(_.U.asTypeOf(new LSQPtr))))
   val enq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new LSQPtr))))
   val deq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new LSQPtr))))
@@ -63,7 +63,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   //侦听执行单元结果
   for (i <- 0 until lsqSize){
     //LSU外其它执行单元
-    for(j <- 0 until (ExuNum-2)){
+    for(j <- 0 until (ExuNum-nLSU)){
       val monitorValid = valid(i) && io.ExuResult(j).valid
       val exurfWen     = io.ExuResult(j).bits.uop.ctrl.rfWen
       val psrc1Rdy     = io.ExuResult(j).bits.uop.pdest === decode(i).psrc(0)
@@ -120,7 +120,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
       resp(enq_vec(i).value) := false.B
 
       //入列指令侦听当拍执行单元
-      for (j <- 0 until (ExuNum-2)) {
+      for (j <- 0 until (ExuNum-nLSU)) {
         //侦听LSU外其它执行单元
         val exurfWen    = io.ExuResult(j).bits.uop.ctrl.rfWen
         val psrc1Rdy = io.ExuResult(j).bits.uop.pdest === io.in(i).bits.psrc(0)

@@ -61,8 +61,15 @@ class IFU extends Module with Config {
   }
 
 
-  //stage2
-  val pcVec2 = RegEnable(pcVec,continue)
+  //stage
+  val pcVec2_init =  Wire(Vec(FETCH_WIDTH, UInt(XLEN.W)))
+  for(i <- 0 until FETCH_WIDTH){
+    pcVec2_init(i) := pcVec(i) - 8.U
+  }
+  val pcVec2 = RegInit(pcVec2_init)
+  when(continue){
+    pcVec2 :=pcVec
+  }
   for(i <- 0 until FETCH_WIDTH){
     io.toMem(i).req.valid := continue && RegNext(!reset.asBool)
     io.toMem(i).req.bits.addr := pcVec2(i)
@@ -75,12 +82,17 @@ class IFU extends Module with Config {
 
 
   //stage3
-  val pcVec3 = RegEnable(pcVec2,continue)
-  //val instrValid = RegNext(!reset.asBool) && RegNext(RegNext(!reset.asBool))
-  val br_taken2 = RegEnable(bpu.io.br_taken,continue)
-  val jump_pc2 = RegEnable(bpu.io.jump_pc,continue)
+  val pcVec3    = RegInit(pcVec2)
+  val br_taken2 = RegInit(bpu.io.br_taken)
+  val jump_pc2  = RegInit(bpu.io.jump_pc)
+  when(continue){
+    pcVec3    := pcVec2
+    br_taken2 := bpu.io.br_taken
+    jump_pc2  := bpu.io.jump_pc
+  }
 
-  val instrReg3 = Reg(Vec(2,UInt(INST_WIDTH)))
+  val instrReg3 = RegInit(VecInit(Seq.fill(FETCH_WIDTH)(0.U(INST_WIDTH))))
+
   val instrVec3 = Wire(Vec(2,UInt(INST_WIDTH)))
   for(i <- 0 until FETCH_WIDTH){
     when(io.toMem(i).resp.valid){
@@ -117,7 +129,10 @@ class IFU extends Module with Config {
   }
 
   ifu_redirect := (((jump_pc2 =/= bpu.io.jump_pc3) || !br_taken2.asUInt.orR) && (bpu.io.br_taken3.asUInt.orR)) && io.out(0).valid
-  val ifu_redirect3 = RegEnable(ifu_redirect,continue)
+  val ifu_redirect3 = RegInit(ifu_redirect)
+  when(continue){
+    ifu_redirect3 := ifu_redirect
+  }
 
   val flush = io.redirect.valid && mispred
   val flush2 = flush || RegNext(flush)

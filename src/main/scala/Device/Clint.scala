@@ -20,7 +20,10 @@ class Clint extends Module {
   val io : ClintIO = IO(new ClintIO)
 
   private val addr_wire = WireInit(io.bus.req.bits.addr)
-  private val addr_reg  = RegEnable(io.bus.req.bits.addr, io.bus.req.valid)
+  private val addr_reg  = RegInit(io.bus.req.bits.addr)
+  when(io.bus.req.valid){
+    addr_reg := io.bus.req.bits.addr
+  }
   private val addr      = Mux(io.bus.req.valid, addr_wire, addr_reg)
   private val wdata     = io.bus.req.bits.data
   private val wstrb     = io.bus.req.bits.wmask
@@ -76,7 +79,9 @@ class Clint extends Module {
 
   io.bus.req.ready := true.B
   io.bus.resp.bits.data := rdata
-  io.bus.resp.valid := RegNext(io.bus.req.valid)
+  val reqvalid = RegInit(false.B)
+  reqvalid := io.bus.req.valid
+  io.bus.resp.valid := reqvalid//RegNext(io.bus.req.valid)
 
   val mtip = mtime >= mtimecmp
   BoringUtils.addSource(mtip, "mtip")

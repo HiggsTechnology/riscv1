@@ -88,8 +88,12 @@ class BPU extends Module with Config{
 
 
   //stage2
-  val GPHT_Idx2 = RegEnable(GPHT_Idx1,io.continue)
-  val pc2 = RegEnable(pc1,io.continue)
+  val GPHT_Idx2 = RegInit(GPHT_Idx1)
+  val pc2       = RegInit(pc1)
+  when(io.continue){
+    GPHT_Idx2 := GPHT_Idx1
+    pc2       := pc1
+  }
 
   val pred_select = RegInit(0.U(3.W))//第2位为高则选GPHT
 
@@ -133,16 +137,34 @@ class BPU extends Module with Config{
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //stage3
-  val GPHT_taken3          =   RegEnable(GPHT_taken,io.continue)
-  val PHT_taken3           =   RegEnable(PHT_taken,io.continue)
-  val GPHT_Idx3            =   RegEnable(GPHT_Idx2,io.continue)
-  val pc3                  =   RegEnable(pc2,io.continue) //跳转指令的pc
-  val bimPred3             =   RegEnable(bimPred,io.continue)
-  val br_taken3            =   RegEnable(br_taken2,io.continue)
-  val jump3                =   RegEnable(io.jump_pc,io.continue)
-  val btb_hit3             =   RegEnable(btb_hit2,io.continue)
-  val btbtarget3           =   RegEnable(btbtarget2,io.continue)   //跳转到的pc
-  val br_type3             =   RegEnable(br_type2,io.continue)
+  val GPHT_taken3  =   RegInit(GPHT_taken)
+  val PHT_taken3   =   RegInit(PHT_taken)
+  val GPHT_Idx3    =   RegInit(GPHT_Idx2)
+  val pc3          =   RegInit(pc2) //跳转指令的pc
+  val bimPred3     =   RegInit(bimPred)
+  val br_taken3    =   RegInit(br_taken2)
+  val jump3        =   RegInit(io.jump_pc)
+  val btb_hit3     =   RegInit(btb_hit2)
+  val btbtarget3   =   RegInit(btbtarget2)   //跳转到的pc
+  val br_type3     =   RegInit(br_type2)
+  when(io.continue){
+    GPHT_taken3  :=   GPHT_taken
+    PHT_taken3   :=   PHT_taken
+    GPHT_Idx3    :=   GPHT_Idx2
+    pc3          :=   pc2
+    bimPred3     :=   bimPred
+    br_taken3    :=   br_taken2
+    jump3        :=   io.jump_pc
+    btb_hit3     :=   btb_hit2
+    btbtarget3   :=   btbtarget2
+    br_type3     :=   br_type2
+  }
+
+
+
+
+
+
   //根据predecode，以及stage2的GPHT、PHT，计算分支预测结果
   val br_taken_predecode   =   Wire(Vec(FETCH_WIDTH, Bool()))
   val is_call              =   Wire(Vec(FETCH_WIDTH, Bool()))

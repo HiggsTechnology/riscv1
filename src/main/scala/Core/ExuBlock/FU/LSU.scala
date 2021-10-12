@@ -63,13 +63,17 @@ class LSU extends Module with Config {
     ))
   }
 
-  val io = IO(new LSUIO)
-  val uop = RegEnable(io.in.bits.uop, io.toMem.req.fire())
+  val io  = IO(new LSUIO)
+  val uop     = RegInit(io.in.bits.uop)
+  val addrReg = RegInit(io.in.bits.src(0))
+  when(io.toMem.req.fire()){
+    uop     := io.in.bits.uop
+    addrReg := io.in.bits.src(0)
+  }
+
   val addr = Mux(io.in.valid, io.in.bits.src(0), 0.U)
-  val addrReg = RegEnable(io.in.bits.src(0), io.toMem.req.fire())
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
-
 
   val size = io.in.bits.uop.ctrl.funcOpType(1,0)
   val wdata_align = genWdata(storedata, size) //<< (addr(2, 0) * 8.U)
@@ -101,14 +105,15 @@ class LSU extends Module with Config {
   }
   io.toMem.resp.ready := true.B
 
+
   io.out.valid := io.toMem.resp.valid && !inst_flushed
   io.out.bits.uop := uop
   io.skip := addrReg < 0x80000000L.U
-  // when(io.in.valid){
-  //   printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
-  // }
-  // when(io.out.valid){
-  //   printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
-  // }
+//   when(io.in.valid){
+//     printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
+//   }
+//   when(io.out.valid){
+//     printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
+//   }
 
 }

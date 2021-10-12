@@ -39,15 +39,17 @@ class RsInorder(
   name: String = "unnamedRS"
 ) extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new RsInorderIO(slave_num = slave_num))
-  val decode  = Mem(rsSize, new MicroOp)
-  val valid   = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
+  val decode    = Mem(rsSize, new MicroOp)
+  val valid     = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
-  val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
-  val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
-  val enq_vec = RegInit(0.U.asTypeOf(new RSPtr))
-  val deq_vec = RegInit(0.U.asTypeOf(new RSPtr))
-  val rsFull = valid.asUInt.andR
+  val src1      = RegInit(VecInit(Seq.fill(rsSize)(0.U(XLEN.W))))
+  val src2      = RegInit(VecInit(Seq.fill(rsSize)(0.U(XLEN.W))))
+//  val src1 = Reg(Vec(rsSize, UInt(XLEN.W)))
+//  val src2 = Reg(Vec(rsSize, UInt(XLEN.W)))
+  val enq_vec   = RegInit(0.U.asTypeOf(new RSPtr))
+  val deq_vec   = RegInit(0.U.asTypeOf(new RSPtr))
+  val rsFull    = valid.asUInt.andR
 
   for (i <- 0 until rsSize){
     for(j <- 0 until ExuNum){

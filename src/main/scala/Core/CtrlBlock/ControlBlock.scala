@@ -64,9 +64,15 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
     validReg1A := decoders(0).io.out.valid
   }
-  val validReg1B = RegEnable(decoders(1).io.out.valid, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
-  val dataReg1A  = RegEnable(decoders(0).io.out.bits, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
-  val dataReg1B  = RegEnable(decoders(1).io.out.bits, rename.io.in.cfctrl(0).fire || !validReg1A || flush)
+  val validReg1B = RegInit(decoders(1).io.out.valid)
+  val dataReg1A  = RegInit(decoders(0).io.out.bits)
+  val dataReg1B  = RegInit(decoders(1).io.out.bits)
+  when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
+    validReg1B := decoders(1).io.out.valid
+    dataReg1A  := decoders(0).io.out.bits
+    dataReg1B  := decoders(1).io.out.bits
+  }
+
   decoders(0).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
   decoders(1).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
 
@@ -83,9 +89,17 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   when((validReg2A && ready3) || !validReg2A || flush){
     validReg2A := rename.io.out.microop(0).valid
   }
-  val validReg2B = RegEnable(rename.io.out.microop(1).valid, (validReg2A && ready3) || !validReg2A || flush)
-  val dataReg2A  = RegEnable(rename.io.out.microop(0).bits, (validReg2A && ready3) || !validReg2A || flush)
-  val dataReg2B  = RegEnable(rename.io.out.microop(1).bits, (validReg2A && ready3) || !validReg2A || flush)
+  val validReg2B = RegInit(false.B)
+  val dataReg2A  = RegInit(rename.io.out.microop(0).bits)
+  val dataReg2B  = RegInit(rename.io.out.microop(1).bits)
+  when((validReg2A && ready3) || !validReg2A || flush){
+    validReg2B := rename.io.out.microop(1).valid
+    dataReg2A  := rename.io.out.microop(0).bits
+    dataReg2B  := rename.io.out.microop(1).bits
+  }
+
+
+
   //ROB && Dispatch Ready
   rename.io.out.microop(0).ready := (validReg2A && ready3) || !validReg2A || flush
   rename.io.out.microop(1).ready := (validReg2A && ready3) || !validReg2A || flush

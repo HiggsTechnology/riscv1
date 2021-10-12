@@ -101,12 +101,12 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   lsq.io.in(0).valid := false.B
   lsq.io.in(1).valid := false.B
   lsq.io.SrcIn := DontCare
-  murs.io.in := DontCare
-  murs.io.in.valid := false.B
-  murs.io.SrcIn := DontCare
-  durs.io.in := DontCare
-  durs.io.in.valid := false.B
-  durs.io.SrcIn := DontCare
+//  murs.io.in := DontCare
+//  murs.io.in.valid := false.B
+//  murs.io.SrcIn := DontCare
+//  durs.io.in := DontCare
+//  durs.io.in.valid := false.B
+//  durs.io.SrcIn := DontCare
 
   //  printf("rs_num_in0 %d in1 %d\n",io.rs_num_in(0),io.rs_num_in(1))
   //  printf("ExuBlock io.in(0) %d %x %x, io.in(1) %d %x %x\n",io.in(0).valid,io.in(0).bits.cf.pc,io.in(0).bits.cf.instr,io.in(1).valid,io.in(1).bits.cf.pc,io.in(1).bits.cf.instr)
@@ -184,14 +184,15 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   mu.io.in   <> murs.io.out
   du.io.in   <> durs.io.out
   lsu1.io.in <> lsq.io.lsu_in(0)
-  lsu2.io.in <> lsq.io.lsu_in(1)
+//  lsu2.io.in <> lsq.io.lsu_in(1)
   lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
-  lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
+//  lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
 
-  io.toMem(0) <> lsu1.io.toMem
-  io.toMem(1) <> lsu2.io.toMem
-  lsq.io.cache_ready := io.toMem.map(_.req.ready)
-
+  io.toMem <> lsu1.io.toMem
+ // io.toMem(1) <> lsu2.io.toMem
+//  lsq.io.cache_ready := io.toMem.map(_.req.ready)
+  lsq.io.cache_ready(0) := io.toMem.req.ready
+  lsq.io.cache_ready(1) := false.B
 
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
@@ -207,10 +208,11 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   ExuResult(4) := mu.io.out//when add EXU, need before lsu1/lsu2
   ExuResult(5) := du.io.out
   ExuResult(6) := lsu1.io.out
-  ExuResult(7) := lsu2.io.out
+  ExuResult(7) := DontCare//lsu2.io.out
+  ExuResult(7).valid := false.B
 
   lsq.io.lsu_out(0) := lsu1.io.out
-  lsq.io.lsu_out(1) := lsu2.io.out
+  lsq.io.lsu_out(1) := DontCare//lsu2.io.out //todo: delete redundant lines, don't use DontCare
 
   lsq.io.predict_robPtr := io.predict_robPtr
   io.redirect := DontCare
@@ -231,7 +233,7 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
     }
   }
   lsu1.io.trapvalid := csr.io.trapvalid
-  lsu2.io.trapvalid := csr.io.trapvalid
+ // lsu2.io.trapvalid := csr.io.trapvalid
 
 
 
@@ -249,7 +251,7 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   lsq.io.mispred_robPtr := io.redirect.bits.ROBIdx
 
   lsu1.io.flush := io.redirect.valid && io.redirect.bits.mispred
-  lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
+//  lsu2.io.flush := io.redirect.valid && io.redirect.bits.mispred
   mu.io.flush := io.redirect.valid && io.redirect.bits.mispred
   du.io.flush := io.redirect.valid && io.redirect.bits.mispred
   du.io.mispred_robPtr := io.redirect.bits.ROBIdx
@@ -257,9 +259,9 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   jumprs.io.ExuResult := ExuResult
   alu1rs.io.ExuResult := ExuResult
   alu2rs.io.ExuResult := ExuResult
-  murs.io.ExuResult  := ExuResult
-  durs.io.ExuResult  := ExuResult//rs_num和rs_can_allocate按顺序加，ExuResult在LSU之前插入
-  for(i <- 0 until (ExuNum-2)){//subtract 2 l/d unit
+//  murs.io.ExuResult  := ExuResult
+//  durs.io.ExuResult  := ExuResult//rs_num和rs_can_allocate按顺序加，ExuResult在LSU之前插入
+  for(i <- 0 until (ExuNum-nLSU)){//subtract 2 l/d unit
     lsq.io.ExuResult(i) := ExuResult(i)
   }
 
@@ -275,7 +277,7 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
     io.exuCommit(i).bits.skip := false.B
   }
   io.exuCommit(6).bits.skip := lsu1.io.skip
-  io.exuCommit(7).bits.skip := lsu2.io.skip
+  io.exuCommit(7).bits.skip := false.B
   io.exuCommit(0).bits.skip := csr.io.skip
 
   io.rs_can_allocate(0) := !jumprs.io.full///can_allocate

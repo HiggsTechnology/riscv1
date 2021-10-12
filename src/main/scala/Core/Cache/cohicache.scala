@@ -237,45 +237,45 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
   io.to_rw.ar.bits.qos    := 0.U
   io.to_rw.ar.bits.region := 0.U
 
-  when(state === s_lookUp){
-    printf(" in valid is %d %d \n",io.bus(0).req.valid,io.bus(1).req.valid)
-  }
+//  when(state === s_lookUp){
+//    printf(" in valid is %d %d \n",io.bus(0).req.valid,io.bus(1).req.valid)
+//  }
+//
+//  when(io.bus(0).req.fire()){
+//    printf("hit message :  hit %d:   %d  \n",0.U, hit(0))
+//    printf("addridx %x, req.valid %d , valid %d, tagArray is %x , tag is %x \n",addr(0).index,io.bus(0).req.valid, valid(addr(0).index), tagArray(addr(0).index) , addr(0).tag)
+//  }
+//  when(io.bus(1).req.fire()){
+//    printf("hit message :  hit %d:   %d  \n",1.U, hit(1))
+//    printf("addridx %x, req.valid %d , valid %d, tagArray is %x , tag is %x \n",addr(1).index,io.bus(1).req.valid, valid(addr(1).index), tagArray(addr(1).index) , addr(1).tag)
+//  }
+//
+// when(state === s_miss || state === s_replace || state === s_refill  || state === s_refill_done){
+//   printf("state %d, needrefill %d %d, readMenCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d,\n", state,needRefill(0),needRefill(1),axireadMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready)
+// }
+// when(io.bus(0).req.valid ||io.bus(1).req.valid ){
+//   printf("PC1 valid %d, addr %x, \n",io.bus(0).req.valid,io.bus(0).req.bits.addr)
+//   printf("PC2 valid %d, addr %x, \n",io.bus(1).req.valid,io.bus(1).req.bits.addr)
+//
+// }
 
-  when(io.bus(0).req.fire()){
-    printf("hit message :  hit %d:   %d  \n",0.U, hit(0))
-    printf("addridx %x, req.valid %d , valid %d, tagArray is %x , tag is %x \n",addr(0).index,io.bus(0).req.valid, valid(addr(0).index), tagArray(addr(0).index) , addr(0).tag)
-  }
-  when(io.bus(1).req.fire()){
-    printf("hit message :  hit %d:   %d  \n",1.U, hit(1))
-    printf("addridx %x, req.valid %d , valid %d, tagArray is %x , tag is %x \n",addr(1).index,io.bus(1).req.valid, valid(addr(1).index), tagArray(addr(1).index) , addr(1).tag)
-  }
-
- when(state === s_miss || state === s_replace || state === s_refill  || state === s_refill_done){
-   printf("state %d, needrefill %d %d, readMenCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d,\n", state,needRefill(0),needRefill(1),axireadMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready)
- }
- when(io.bus(0).req.valid ||io.bus(1).req.valid ){
-   printf("PC1 valid %d, addr %x, \n",io.bus(0).req.valid,io.bus(0).req.bits.addr)
-   printf("PC2 valid %d, addr %x, \n",io.bus(1).req.valid,io.bus(1).req.bits.addr)
-
- }
-
- when(io.bus(0).resp.fire || io.bus(1).resp.fire){
-   printf("cache out valid \n")
-   printf("readReg %x \n",readReg.asUInt)
-   printf("data array 1 , idx is %d\n",addr(0).index)
-   for(i<- 0 until cacheCatNum){
-     printf(" %x ",dataArray(i).read(addr(0).index).asUInt())
-   }
-   printf("\ndata array 2 , idx is %d\n",addr(1).index)
-   for(i<- 0 until cacheCatNum){
-     printf(" %x ",dataArray(i).read(addr(1).index).asUInt())
-   }
-   printf("\n")
-   printf("offset0 %x, out inst0 is %x, PC0 is %x ,offset1 %x, out inst1 is %x  PC1  is  %x \n",addrReg(0).Offset,io.bus(0).resp.bits.data,addrReg(0).asUInt,addrReg(1).Offset,io.bus(1).resp.bits.data,addrReg(1).asUInt)
- }
- when(io.to_rw.ar.fire){
-   printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
- }
+// when(io.bus(0).resp.fire || io.bus(1).resp.fire){
+//   printf("cache out valid \n")
+//   printf("readReg %x \n",readReg.asUInt)
+//   printf("data array 1 , idx is %d\n",addr(0).index)
+//   for(i<- 0 until cacheCatNum){
+//     printf(" %x ",dataArray(i).read(addr(0).index).asUInt())
+//   }
+//   printf("\ndata array 2 , idx is %d\n",addr(1).index)
+//   for(i<- 0 until cacheCatNum){
+//     printf(" %x ",dataArray(i).read(addr(1).index).asUInt())
+//   }
+//   printf("\n")
+//   printf("offset0 %x, out inst0 is %x, PC0 is %x ,offset1 %x, out inst1 is %x  PC1  is  %x \n",addrReg(0).Offset,io.bus(0).resp.bits.data,addrReg(0).asUInt,addrReg(1).Offset,io.bus(1).resp.bits.data,addrReg(1).asUInt)
+// }
+// when(io.to_rw.ar.fire){
+//   printf("ar addr is %x\n", io.to_rw.ar.bits.addr)
+// }
   //   if(cacheNum==1){
   //   when(state === s_miss || state === s_replace || state === s_refill ){
   //     printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)

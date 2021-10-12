@@ -216,7 +216,11 @@ class MMIOCrossbar1toN(addrConfig: List[((Long, Long), Boolean)]) extends Module
 
   val outSelIdx : UInt = PriorityEncoder(outSelVec)
   val outSel : SimpleBus = io.out(outSelIdx)
-  val outSelIdxResp = RegEnable(outSelIdx, outSel.req.fire() && (state === State.idle))
+
+  val outSelIdxResp = RegInit(outSelIdx)
+  when(outSel.req.fire() && (state === State.idle)){
+    outSelIdxResp := outSelIdx
+  }
   val outSelResp = io.out(outSelIdxResp)
 
   //  printf("req_valid: %b, outSelVec: %b\n", io.in.valid, outSelVec.asUInt())

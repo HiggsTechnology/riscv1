@@ -12,7 +12,7 @@ import utils.ParallelOperation
 
 sealed trait CacheConfig extends AXIParameter{
   def TotalSize = 4 //Kb
-  def Ways = 4
+  def Ways = 1
   def LineSize = 64 // byte
   def Sets = TotalSize * 1024 / LineSize / Ways
   def OffsetBits = log2Up(LineSize) //对应的是字节标号
@@ -207,6 +207,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
             mem_wb(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
           }
         }
+        dirty(addrReg.index) := true.B
       }
       tagArray.write(addrReg.index,addrReg.tag)
       valid(addrReg.index)     := true.B
