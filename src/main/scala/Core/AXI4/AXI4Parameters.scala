@@ -7,7 +7,7 @@ import chisel3.util.{Enum, log2Up}
 
 trait AXIParameter extends Config {
   val PAddrBits = 32
-  val DataBits : Int = 256   // 256bits
+  val DataBits : Int = 64   // 256bits
 //  val DataScale : Int = 4     // Vec[1]
 }
 
@@ -23,9 +23,9 @@ object AXI4Parameters extends AXIParameter {
   val regionBits = 4
 
   // These are not fixed:
-  val idBits = 3
+  val idBits = 4
   val LSUidBits = 4
-  val addrBits : Int = 64
+  val addrBits : Int = 32
   val dataBits : Int = DataBits
   val dataBytes: Int = dataBits / 8
 //  val dataScale: Int = DataScale
