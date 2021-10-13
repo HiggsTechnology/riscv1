@@ -21,8 +21,8 @@ import utils._
 class ControlBlockIN extends Bundle{
   val pcinstr         = Vec(2, Flipped(DecoupledIO(new CtrlFlow)))
   val rs_can_allocate = Vec(RSNum, Input(Bool()))
-  val exuCommit = Vec(ExuNum, Flipped(ValidIO(new ExuCommit)))
-  val redirect  = Flipped(ValidIO(new RedirectIO))
+  val exuCommit       = Vec(ExuNum, Flipped(ValidIO(new ExuCommit)))
+  val redirect        = Flipped(ValidIO(new RedirectIO))
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
@@ -58,7 +58,6 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   intBusyTable.io.flush          := rob.io.flush_out
   for(i <- 0 until 2){
     decoders(i).io.in              <> io.in.pcinstr(i)
-    //rename.io.out.microop(i).ready := true.B
   }
   val validReg1A = RegInit(false.B)
   when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
@@ -72,7 +71,6 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
     dataReg1A  := decoders(0).io.out.bits
     dataReg1B  := decoders(1).io.out.bits
   }
-
   decoders(0).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
   decoders(1).io.out.ready := rename.io.in.cfctrl(0).fire || !validReg1A || flush
 

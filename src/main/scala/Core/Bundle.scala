@@ -1,6 +1,6 @@
 package Core
 
-import Core.Cache.{CacheConfig, ICacheConfig}
+import Core.Cache.{CacheConfig}
 import Core.CtrlBlock.IDU.{FuncOpType, FuncType, SrcType1, SrcType2}
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.MemReg.RegWriteIO
@@ -49,7 +49,6 @@ class CfCtrl extends Bundle with Config {
   val cf   = new CtrlFlow
   val ctrl = new CtrlSignalIO
   val data = new DataSrcIO
-
 }
 
 class ALU_OUTIO extends Bundle with Config {
@@ -187,7 +186,7 @@ class TrapIO extends Bundle with Config {
   val ROBIdx = new ROBPtr
 }
 
-class cohResp extends Bundle with ICacheConfig {
+class cohResp extends Bundle with CacheConfig {
   val forward = Vec(CacheCatNum,UInt((LineSize/CacheCatNum*8).W))
   val needforward = Bool()
 }

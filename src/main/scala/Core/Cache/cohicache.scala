@@ -7,7 +7,7 @@ import Core.{Config, cohResp}
 import chisel3._
 import chisel3.util._
 
-trait ICacheConfig extends AXIParameter{
+trait CacheConfig extends AXIParameter{
   def TotalSize = 4 //Kb
   def Ways = 1
   def LineSize = 64 // byte
@@ -17,7 +17,7 @@ trait ICacheConfig extends AXIParameter{
   def TagBits = 64 - OffsetBits - IndexBits
   def CacheDataBits = LineSize*8
   def axiDataBits = 64
-  def retTimes = CacheDataBits/axiDataBits
+  def RetTimes = CacheDataBits/axiDataBits
   def cacheUseTabCnt = 32
   def CacheCatNum  = 4
   def addrBundle = new Bundle {
@@ -34,7 +34,7 @@ class ICacheIO extends Bundle with Config {
   val cohresp = Flipped(ValidIO(new cohResp))
 }
 
-class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig with AXIParameter {
+class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with AXIParameter {
   val io = IO(new ICacheIO)
   io.to_rw := DontCare
 
@@ -64,7 +64,7 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
     }
   }
   val hit = Wire(Vec(FETCH_WIDTH, Bool()))
-  val axireadMemCnt = Reg(UInt(log2Up(retTimes+1).W))
+  val axireadMemCnt = Reg(UInt(log2Up(RetTimes+1).W))
 
   for (i <- 0 until 2) {
     hit(i) := io.bus(i).req.valid && valid(addr(i).index) && tagArray.read(addr(i).index) === addr(i).tag //&& ((state === s_idle) || (state === s_lookUp))
@@ -119,10 +119,10 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
   }
 
   //refill
-  io.to_rw.r.ready := (state === s_refill) && (axireadMemCnt < retTimes.U)
-  val readDataReg = RegInit(VecInit(Seq.fill(retTimes)(0.U(axiDataBits.W))))
+  io.to_rw.r.ready := (state === s_refill) && (axireadMemCnt < RetTimes.U)
+  val readDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
 
-  when(axireadMemCnt < retTimes.U && state === s_refill){
+  when(axireadMemCnt < RetTimes.U && state === s_refill){
     when(needRefill(0)) {
       readDataReg(axireadMemCnt) := io.to_rw.r.bits.data(63,0)//Mux(forwarden(0),forwardinst(0),io.to_rw.r.bits.data)
     }.elsewhen(needRefill(1)){
@@ -140,7 +140,7 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
 
   for( i <- 0 until  CacheCatNum){
     //val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
-    when(state === s_refill && axireadMemCnt === retTimes.U){
+    when(state === s_refill && axireadMemCnt === RetTimes.U){
       tagArray.write(refill_idx,Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag))
       valid(refill_idx)     := true.B
       SRam_write(i) := mem_wb(i)
@@ -150,11 +150,6 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
     }
   }
   //for refill done state hit match
-  val tagHitVec_done = Seq.fill(2)(Wire(Bool()))
-  for (i <- 0 until 2) {
-    tagHitVec_done(i) := tagArray(i)(addrReg(i).index) === addrReg(i).tag && (state === s_refill_done)
-  }
-
   val readIdx = Wire(Vec(2,UInt(IndexBits.W)))
   for(i <- 0 until 2){
     readIdx(i) := Mux(state===s_refill_done,addrReg(i).index,addr(i).index)
@@ -174,11 +169,24 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
     io.bus(j).resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid(j)
   }
 
-  val hit_read = state===s_refill_done || io.bus.req(0).valid
+  val hit_read = state===s_refill_done || io.bus(0).req.valid
   val fw_write = state === s_miss && io.cohresp.valid && io.cohresp.bits.needforward
-  val refill_write = state === s_refill && axireadMemCnt === retTimes.U
-  val SRamArray     = Seq.fill(CacheCatNum)(Module(new SRam))
+  val refill_write = state === s_refill && axireadMemCnt === RetTimes.U
+  val SRamArray    = Seq.fill(CacheCatNum)(Module(new SRam))
 
+
+  // linesize = 512 bit
+  // sram width = 128 bit
+  // idx = addr(11,6)
+  // en  = addr(5,4) === i.U
+  for(i<- 0 until CacheCatNum){
+    SRam_read(i) := SRamArray(i).io.rData.asTypeOf(SRam_read(i))
+    SRamArray(i).io.idx := Mux(refill_write || fw_write, refill_idx, Mux(i.U>1.U,readIdx(0),readIdx(1)))
+    SRamArray(i).io.wMask := VecInit(Seq.fill(128)(true.B)).asUInt() //wmask had been done
+    SRamArray(i).io.wData := SRam_write(i).asUInt()
+    SRamArray(i).io.en := hit_read || refill_write || fw_write
+    SRamArray(i).io.wen := fw_write || refill_write
+  }
 
 
   //-------------------------------------状态机------------------------------------------------
@@ -217,10 +225,10 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
       }
     }
     is(s_refill) {
-      when((axireadMemCnt === retTimes.U) && needRefill(0) && needRefill(1)){
+      when((axireadMemCnt === RetTimes.U) && needRefill(0) && needRefill(1)){
         state := s_miss
         needRefill(0) := false.B
-      }.elsewhen((axireadMemCnt === retTimes.U) && ((needRefill(0) && !needRefill(1)) || (!needRefill(0) && needRefill(1))) ){
+      }.elsewhen((axireadMemCnt === RetTimes.U) && ((needRefill(0) && !needRefill(1)) || (!needRefill(0) && needRefill(1))) ){
         state := s_refill_done
         needRefill(0) := false.B
         needRefill(1) := false.B

@@ -10,25 +10,25 @@ import utils.ParallelOperation
 
 
 
-sealed trait CacheConfig extends AXIParameter{
-  def TotalSize = 4 //Kb
-  def Ways = 1
-  def LineSize = 64 // byte
-  def Sets = TotalSize * 1024 / LineSize / Ways
-  def OffsetBits = log2Up(LineSize) //对应的是字节标号
-  def IndexBits = log2Up(Sets)
-  def TagBits = 64 - OffsetBits - IndexBits
-  def CacheDataBits = LineSize*8
-  def AxiDataBits = 64
-  def CacheCatNum  = 4
-  def CacheCatWidth = log2Up(CacheCatNum)
-  def RetTimes = CacheDataBits/AxiDataBits
-  def addrBundle = new Bundle {
-    val tag        = UInt(TagBits.W)
-    val index      = UInt(IndexBits.W)
-    val Offset = UInt(OffsetBits.W)
-  }
-}
+//sealed trait CacheConfig extends AXIParameter{
+//  def TotalSize = 4 //Kb
+//  def Ways = 1
+//  def LineSize = 64 // byte
+//  def Sets = TotalSize * 1024 / LineSize / Ways
+//  def OffsetBits = log2Up(LineSize) //对应的是字节标号
+//  def IndexBits = log2Up(Sets)
+//  def TagBits = 64 - OffsetBits - IndexBits
+//  def CacheDataBits = LineSize*8
+//  def AxiDataBits = 64
+//  def CacheCatNum  = 4
+//  def CacheCatWidth = log2Up(CacheCatNum)
+//  def RetTimes = CacheDataBits/AxiDataBits
+//  def addrBundle = new Bundle {
+//    val tag        = UInt(TagBits.W)
+//    val index      = UInt(IndexBits.W)
+//    val Offset = UInt(OffsetBits.W)
+//  }
+//}
 
 class CacheReq extends Bundle with Config with CacheConfig {
   val addr = UInt(XLEN.W)
@@ -107,14 +107,14 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
 
-  //for refill done state hit match
-  val tagHitVec_done = Wire(Bool())
-
-  when(state === s_refill_done){
-    tagHitVec_done := tagArray.read(addrReg.index) === addrReg.tag
-  }.otherwise{
-    tagHitVec_done := false.B
-  }
+//  //for refill done state hit match
+//  val tagHitVec_done = Wire(Bool())
+//
+//  when(state === s_refill_done){
+//    tagHitVec_done := tagArray.read(addrReg.index) === addrReg.tag
+//  }.otherwise{
+//    tagHitVec_done := false.B
+//  }
   //hitwrite  is dirty
   val readIdx = Mux(state===s_refill_done,addrReg.index,addr.index)
   //for (i <- 0 until CacheCatNum) {
@@ -144,7 +144,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val wb_tag        = tagArray.read(addrReg.index)
 
 
-  val writeDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(AxiDataBits.W))))
+  val writeDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
   val writeMemCnt  = Reg(UInt(log2Up(RetTimes + 1).W))
   for (i <- 0 until CacheCatNum) {
     when(RegNext(state === s_miss)) {
@@ -194,7 +194,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
   //refill
   io.to_rw.r.ready := (state === s_refill) && (readMemCnt < RetTimes.U)
-  val readDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(AxiDataBits.W))))
+  val readDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
   when(readMemCnt < RetTimes.U && state === s_refill){
     when(needRefill) {
       readDataReg(readMemCnt) := io.to_rw.r.bits.data

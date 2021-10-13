@@ -7,6 +7,7 @@ import utils.InBool
 class riscv_cpu_io extends Bundle {
   val master = new ysyxAXI4IO()
   val slave  = Flipped(new ysyxAXI4IO())
+  val interrupt = Input(Bool())
 }
 
 class riscv_cpu extends Module {
