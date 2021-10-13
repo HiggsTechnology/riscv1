@@ -76,7 +76,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val dirty         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val tagArray      = Mem(Sets, UInt(TagBits.W))
-  val dataArray     = Seq.fill(CacheCatNum)(Mem(Sets, Vec(LineSize/CacheCatNum, UInt(8.W))))//(new 100)
+  //val dataArray     = Seq.fill(CacheCatNum)(Mem(Sets, Vec(LineSize/CacheCatNum, UInt(8.W))))//(new 100)
 
 
   val SRam_read  = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))

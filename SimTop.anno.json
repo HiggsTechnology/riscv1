@@ -19,121 +19,169 @@
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|PreDecode",
     "duplicate":"~SimTop|SimTop/ifu:IFU/preDecVec_0:PreDecode",
-    "index":0.06
+    "index":0.05172413793103448
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|PreDecode_1",
     "duplicate":"~SimTop|SimTop/ifu:IFU/preDecVec_1:PreDecode",
-    "index":0.08
+    "index":0.06896551724137931
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|IDU",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/decoders_0:IDU",
-    "index":0.14
+    "index":0.1206896551724138
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|IDU_1",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/decoders_1:IDU",
-    "index":0.16
+    "index":0.13793103448275862
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|DifftestInstrCommit",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/rob:ROB/instrCommit:DifftestInstrCommit",
-    "index":0.3
+    "index":0.25862068965517243
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|DifftestInstrCommit_1",
     "duplicate":"~SimTop|SimTop/ctrlblock:ControlBlock/rob:ROB/instrCommit_1:DifftestInstrCommit",
-    "index":0.32
+    "index":0.27586206896551724
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|RS",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu1rs:RS",
-    "index":0.44
+    "index":0.3793103448275862
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|RS_1",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu2rs:RS",
-    "index":0.46
+    "index":0.39655172413793105
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|ALU",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu1:ALU",
-    "index":0.56
+    "index":0.4827586206896552
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|ALU_1",
     "duplicate":"~SimTop|SimTop/exublock:ExuBlock/alu2:ALU",
-    "index":0.58
+    "index":0.5
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|S011HD1P_X32Y2D128_BW",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam/sram:S011HD1P_X32Y2D128_BW",
-    "index":0.7
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_0:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.5862068965517241
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|SRam",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam",
-    "index":0.72
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_0:SRam",
+    "index":0.603448275862069
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|S011HD1P_X32Y2D128_BW_1",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam/sram:S011HD1P_X32Y2D128_BW",
-    "index":0.74
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_1:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.6206896551724138
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|SRam_1",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam",
-    "index":0.76
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_1:SRam",
+    "index":0.6379310344827587
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|S011HD1P_X32Y2D128_BW_2",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam/sram:S011HD1P_X32Y2D128_BW",
-    "index":0.78
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_2:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.6551724137931034
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|SRam_2",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam",
-    "index":0.8
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_2:SRam",
+    "index":0.6724137931034483
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|S011HD1P_X32Y2D128_BW_3",
-    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_3:SRam/sram:S011HD1P_X32Y2D128_BW",
-    "index":0.82
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_3:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.6896551724137931
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|SRam_3",
+    "duplicate":"~SimTop|SimTop/icache:ICache/SRamArray_3:SRam",
+    "index":0.7068965517241379
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_4",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.7413793103448276
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_4",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_0:SRam",
+    "index":0.7586206896551724
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_5",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.7758620689655172
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_5",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_1:SRam",
+    "index":0.7931034482758621
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_6",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.8103448275862069
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_6",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_2:SRam",
+    "index":0.8275862068965517
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|S011HD1P_X32Y2D128_BW_7",
+    "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_3:SRam/sram:S011HD1P_X32Y2D128_BW",
+    "index":0.8448275862068966
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|SRam_7",
     "duplicate":"~SimTop|SimTop/dcache:DCache/SRamArray_3:SRam",
-    "index":0.84
+    "index":0.8620689655172413
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|Arbiter",
     "duplicate":"~SimTop|SimTop/crossbar:CROSSBAR_Nto1/readArb:Arbiter",
-    "index":0.88
+    "index":0.896551724137931
   },
   {
     "class":"firrtl.transforms.DedupedResult",
     "original":"~SimTop|Arbiter_1",
     "duplicate":"~SimTop|SimTop/crossbar:CROSSBAR_Nto1/writeArb:Arbiter",
-    "index":0.9
+    "index":0.9137931034482759
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",

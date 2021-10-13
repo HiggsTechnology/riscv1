@@ -188,6 +188,6 @@ class TrapIO extends Bundle with Config {
 }
 
 class cohResp extends Bundle with ICacheConfig {
-  val forward = Vec(cacheCatNum,UInt((LineSize/cacheCatNum*8).W))
+  val forward = Vec(CacheCatNum,UInt((LineSize/CacheCatNum*8).W))
   val needforward = Bool()
 }
