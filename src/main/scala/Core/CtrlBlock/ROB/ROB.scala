@@ -1,11 +1,10 @@
 package Core.CtrlBlock.ROB
 
-import Core.TrapIO
+import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, PcInst, RedirectIO, TrapIO}
 import Core.ExuBlock.FU.{BRUOpType, CsrRegDefine}
 import Core.Config.robSize
-import Core.CtrlBlock.IDU.FuncType
+import Core.CtrlBlock.IDU.{FuncOpType, FuncType}
 import Core.ExuBlock.FU
-import Core.{CommitIO, Config, CsrCommitIO, ExuCommit, MicroOp, MisPredictIO, RedirectIO}
 import difftest.{DiffCSRStateIO, DifftestArchEvent, DifftestCSRState, DifftestInstrCommit, DifftestTrapEvent}
 import chisel3._
 import chisel3.util._
@@ -28,6 +27,20 @@ class ROBIO extends Bundle with Config {//todo:
   //io.in(i).bits.ctrl.funcType===FuncType.bru
 }
 
+class ROB_data extends Bundle with Config {
+  val pc    : UInt = UInt(XLEN.W)
+  val instr  : UInt = UInt(INST_WIDTH)
+  val ROBIdx     = new ROBPtr
+  val is_br      = Bool()
+  val funcOpType = FuncOpType.uwidth
+  val funcType   = FuncType.uwidth
+  val pdest      = UInt(PhyRegIdxWidth.W)
+  val old_pdest  = UInt(PhyRegIdxWidth.W)
+  val rfrd       = UInt(5.W)
+  val rfWen      = Bool()
+
+}
+
 
 class ROBPtr extends CircularQueuePtr[ROBPtr](robSize) with HasCircularQueuePtrHelper{
   override def cloneType = (new ROBPtr).asInstanceOf[this.type]
@@ -41,8 +54,8 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   val valid     = RegInit(VecInit(Seq.fill(robSize)(false.B)))
   val wb        = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:添加isbranch寄存器
   val mispred   = RegInit(VecInit(Seq.fill(robSize)(false.B)))//todo:等到分支指令robIdx走到第一个再冲刷
-  val res       = Mem(robSize, UInt(XLEN.W))
-  val data      = Mem(robSize, new MicroOp)
+  val res       = RegInit(VecInit(Seq.fill(robSize)(0.U(XLEN.W))))
+  val data      = RegInit(VecInit(Seq.fill(robSize)(0.U.asTypeOf(new ROB_data))))
   val csrState  = RegInit(VecInit(Seq.fill(robSize)(0.U.asTypeOf(Flipped(new CsrCommitIO)))))
 
   val enq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new ROBPtr))))///循环指针，enq发射阶段进来的信号在orderqueue的位置
@@ -78,7 +91,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   for(i <- 0 until robSize) {
     // val ret = data(i).ctrl.funcOpType === BRUOpType.jalr && data(i).cf.instr(11,7) === 0.U && (data(i).cf.instr(19,15) === 1.U || data(i).cf.instr(19,15) === 5.U)
     // br_pred(i) := valid(i) && (data(i).cf.is_br && !ret && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
-    br_pred(i) := valid(i) && (data(i).cf.is_br && data(i).ctrl.funcOpType =/= BRUOpType.jal) && !wb(i)
+    br_pred(i) := valid(i) && (data(i).is_br && data(i).funcOpType =/= BRUOpType.jal) && !wb(i)
   }
   when(enq_vec(0).value > deq_vec(0).value){
     br_pred_reorder := DontCare
@@ -112,10 +125,18 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
     when(io.in(i).valid && io.in(0).valid && allowEnq){
       valid(enq_vec(i).value) := io.in(i).valid && io.in(0).valid && allowEnq
       wb(enq_vec(i).value) := false.B
-      skip(enq_vec(i).value) := false.B
-      mispred(enq_vec(i).value) := false.B
-      data(enq_vec(i).value) := io.in(i).bits
-      data(enq_vec(i).value).ROBIdx := enq_vec(i)
+      skip(enq_vec(i).value)            := false.B
+      mispred(enq_vec(i).value)         := false.B
+      data(enq_vec(i).value).pc         := io.in(i).bits.cf.pc
+      data(enq_vec(i).value).instr      := io.in(i).bits.cf.instr
+      data(enq_vec(i).value).is_br      := io.in(i).bits.cf.is_br
+      data(enq_vec(i).value).rfrd       := io.in(i).bits.ctrl.rfrd
+      data(enq_vec(i).value).rfWen      := io.in(i).bits.ctrl.rfWen
+      data(enq_vec(i).value).funcOpType := io.in(i).bits.ctrl.funcOpType
+      data(enq_vec(i).value).funcType   := io.in(i).bits.ctrl.funcType
+      data(enq_vec(i).value).pdest      := io.in(i).bits.pdest
+      data(enq_vec(i).value).old_pdest  := io.in(i).bits.old_pdest
+      data(enq_vec(i).value).ROBIdx     := enq_vec(i)
     }
   }
 
@@ -155,7 +176,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   val commitIsCsr = Wire(Vec(2,Bool()))
 
   for(i <- 0 until 2){
-    commitIsCsr(i) := data(deq_vec(i).value).ctrl.funcType === FuncType.csr
+    commitIsCsr(i) := data(deq_vec(i).value).funcType === FuncType.csr
   }
 
   val commitCsrState = Wire(new CsrCommitIO)
@@ -173,8 +194,8 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
     io.commit(i).valid := commitReady(i)
     io.commit(i).bits.pdest := data(deq_vec(i).value).pdest
     io.commit(i).bits.old_pdest := data(deq_vec(i).value).old_pdest
-    io.commit(i).bits.ldest := data(deq_vec(i).value).ctrl.rfrd
-    io.commit(i).bits.rfWen := data(deq_vec(i).value).ctrl.rfWen
+    io.commit(i).bits.ldest := data(deq_vec(i).value).rfrd
+    io.commit(i).bits.rfWen := data(deq_vec(i).value).rfWen
     when(commitReady(i)){
       valid(deq_vec(i).value) := false.B
       mispred(deq_vec(i).value) := false.B
@@ -192,8 +213,8 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   BoringUtils.addSource(trap, "ROBTrap")
   trap.interruptValid := resp_interrupt
   trap.interruptVec := interruptVec
-  trap.epc := data(deq_vec(0).value).cf.pc
-  trap.einst := data(deq_vec(0).value).cf.instr
+  trap.epc   := data(deq_vec(0).value).pc
+  trap.einst := data(deq_vec(0).value).instr
   trap.ROBIdx := (deq_vec(0) - 1.U)
   trap.mstatus := RegNext(commitCsrState.mstatus)  // 中断使用待提交的mstatus状态，而不是CSR中的mstatus状态
 
@@ -214,11 +235,11 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
       instrCommit.io.scFailed := false.B
 
       instrCommit.io.valid := RegNext(commitReady(i))
-      instrCommit.io.pc := RegNext(data(deq_vec(i).value).cf.pc)
-      instrCommit.io.instr := RegNext(data(deq_vec(i).value).cf.instr)
-      instrCommit.io.wen := RegNext(data(deq_vec(i).value).ctrl.rfWen)
+      instrCommit.io.pc := RegNext(data(deq_vec(i).value).pc)
+      instrCommit.io.instr := RegNext(data(deq_vec(i).value).instr)
+      instrCommit.io.wen := RegNext(data(deq_vec(i).value).rfWen)
       instrCommit.io.wdata := RegNext(res(deq_vec(i).value))
-      instrCommit.io.wdest := RegNext(data(deq_vec(i).value).ctrl.rfrd)
+      instrCommit.io.wdest := RegNext(data(deq_vec(i).value).rfrd)
     }
   }
 
@@ -253,7 +274,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
 
   val hitTrap = Wire(Vec(2, Bool()))
   for(i <- 0 until 2){
-    hitTrap(i) := data(deq_vec(i).value).cf.instr === BigInt("0000006b",16).U && commitReady(i)
+    hitTrap(i) := data(deq_vec(i).value).instr === BigInt("0000006b",16).U && commitReady(i)
   }
 
   if (is_sim) {
@@ -262,7 +283,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
     difftestTrapEvent.io.coreid := 0.U
     difftestTrapEvent.io.valid := hitTrap(0) || hitTrap(1)
     difftestTrapEvent.io.code := 0.U
-    difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).cf.pc, data(deq_vec(1).value).cf.pc)
+    difftestTrapEvent.io.pc := Mux(hitTrap(0), data(deq_vec(0).value).pc, data(deq_vec(1).value).pc)
     difftestTrapEvent.io.cycleCnt := cycleCnt
     difftestTrapEvent.io.instrCnt := instrCnt
   }

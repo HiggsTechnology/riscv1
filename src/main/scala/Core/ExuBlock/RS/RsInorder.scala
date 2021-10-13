@@ -1,10 +1,10 @@
 package Core.ExuBlock.RS
 
-import Core.Config.{ExuNum, rsSize}
+import Core.Config.{ExuNum, PhyRegIdxWidth, rsSize}
 import Core.CtrlBlock.IDU.FuncType
 import Core.CtrlBlock.ROB.ROBPtr
 import Core.ExuBlock.ExuBlockConfig.{JumpRsBruNo, JumpRsCsrNo}
-import Core.{Config, FuInPut, FuOutPut, MicroOp}
+import Core.{Config, FuInPut, FuOutPut, MicroOp, SrcState}
 import chisel3._
 import chisel3.util._
 import utils._
@@ -30,6 +30,13 @@ class RsInorderIO(slave_num: Int) extends Bundle with Config{
   val mispred_robPtr : ROBPtr = Input(new ROBPtr)
 }
 
+class DecodeOp extends Bundle with Config {
+  val psrc      = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
+  val ROBIdx     = Output(new ROBPtr)
+  val funcType     = Output(FuncType.uwidth)
+}
+
+
 class RsInorder(
   slave_num: Int,
   size: Int = 2,
@@ -39,7 +46,8 @@ class RsInorder(
   name: String = "unnamedRS"
 ) extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new RsInorderIO(slave_num = slave_num))
-  val decode    = Mem(rsSize, new MicroOp)
+  //val decode    = Mem(rsSize, new MicroOp)
+  val decode    = RegInit(VecInit(Seq.fill(rsSize)(0.U.asTypeOf(new MicroOp))))
   val valid     = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
@@ -116,7 +124,7 @@ class RsInorder(
   when(dispatchReady) {
     when (decode(deq_vec.value).ctrl.funcType === FuncType.bru) {
       to_bru.valid := true.B
-      to_bru.bits.uop := decode(deq_vec.value)
+      to_bru.bits.uop := decode(deq_vec.value) // io.in.bits
       to_bru.bits.src(0) := src1(deq_vec.value)
       to_bru.bits.src(1) := src2(deq_vec.value)
       valid(deq_vec.value) := false.B

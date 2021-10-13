@@ -28,7 +28,7 @@ class RS(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, name
     val mispred_robPtr = Input(new ROBPtr)
   })
 
-  val decode  = Mem(rsSize, new MicroOp)
+  val decode  = RegInit(VecInit(Seq.fill(rsSize)(0.U.asTypeOf(new MicroOp))))
   val valid   = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState1 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
   val srcState2 = RegInit(VecInit(Seq.fill(rsSize)(false.B)))
