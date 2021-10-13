@@ -174,24 +174,11 @@ class ICache(cacheNum: Int = 0) extends Module with Config with ICacheConfig wit
     io.bus(j).resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid(j)
   }
 
-  val hit_read = state===s_refill_done || io.bus(0).req.valid
+  val hit_read = state===s_refill_done || io.bus.req(0).valid
   val fw_write = state === s_miss && io.cohresp.valid && io.cohresp.bits.needforward
   val refill_write = state === s_refill && axireadMemCnt === retTimes.U
-  val SRamArray    = Seq.fill(CacheCatNum)(Module(new SRam))
+  val SRamArray     = Seq.fill(CacheCatNum)(Module(new SRam))
 
-
-  // linesize = 512 bit
-  // sram width = 128 bit
-  // idx = addr(11,6)
-  // en  = addr(5,4) === i.U
-  for(i<- 0 until CacheCatNum){
-    SRam_read(i) := SRamArray(i).io.rData.asTypeOf(SRam_read(i))
-    SRamArray(i).io.idx := Mux(refill_write || fw_write, refill_idx, Mux(i.U>1.U,readIdx(0),readIdx(1)))
-    SRamArray(i).io.wMask := VecInit(Seq.fill(128)(true.B)).asUInt() //wmask had been done
-    SRamArray(i).io.wData := SRam_write(i).asUInt()
-    SRamArray(i).io.en := hit_read || refill_write || fw_write
-    SRamArray(i).io.wen := fw_write || refill_write
-  }
 
 
   //-------------------------------------状态机------------------------------------------------
