@@ -29,8 +29,8 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   val io = IO(new DispatchQueueIO)
   //定义输入数据接收MEM，接收输入MicroOp中的valid、data、rs number
   val valid     = RegInit(VecInit(Seq.fill(DispatchQueueSize)(false.B)))
-  val data      = Mem(DispatchQueueSize, new MicroOp)
-  val rs_num    = Mem(DispatchQueueSize, UInt(log2Up(RSNum).W))
+  val data      = RegInit(VecInit(Seq.fill(DispatchQueueSize)(0.U.asTypeOf(new MicroOp))))
+  val rs_num    = RegInit(VecInit(Seq.fill(DispatchQueueSize)(0.U(log2Up(RSNum).W))))
   //定义头指针enq_vec代表入队逻辑，尾指针deq_vec代表出队逻辑
   val enq_vec   = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr))))
   val deq_vec   = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new DispatchQueuePtr))))

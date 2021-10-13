@@ -29,14 +29,6 @@ class RsInorderIO(slave_num: Int) extends Bundle with Config{
   val flush : Bool = Input(Bool())
   val mispred_robPtr : ROBPtr = Input(new ROBPtr)
 }
-
-class DecodeOp extends Bundle with Config {
-  val psrc      = Vec(2, Output(UInt(PhyRegIdxWidth.W)))
-  val ROBIdx     = Output(new ROBPtr)
-  val funcType     = Output(FuncType.uwidth)
-}
-
-
 class RsInorder(
   slave_num: Int,
   size: Int = 2,

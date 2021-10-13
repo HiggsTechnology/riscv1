@@ -183,16 +183,16 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   alu2.io.in <> alu2rs.io.out
 //  mu.io.in   <> murs.io.out
 //  du.io.in   <> durs.io.out
-  lsu1.io.in <> lsq.io.lsu_in(0)
+  lsu1.io.in <> lsq.io.lsu_in
 //  lsu2.io.in <> lsq.io.lsu_in(1)
-  lsu1.io.spec_issued := lsq.io.lsu_spec_issued(0)
+  lsu1.io.spec_issued := lsq.io.lsu_spec_issued
 //  lsu2.io.spec_issued := lsq.io.lsu_spec_issued(1)
 
   io.toMem <> lsu1.io.toMem
  // io.toMem(1) <> lsu2.io.toMem
 //  lsq.io.cache_ready := io.toMem.map(_.req.ready)
-  lsq.io.cache_ready(0) := io.toMem.req.ready
-  lsq.io.cache_ready(1) := false.B
+  lsq.io.cache_ready := io.toMem.req.ready
+
 
   //exu res write back
   ///我建议在MicroOp中加入orderque指针，或者
@@ -213,8 +213,7 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   //ExuResult(7) := DontCare//lsu2.io.out
   //ExuResult(7).valid := false.B
 
-  lsq.io.lsu_out(0) := lsu1.io.out
-  lsq.io.lsu_out(1) := DontCare//lsu2.io.out //todo: delete redundant lines, don't use DontCare
+  lsq.io.lsu_out := lsu1.io.out
 
   lsq.io.predict_robPtr := io.predict_robPtr
   io.redirect := DontCare

@@ -83,16 +83,16 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val SRam_write = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
 
   val readReg       = Wire(Vec(CacheCatNum,Vec(LineSize/CacheCatNum,UInt(8.W))))// 128bit * 4
-  val writeMem      = Reg(UInt((LineSize * 8).W))
+  val writeMem      = RegInit(0.U((LineSize * 8).W))
 
   val addr = io.bus.req.bits.addr.asTypeOf(addrBundle)
   val storeEn = io.bus.req.valid && (state === s_idle || state === s_lookUp)
-  val reqValid = Reg(Bool())
+  val reqValid = RegInit(false.B)
   when(storeEn) {
     reqValid := io.bus.req.valid
   }
-  val addrReg  = Reg(addrBundle)
-  val writeReg = Reg(new CacheReq)
+  val addrReg  = RegInit(0.U.asTypeOf(addrBundle))
+  val writeReg = RegInit(0.U.asTypeOf(new CacheReq))
 
   when(storeEn) {
     addrReg   := addr
@@ -101,7 +101,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val hit = Wire(Bool())
   hit := io.bus.req.valid && valid(addr.index) && tagArray.read(addr.index) === addr.tag && ((state === s_idle) || (state === s_lookUp))
 
-  val needRefill = Reg(Bool())
+  val needRefill = RegInit(false.B)
   when(storeEn) {
     needRefill := io.bus.req.valid && !hit
   }
@@ -145,9 +145,11 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
 
   val writeDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
-  val writeMemCnt  = Reg(UInt(log2Up(RetTimes + 1).W))
+  val writeMemCnt  = RegInit(0.U(log2Up(RetTimes + 1).W))
+  val refill_data_switch = RegInit(false.B)
+  refill_data_switch := state === s_miss
   for (i <- 0 until CacheCatNum) {
-    when(RegNext(state === s_miss)) {
+    when(refill_data_switch) {
       writeDataReg(2*i)   := SRam_read(i).asUInt()//dataArray(i)(addrReg.index).asUInt
       writeDataReg(2*i+1) := SRam_read(i).asUInt() >> 64.U//dataArray(i)(addrReg.index).asUInt >> 64.U
     }
@@ -161,7 +163,9 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   }
 
   //write to mem
-  io.to_rw.w.valid  := RegNext((state === s_replace || state === s_refill )) && needRefill
+  val w_valid_reg = RegInit(false.B)
+  w_valid_reg := state === s_replace || state === s_refill
+  io.to_rw.w.valid  := w_valid_reg && needRefill
   when(writeMemCnt < RetTimes.U) {
     io.to_rw.w.bits.data := writeDataReg(writeMemCnt)
     io.to_rw.w.bits.strb := 0xffffffffL.U
@@ -182,7 +186,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   io.to_rw.b.ready := (state === s_replace || state === s_refill) && (writeMemCnt === RetTimes.U)
 
   //replace
-  val readMemCnt = Reg(UInt(log2Up(RetTimes+1).W))
+  val readMemCnt = RegInit(0.U(log2Up(RetTimes+1).W))
   when(state === s_replace){
     readMemCnt := 0.U
   }
@@ -226,18 +230,21 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
   //s_refill_done
 
-
+  val respStateReg = RegInit(state === s_refill_done)
+  respStateReg := (state === s_refill_done)
   io.bus.req.ready  := (state ===s_idle) || (state ===s_lookUp)
   io.bus.resp.bits.data := readReg.asUInt >> addrReg.Offset * 8.U
-  io.bus.resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid
+  io.bus.resp.valid := ((state ===s_lookUp) || respStateReg) && reqValid
 
   val cohaddr = io.cohreq.bits.asTypeOf(addrBundle)
+  val cohrespReg = RegInit(io.cohreq.valid && state===s_idle && !io.bus.req.valid)
+  cohrespReg := io.cohreq.valid && state===s_idle && !io.bus.req.valid
   io.cohresp.bits.needforward := io.cohreq.valid && cohaddr.tag === tagArray(cohaddr.index) && valid(cohaddr.index) && dirty(cohaddr.index)
   when(io.cohreq.valid && (!io.cohresp.bits.needforward)){
     io.cohresp.valid := true.B
     io.cohresp.bits.forward := DontCare
   }.elsewhen(io.cohreq.valid && state===s_idle && !io.bus.req.valid){
-    io.cohresp.valid := RegNext(io.cohreq.valid && state===s_idle && !io.bus.req.valid)
+    io.cohresp.valid := cohrespReg//RegNext(io.cohreq.valid && state===s_idle && !io.bus.req.valid)
     for(i <- 0 until 4) {
       io.cohresp.bits.forward(i) := SRam_read(i).asUInt()//RegNext(dataArray(i)(cohaddr.index).asUInt())
     }

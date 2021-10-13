@@ -45,38 +45,38 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   //val dataArray     = Seq.fill(cacheCatNum)(Mem(Sets, Vec(LineSize/cacheCatNum, UInt(8.W))))
   val readReg       = Wire(Vec(CacheCatNum, UInt((LineSize*8/CacheCatNum).W) ))// 128bit * 4
 
-  val SRam_read = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
+  val SRam_read   = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
   val SRam_write  = Seq.fill(CacheCatNum)(WireInit(VecInit(Seq.fill(LineSize/CacheCatNum)(0.U(8.W)))))
 
 
   //stage1 拆信号 判断hitvec
   val addr        = io.bus.map(_.req.bits.addr.asTypeOf(addrBundle))
   val storeEn     = io.bus.map(_.req.valid && (state === s_idle || state === s_lookUp))
-  val reqValid    = Reg(Vec(2, Bool()))
+  val reqValid    = RegInit(VecInit(Seq.fill(2)(false.B))) // Reg(Vec(2, Bool()))
   when(storeEn(0) || storeEn(1)) {
     reqValid(0) := io.bus(0).req.valid
     reqValid(1) := io.bus(1).req.valid
   }
-  val addrReg     = Seq.fill(FETCH_WIDTH)(Reg(addrBundle))
+  val addrReg     = Seq.fill(FETCH_WIDTH)(RegInit(0.U.asTypeOf(addrBundle)))
   for (j <- 0 until 2) {
     when(storeEn(j)) {
       addrReg(j) := addr(j)
     }
   }
   val hit = Wire(Vec(FETCH_WIDTH, Bool()))
-  val axireadMemCnt = Reg(UInt(log2Up(RetTimes+1).W))
+  val axireadMemCnt = RegInit(0.U(log2Up(RetTimes+1).W))
 
   for (i <- 0 until 2) {
     hit(i) := io.bus(i).req.valid && valid(addr(i).index) && tagArray.read(addr(i).index) === addr(i).tag //&& ((state === s_idle) || (state === s_lookUp))
   }
   //hit Reg has one clk lag
-  val hitReg = Seq.fill(FETCH_WIDTH)(Reg(Bool()))
-  for (j <- 0 until 2) {
-    when(storeEn(0) || storeEn(1)) {
-      hitReg(j) := hit(j)
-    }
-  }
-  val needRefill = Seq.fill(2)(Reg(Bool()))
+//  val hitReg = Seq.fill(FETCH_WIDTH)(RegInit(false.B))
+//  for (j <- 0 until 2) {
+//    when(storeEn(0) || storeEn(1)) {
+//      hitReg(j) := hit(j)
+//    }
+//  }
+  val needRefill = Seq.fill(2)(RegInit(false.B))
   when(storeEn(0) && storeEn(1)) {
     needRefill(0) := io.bus(0).req.valid && !hit(0)
     needRefill(1) := io.bus(1).req.valid && !hit(1) && (addr(0).tag =/= addr(1).tag || addr(0).index =/= addr(1).index)
@@ -162,11 +162,12 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       readReg(i) := SRam_read(i).asUInt()//RegNext(dataArray(i).read(readIdx(1)).asUInt())
     }
   }
-
+  val stateReg = RegInit(state === s_refill_done)
+  stateReg := state === s_refill_done
   for (j <- 0 until 2) {
     io.bus(j).req.ready  := (state ===s_idle) || (state ===s_lookUp)
     io.bus(j).resp.bits.data  := readReg.asUInt() >> addrReg(j).Offset * 8.U
-    io.bus(j).resp.valid := ((state ===s_lookUp) || RegNext(state === s_refill_done)) && reqValid(j)
+    io.bus(j).resp.valid := ((state ===s_lookUp) || stateReg) && reqValid(j)
   }
 
   val hit_read = state===s_refill_done || io.bus(0).req.valid
