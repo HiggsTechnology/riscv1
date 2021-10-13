@@ -58,7 +58,8 @@ class BTB extends Module with Config {
   }
 
   val btb_valid = Seq.fill(4)(RegInit(VecInit(Seq.fill(btbRows)(false.B))))
-  val btb = Seq.fill(4)(Mem(btbRows, new btbEntry))
+  //val btb = Seq.fill(4)(Mem(btbRows, new btbEntry))
+  val btb = Seq.fill(4)(RegInit(VecInit(Seq.fill(btbRows)(0.U.asTypeOf(new btbEntry)))))
   //TODO: read simultaneously
   for (j <- 0 until FETCH_WIDTH) {
     val btbRead = Wire(Vec(BtbWays, new btbEntry))

@@ -216,7 +216,9 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
   trap.epc   := data(deq_vec(0).value).pc
   trap.einst := data(deq_vec(0).value).instr
   trap.ROBIdx := (deq_vec(0) - 1.U)
-  trap.mstatus := RegNext(commitCsrState.mstatus)  // 中断使用待提交的mstatus状态，而不是CSR中的mstatus状态
+  val trapMstatusReg = RegInit(commitCsrState.mstatus)
+  trapMstatusReg := trapMstatusReg
+  trap.mstatus := trapMstatusReg//RegNext(commitCsrState.mstatus)  // 中断使用待提交的mstatus状态，而不是CSR中的mstatus状态
 
   //difftest
   val cycleCnt = RegInit(0.U(64.W))
@@ -243,11 +245,14 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
     }
   }
 
-  // DifftestInstr.valid或中断/异常 才比较CSR和regfile，以下实现保证提交的CSR始终正确
-  //                        N+1         N               N+2                                >N+1        N+3       N+2
-  val csrTrueCommit = Mux(RegNext(resp_interrupt) || RegNext(RegNext(resp_interrupt)), csrCommitIO, RegNext(commitCsrState))
 
   if (is_sim) {
+    // DifftestInstr.valid或中断/异常 才比较CSR和regfile，以下实现保证提交的CSR始终正确
+    //                        N+1         N               N+2                                >N+1        N+3       N+2
+    val csrTrueCommit = Mux(RegNext(resp_interrupt) || RegNext(RegNext(resp_interrupt)), csrCommitIO, RegNext(commitCsrState))
+
+
+
     val difftestCSRState = Module(new DifftestCSRState)
     difftestCSRState.io.clock := clock
     difftestCSRState.io.coreid := 0.U
