@@ -50,6 +50,8 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   val dispatch      = Module(new Dispatch)
   val disQueue      = Module(new DispatchQueue)
   val rob           = Module(new ROB(is_sim = is_sim))
+
+  val flush = io.in.redirect.valid && io.in.redirect.bits.mispred
   //io.in.pcinstr(0).ready := disQueue.io.out.can_allocate
   //io.in.pcinstr(1).ready := disQueue.io.out.can_allocate
   //Decoder & Backend Commit To Rename

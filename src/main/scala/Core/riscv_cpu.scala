@@ -1,8 +1,7 @@
 package Core
 
-import Core.AXI4.{AXI4IO, ysyxAXI4IO}
+import Core.AXI4.ysyxAXI4IO
 import chisel3._
-import utils.InBool
 
 class riscv_cpu_io extends Bundle {
   val master = new ysyxAXI4IO()

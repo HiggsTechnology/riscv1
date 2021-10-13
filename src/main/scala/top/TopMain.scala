@@ -1,5 +1,4 @@
 package top
-import Core.riscv_cpu
 import Sim._
 import Sim.SimTop
 import Core.riscv_cpu
@@ -19,12 +18,6 @@ object TopMain extends App {
       ChiselGeneratorAnnotation(() => new riscv_cpu()) ,
       firrtl.stage.RunFirrtlTransformAnnotation(new AddModulePrefix()),
       ModulePrefixAnnotation("ysyx_210062_")
-    )
-  )
-  (new ChiselStage).execute(
-    args,
-    Seq(
-      ChiselGeneratorAnnotation(() => new riscv_cpu())
     )
   )
 }
