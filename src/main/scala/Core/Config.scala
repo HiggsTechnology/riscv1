@@ -7,7 +7,7 @@ import chisel3.util.log2Up
 import scala.math.{BigInt, pow}
 
 trait Config {
-  def PC_START = 0x80000000L
+  def PC_START = 0x30000000L
 
   def XLEN : Int = 64
   def INST_WIDTH: Width = 32.W

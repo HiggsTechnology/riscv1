@@ -38,7 +38,7 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val io = IO(new ICacheIO)
   io.to_rw := DontCare
 
-  val s_idle :: s_lookUp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(6)
+  val s_idle :: s_lookUp :: s_mmio :: s_mmio_resp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(8)
   val state: UInt   = RegInit(s_idle)
   val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val tagArray      = Mem(Sets, UInt(TagBits.W))
@@ -82,6 +82,22 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     needRefill(1) := io.bus(1).req.valid && !hit(1) && (addr(0).tag =/= addr(1).tag || addr(0).index =/= addr(1).index)
   }
   val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
+  //s_mmio
+  val mmio_read_cnt = RegInit(0.U)
+
+  io.to_rw.ar.bits.addr := DontCare
+
+  io.to_rw.ar.bits.size   := AXI_SIZE.bytes4
+  when(state === s_mmio){
+    io.to_rw.ar.bits.addr   := Mux(mmio_read_cnt === 1.U, addrReg(0).asUInt(), addrReg(1).asUInt())
+    io.to_rw.ar.bits.len    := 0.U
+    io.to_rw.ar.bits.size   := AXI_SIZE.bytes4
+  }
+
+  //s_mmio_resp
+  val mmio_inst = RegInit(VecInit(Seq.fill(FETCH_WIDTH)(0.U(INST_WIDTH))))
+  mmio_inst(1.U-mmio_read_cnt) := io.to_rw.r.bits.data(31,0)
+
   //s_miss
   val validVec = Seq.fill(FETCH_WIDTH)(Wire(Bool()))
   for (i <- 0 until 2) {
@@ -105,21 +121,23 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     axireadMemCnt := 0.U
   }
 
-  io.to_rw.ar.valid := (state === s_replace)
-  when(needRefill(0) && needRefill(1)) {
+  io.to_rw.ar.valid := (state === s_replace) || (state === s_mmio)
+  when(state === s_replace && needRefill(0) && needRefill(1)) {
     io.to_rw.ar.bits.addr := Cat(addrReg(0).tag, addrReg(0).index, 0.U(OffsetBits.W))
-  }.elsewhen(needRefill(0) || needRefill(1)){
+    io.to_rw.ar.bits.len    := 7.U
+    io.to_rw.ar.bits.size   := AXI_SIZE.bytes8
+  }.elsewhen(state === s_replace && (needRefill(0) || needRefill(1))){
     for (j <- 0 until 2) {
       when(needRefill(j)){
         io.to_rw.ar.bits.addr := Cat(addrReg(j).tag, addrReg(j).index, 0.U(OffsetBits.W))
+        io.to_rw.ar.bits.len    := 7.U
+        io.to_rw.ar.bits.size   := AXI_SIZE.bytes8
       }
     }
-  }.otherwise{
-    io.to_rw.ar.bits.addr := DontCare
   }
 
   //refill
-  io.to_rw.r.ready := (state === s_refill) && (axireadMemCnt < RetTimes.U)
+
   val readDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
 
   when(axireadMemCnt < RetTimes.U && state === s_refill){
@@ -162,12 +180,14 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       readReg(i) := SRam_read(i).asUInt()//RegNext(dataArray(i).read(readIdx(1)).asUInt())
     }
   }
-  val stateReg = RegInit(state === s_refill_done)
-  stateReg := state === s_refill_done
+  val stateReg1 = RegInit(state === s_refill_done)
+  stateReg1 := state === s_refill_done
+  val stateReg2 = RegInit(state === s_mmio_resp)
+  stateReg2 := state === s_mmio_resp
   for (j <- 0 until 2) {
     io.bus(j).req.ready  := (state ===s_idle) || (state ===s_lookUp)
-    io.bus(j).resp.bits.data  := readReg.asUInt() >> addrReg(j).Offset * 8.U
-    io.bus(j).resp.valid := ((state ===s_lookUp) || stateReg) && reqValid(j)
+    io.bus(j).resp.bits.data  := Mux(stateReg2 && state ===s_idle,mmio_inst(j),readReg.asUInt() >> addrReg(j).Offset * 8.U)
+    io.bus(j).resp.valid := ((state ===s_lookUp) || stateReg1 ||(stateReg2 && state ===s_idle)) && reqValid(j)
   }
 
   val hit_read = state===s_refill_done || io.bus(0).req.valid
@@ -193,16 +213,35 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   //-------------------------------------状态机------------------------------------------------
   switch(state) {
     is(s_idle) {
-      when((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
+      when(io.bus(0).req.valid && addr(0).asUInt() < 0x80000000L.U) {
+        state := s_mmio
+        mmio_read_cnt := 1.U
+      }.elsewhen((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
         state := s_miss
       }.elsewhen(io.bus(0).req.valid || io.bus(1).req.valid) {
         state := s_lookUp
       }
     }
     is(s_lookUp) {
-      when((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
+      when(io.bus(0).req.valid && addr(0).asUInt() < 0x80000000L.U) {
+        state := s_mmio
+        mmio_read_cnt := 1.U
+      }.elsewhen((!hit(0) && io.bus(0).req.valid) || (!hit(1) && io.bus(1).req.valid)){
         state := s_miss
       }.elsewhen(!io.bus(0).req.valid && !io.bus(1).req.valid){
+        state := s_idle
+      }
+    }
+    is(s_mmio){
+      when(io.to_rw.ar.ready){
+        state := s_mmio_resp
+      }
+    }
+    is(s_mmio_resp){
+      when(io.to_rw.r.valid && mmio_read_cnt === 1.U){
+        state := s_mmio
+        mmio_read_cnt := 0.U
+      }.elsewhen(io.to_rw.r.valid && mmio_read_cnt === 0.U){
         state := s_idle
       }
     }
@@ -246,13 +285,15 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   io.to_rw.ar.bits.prot   := AXI_PROT.UNPRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
   io.to_rw.ar.bits.id     := 0.U
   io.to_rw.ar.bits.user   := 0.U
-  io.to_rw.ar.bits.len    := 7.U
-  io.to_rw.ar.bits.size   := AXI_SIZE.bytes8
+
+
   io.to_rw.ar.bits.burst  := AXI4Parameters.BURST_INCR
   io.to_rw.ar.bits.lock   := 0.U
   io.to_rw.ar.bits.cache  := 0.U
   io.to_rw.ar.bits.qos    := 0.U
   io.to_rw.ar.bits.region := 0.U
+
+  io.to_rw.r.ready := ((state === s_refill) && (axireadMemCnt < RetTimes.U)) || state === s_mmio_resp
 
 //  when(state === s_lookUp){
 //    printf(" in valid is %d %d \n",io.bus(0).req.valid,io.bus(1).req.valid)
