@@ -338,7 +338,6 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   //   when(state === s_miss || state === s_replace || state === s_refill ){
   //     printf("cache num %d, state %d, needwb %d %d, needrefill %d %d, readMenCnt %d, writeMemCnt %d, ar_valid %d, ar_ready %d, r_valid %d, r_ready %d, aw_valid %d, aw_ready %d, w_valid %d, w_ready %d\n", cacheNum.U, state, needWriteBack(0), needWriteBack(1),needRefill(0),needRefill(1),readMemCnt, writeMemCnt, io.to_rw.ar.valid,io.to_rw.ar.ready,io.to_rw.r.valid,io.to_rw.r.ready,io.to_rw.aw.valid,io.to_rw.aw.ready,io.to_rw.w.valid,io.to_rw.w.ready)
   //   }
-
   //   when(io.req(0).valid ||io.req(1).valid ){
   //     printf("LSU1 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(0).valid,io.req(0).bits.addr,io.req(0).bits.isWrite,io.req(0).bits.data,io.req(0).bits.wmask)
   //     printf("LSU2 valid %d, addr %x, isStore %d, data %x, wmask %x\n",io.req(1).valid,io.req(1).bits.addr,io.req(1).bits.isWrite,io.req(1).bits.data,io.req(1).bits.wmask)

@@ -36,7 +36,7 @@ class ysyxAXI4IO(
   val wvalid        = OutBool()
   val wdata  : UInt = OutUInt(dataBits)
   val wlast  : Bool = OutBool()
-  val wstrb  : UInt = OutUInt(AXI4Parameters.strbBits)
+  val wstrb  : UInt = OutUInt(dataBits/8)
 
   val bready       = OutBool()
   val bvalid       = InBool()

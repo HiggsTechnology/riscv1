@@ -25,11 +25,11 @@ class SimTop extends Module {
   val io       = IO(new SimTopIO)
 
 
-  val ifu       = Module(new IFU)
+  val ifu       = Module(new IFU(is_sim = is_sim))
   val ibf       = Module(new Ibuffer)
   val ctrlblock = Module(new ControlBlock(is_sim = is_sim))
   val exublock  = Module(new ExuBlock(is_sim = is_sim))
-  val icache    = Module(new ICache(cacheNum = 0))
+  val icache    = Module(new ICache(cacheNum = 0,is_sim = is_sim))
   val dcache    = Module(new DCache(cacheNum = 1))
   val crossbar  = Module(new CROSSBAR_Nto1(1,2))
   val clint     = Module(new Clint)

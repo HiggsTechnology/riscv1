@@ -7,7 +7,8 @@ import chisel3.util.log2Up
 import scala.math.{BigInt, pow}
 
 trait Config {
-  def PC_START = 0x30000000L
+  def PC_START_sim = 0x80000000L
+  def PC_START_soc = 0x30000000L
 
   def XLEN : Int = 64
   def INST_WIDTH: Width = 32.W
@@ -110,7 +111,8 @@ trait Config {
       "spi-xip"   ->  ((0x30000000L, 0x3fffffffL), true   ), // "spi-xip"
       "chiplink"  ->  ((0x40000000L, 0x7fffffffL), true   ), // "chiplink"
       "mem"       ->  ((0x80000000L, 0xffffffffL), false  ), // "dcache/mem"
-      "outside"   ->  ((0x10000000L, 0x7fffffffL), false  )  // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间"
+      "outside_sim"   ->  ((0x10002000L, 0x7fffffffL), false  ),  // "全部外设，地址和上述部分重叠，其实大于0x10000000L都是核外的地址空间" 0x10002000L
+      "outside_soc"   ->  ((0x10000000L, 0x7fffffffL), false  )
     )
     val simAddrMap = List(
       addrMap("mem"),

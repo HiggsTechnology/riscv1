@@ -20,7 +20,7 @@ class IFUIO extends Bundle {
 
 class IFU extends Module with Config {
   val io = IO(new IFUIO)
-  val pc = RegInit(PC_START.U(XLEN.W) + 8.U)
+  val pc = RegInit((if(is_sim) PC_START_sim else PC_START_soc).U(XLEN.W) + 8.U)
   val mispred = io.redirect.bits.mispred
   val bpu = Module(new BPU)
   val continue = (io.out(0).ready || (io.redirect.valid && mispred)) && io.toMem(0).req.ready && io.toMem(1).req.ready

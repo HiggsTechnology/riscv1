@@ -9,7 +9,7 @@ class riscv_cpu_io extends Bundle {
   val interrupt = Input(Bool())
 }
 
-class riscv_cpu extends Module {
+class ysyx_210062 extends Module {
   val io : riscv_cpu_io = IO(new riscv_cpu_io)
   val core = Module(new CoreTop)
   core.io.axi4 := DontCare
