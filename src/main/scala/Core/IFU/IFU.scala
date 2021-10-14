@@ -18,7 +18,7 @@ class IFUIO extends Bundle {
   //  val ifu2rw = new IFU2RW
 }
 
-class IFU extends Module with Config {
+class IFU(is_sim: Boolean) extends Module with Config {
   val io = IO(new IFUIO)
   val pc = RegInit((if(is_sim) PC_START_sim else PC_START_soc).U(XLEN.W) + 8.U)
   val mispred = io.redirect.bits.mispred

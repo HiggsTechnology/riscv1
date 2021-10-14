@@ -5,7 +5,7 @@ import chisel3.util._
 import utils.{InBool, InUInt, OutBool, OutUInt}
 
 class ysyxAXI4IO(
-              val dataBits: Int = AXI4Parameters.dataBits,
+              val dataBits: Int = AXI4Parameters.soc_DataBits,
               val idBits: Int = AXI4Parameters.idBits
             )
   extends Bundle {

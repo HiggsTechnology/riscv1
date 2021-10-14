@@ -21,7 +21,7 @@ class CoreTop extends Module {
 
   val io       = IO(new CoreTopIO)
 
-  val ifu       = Module(new IFU)
+  val ifu       = Module(new IFU(is_sim = is_sim))
   val ibf       = Module(new Ibuffer)
   val ctrlblock = Module(new ControlBlock(is_sim = is_sim))
   val exublock  = Module(new ExuBlock(is_sim = is_sim))

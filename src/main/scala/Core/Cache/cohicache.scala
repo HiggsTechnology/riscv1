@@ -34,7 +34,7 @@ class ICacheIO extends Bundle with Config {
   val cohresp = Flipped(ValidIO(new cohResp))
 }
 
-class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with AXIParameter {
+class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with CacheConfig with AXIParameter {
   val io = IO(new ICacheIO)
   io.to_rw := DontCare
 
@@ -87,11 +87,12 @@ class ICache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 
   io.to_rw.ar.bits.addr := DontCare
 
-  io.to_rw.ar.bits.size   := AXI_SIZE.bytes4
+  io.to_rw.ar.bits.size   := (if(is_sim) AXI_SIZE.bytes8 else AXI_SIZE.bytes4)
+
   when(state === s_mmio){
     io.to_rw.ar.bits.addr   := Mux(mmio_read_cnt === 1.U, addrReg(0).asUInt(), addrReg(1).asUInt())
     io.to_rw.ar.bits.len    := 0.U
-    io.to_rw.ar.bits.size   := AXI_SIZE.bytes4
+    io.to_rw.ar.bits.size   := (if(is_sim) AXI_SIZE.bytes8 else AXI_SIZE.bytes4)
   }
 
   //s_mmio_resp

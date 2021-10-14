@@ -118,12 +118,12 @@ trait Config {
       addrMap("mem"),
       addrMap("clint"),
       addrMap("uart16550"),
-      addrMap("outside")
+      addrMap("outside_sim")
     )
     val realAddrMap = List(
       addrMap("mem"),
       addrMap("clint"),
-      addrMap("outside")
+      addrMap("outside_soc")
     )
   }
 
