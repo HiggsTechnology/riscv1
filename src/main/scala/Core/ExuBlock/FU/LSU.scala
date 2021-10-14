@@ -109,11 +109,11 @@ class LSU extends Module with Config {
   io.out.valid := io.toMem.resp.valid && !inst_flushed
   io.out.bits.uop := uop
   io.skip := addrReg < 0x80000000L.U
-   when(io.in.valid){
-     printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
-   }
-   when(io.out.valid){
-     printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
-   }
+//   when(io.toMem.req.fire()){
+//     printf("LSU valid, pc %x, inst %x, addr %x, isStore %d, storedata %x\n", io.in.bits.uop.cf.pc, io.in.bits.uop.cf.instr, addr, isStore, storedata)
+//   }
+//   when(io.out.valid){
+//     printf("cache out, pc %x, inst %x, res %x\n", uop.cf.pc, uop.cf.instr, io.out.bits.res)
+//   }
 
 }

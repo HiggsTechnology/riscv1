@@ -191,7 +191,7 @@ class BPU extends Module with Config{
   ras.io.is_ret      :=    Mux(br_taken_predecode(0), ret_br_0, ret_br_1)
   ras.io.update      :=    io.ras_update
   ras.io.flush       :=    io.flush && !io.ras_flush
-  ras.io.ras_flush   :=    !io.ras_flush
+  ras.io.ras_flush   :=    io.ras_flush
 
   //输出predecode & ras的转跳信息,供IFU检查stage2的正确性，以确定是否输入IBF
   //printf("predecode pc %x %x, offset %x %x\n",io.predecode(0).bits.pc3,io.predecode(1).bits.pc3,io.predecode(0).bits.offset,io.predecode(1).bits.offset)
