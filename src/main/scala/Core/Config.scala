@@ -69,9 +69,9 @@ trait Config {
 
   def nLSU: Int = 1
 
- // def nMDU : Int = 0//1 MU and 1 DU
+  def nMDU : Int = 2//1 MU and 1 DU
 
-  def ExuNum :Int = nALU + nBRU + nCSR + nLSU
+  def ExuNum :Int = nALU + nBRU + nCSR + nLSU + nMDU
 
   def RSNum :Int = ExuNum - 1// nLSU = 1 conect to 1 LSQ regarded as RS,BRU and CSR connect to 1 RS,thus tot is 6
 
@@ -93,7 +93,7 @@ trait Config {
   def VAddrBits = 64
   def GPHT_Size = 1024
   def ghrBits = log2Up(GPHT_Size)
-  def BtbSize = 256
+  def BtbSize = 64
   def BtbWays = 4
   def btbRows = BtbSize/BtbWays
 

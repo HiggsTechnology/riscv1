@@ -1,1 +1,1 @@
-D:\芯片设计入门\一生一芯\code\ysys_cpu\riscv1\ysyxRam.v
+/home/luoqi/work/zmb/soc_riscv1/riscv1/ysyxRam.v

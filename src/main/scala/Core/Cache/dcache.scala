@@ -258,7 +258,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val fw_read = io.cohreq.valid && state===s_idle && !io.bus.req.valid
   val hit_write = reqValid && writeReg.isWrite && (state === s_lookUp)
   val refill_write = state === s_refill && readMemCnt === RetTimes.U
-  val SRamArray     = Seq.fill(CacheCatNum)(Module(new SRam))
+  val SRamArray     = Seq.fill(CacheCatNum)(Module(new SyncRam))
   // linesize = 512 bit
   // sram width = 128 bit
   // idx = addr(11,6)

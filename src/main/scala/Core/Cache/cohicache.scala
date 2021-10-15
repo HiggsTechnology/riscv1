@@ -194,7 +194,7 @@ class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with
   val hit_read = state===s_refill_done || io.bus(0).req.valid
   val fw_write = state === s_miss && io.cohresp.valid && io.cohresp.bits.needforward
   val refill_write = state === s_refill && axireadMemCnt === RetTimes.U
-  val SRamArray    = Seq.fill(CacheCatNum)(Module(new SRam))
+  val SRamArray    = Seq.fill(CacheCatNum)(Module(new SyncRam))
 
 
   // linesize = 512 bit
