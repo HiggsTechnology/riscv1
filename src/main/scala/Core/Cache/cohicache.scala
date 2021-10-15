@@ -41,7 +41,7 @@ class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with
   val s_idle :: s_lookUp :: s_mmio :: s_mmio_resp :: s_miss :: s_replace :: s_refill :: s_refill_done :: Nil = Enum(8)
   val state: UInt   = RegInit(s_idle)
   val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
-  val tagArray      = Mem(Sets, UInt(TagBits.W))
+  val tagArray      = RegInit(VecInit(Seq.fill(Sets)(0.U(TagBits.W))))
   //val dataArray     = Seq.fill(cacheCatNum)(Mem(Sets, Vec(LineSize/cacheCatNum, UInt(8.W))))
   val readReg       = Wire(Vec(CacheCatNum, UInt((LineSize*8/CacheCatNum).W) ))// 128bit * 4
 
@@ -67,7 +67,7 @@ class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with
   val axireadMemCnt = RegInit(0.U(log2Up(RetTimes+1).W))
 
   for (i <- 0 until 2) {
-    hit(i) := io.bus(i).req.valid && valid(addr(i).index) && tagArray.read(addr(i).index) === addr(i).tag //&& ((state === s_idle) || (state === s_lookUp))
+    hit(i) := io.bus(i).req.valid && valid(addr(i).index) && tagArray(addr(i).index) === addr(i).tag //&& ((state === s_idle) || (state === s_lookUp))
   }
   //hit Reg has one clk lag
 //  val hitReg = Seq.fill(FETCH_WIDTH)(RegInit(false.B))
@@ -110,7 +110,7 @@ class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with
   for( i <- 0 until  CacheCatNum){
     //val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
     when(state === s_miss && io.cohresp.valid && io.cohresp.bits.needforward){
-      tagArray.write(refill_idx,Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag))
+      tagArray(refill_idx) := Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag)
       valid(refill_idx)     := true.B
       SRam_write(i) := io.cohresp.bits.forward(i).asTypeOf(Vec(LineSize/CacheCatNum, UInt(8.W)))
       //dataArray(i).write(refill_idx,io.cohresp.bits.forward(i).asTypeOf(Vec(LineSize/cacheCatNum, UInt(8.W))))
@@ -160,7 +160,7 @@ class ICache(cacheNum: Int = 0, is_sim: Boolean) extends Module with Config with
   for( i <- 0 until  CacheCatNum){
     //val refill_idx = Mux(needRefill(0),addrReg(0).index,addrReg(1).index)
     when(state === s_refill && axireadMemCnt === RetTimes.U){
-      tagArray.write(refill_idx,Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag))
+      tagArray(refill_idx) := Mux(needRefill(0),addrReg(0).tag,addrReg(1).tag)
       valid(refill_idx)     := true.B
       SRam_write(i) := mem_wb(i)
       //dataArray(i).write(refill_idx,mem_wb(i))

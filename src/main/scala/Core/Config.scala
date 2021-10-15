@@ -59,7 +59,7 @@ trait Config {
   def MISA : BigInt = {
     BigInt(MXL) << (MXLEN - 2) | BigInt(ISAEXT.toInt)
   }
-  def IBufSize  = 16
+  def IBufSize  = 8
 
   def nALU: Int = 2
 
@@ -79,7 +79,7 @@ trait Config {
 
   def PhyRegIdxWidth : Int = 7
 
-  def NRPhyRegs : Int = 128
+  def NRPhyRegs : Int = 64
 
   def OrderQueueSize : Int = 16
 
@@ -87,13 +87,13 @@ trait Config {
 
   def robSize : Int = 16
 
-  def lsqSize : Int = 16
+  def lsqSize : Int =16
 
-  def RasSize = 32
+  def RasSize = 16
   def VAddrBits = 64
   def GPHT_Size = 1024
   def ghrBits = log2Up(GPHT_Size)
-  def BtbSize = 256
+  def BtbSize = 32
   def BtbWays = 4
   def btbRows = BtbSize/BtbWays
 

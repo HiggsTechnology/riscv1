@@ -42,17 +42,17 @@ class RAS extends Module with Config {
 
 
   
-  val stack = Mem(RasSize, new RASEntry)
+  val stack = RegInit(VecInit(Seq.fill(RasSize)(0.U.asTypeOf(new RASEntry))))
   val sp = RegInit(0.U(log2Up(RasSize).W))
 
-  val top = stack.read(sp)
+  val top = stack(sp)
   io.target := top.retAddr
 
   when(io.push.iscall){
     when(top.retAddr===io.push.target){
-      stack.write(sp, RASEntry(top.retAddr, top.ctr + 1.U))
+      stack(sp) := RASEntry(top.retAddr, top.ctr + 1.U)
     }.otherwise{
-      stack.write(sp + 1.U, RASEntry(io.push.target, 1.U))
+      stack(sp + 1.U) := RASEntry(io.push.target, 1.U)
       sp := sp + 1.U
     }
   }
@@ -61,19 +61,19 @@ class RAS extends Module with Config {
     when(top.ctr===1.U){
       sp := sp - 1.U
     }.otherwise{
-      stack.write(sp, RASEntry(top.retAddr, top.ctr - 1.U))
+      stack(sp) := RASEntry(top.retAddr, top.ctr - 1.U)
     }
   }
 
-  val stack_commit = Mem(RasSize, new RASEntry)//新建第二个表
+  val stack_commit = RegInit(VecInit(Seq.fill(RasSize)(0.U.asTypeOf(new RASEntry))))//新建第二个表
   val sp_commit = RegInit(0.U(log2Up(RasSize).W))
-  val top_commit = stack_commit.read(sp_commit)
+  val top_commit = stack_commit(sp_commit)
 
   when(io.update.iscall){
     when(top_commit.retAddr===io.update.target){
-      stack_commit.write(sp_commit, RASEntry(top_commit.retAddr, top_commit.ctr + 1.U))
+      stack_commit(sp_commit) := RASEntry(top_commit.retAddr, top_commit.ctr + 1.U)
     }.otherwise{
-      stack_commit.write(sp_commit + 1.U, RASEntry(io.update.target, 1.U))//指针+1，计数层置为1
+      stack_commit(sp_commit + 1.U) := RASEntry(io.update.target, 1.U)//指针+1，计数层置为1
       sp_commit := sp_commit + 1.U
     }
   }
@@ -82,7 +82,7 @@ class RAS extends Module with Config {
     when(top_commit.ctr===1.U){
       sp_commit := sp_commit - 1.U//已调用完毕，指针回退
     }.otherwise{
-      stack_commit.write(sp_commit, RASEntry(top_commit.retAddr, top_commit.ctr - 1.U))//不是第一层，地址写入commit表，计数层减1
+      stack_commit(sp_commit) := RASEntry(top_commit.retAddr, top_commit.ctr - 1.U)//不是第一层，地址写入commit表，计数层减1
     }
   }
 

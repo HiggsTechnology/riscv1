@@ -75,7 +75,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
 //  val readReg     = Reg(Vec(LineSize, UInt(8.W)))
   val valid         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
   val dirty         = RegInit(VecInit(Seq.fill(Sets)(false.B)))
-  val tagArray      = Mem(Sets, UInt(TagBits.W))
+  val tagArray      = RegInit(VecInit(Seq.fill(Sets)(0.U(TagBits.W))))
   //val dataArray     = Seq.fill(CacheCatNum)(Mem(Sets, Vec(LineSize/CacheCatNum, UInt(8.W))))//(new 100)
 
 
@@ -99,7 +99,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     writeReg  := io.bus.req.bits
   }
   val hit = Wire(Bool())
-  hit := io.bus.req.valid && valid(addr.index) && tagArray.read(addr.index) === addr.tag && ((state === s_idle) || (state === s_lookUp))
+  hit := io.bus.req.valid && valid(addr.index) && tagArray(addr.index) === addr.tag && ((state === s_idle) || (state === s_lookUp))
 
   val needRefill = RegInit(false.B)
   when(storeEn) {
@@ -141,7 +141,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   //s_miss
 
   val needWriteBack = dirty(addrReg.index) && valid(addrReg.index)
-  val wb_tag        = tagArray.read(addrReg.index)
+  val wb_tag        = tagArray(addrReg.index)
 
 
   val writeDataReg = RegInit(VecInit(Seq.fill(RetTimes)(0.U(axiDataBits.W))))
@@ -221,7 +221,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
         }
         dirty(addrReg.index) := true.B
       }
-      tagArray.write(addrReg.index,addrReg.tag)
+      tagArray(addrReg.index) := addrReg.tag
       valid(addrReg.index)     := true.B
       SRam_write(i) := mem_wb(i)
       //dataArray(i)(addrReg.index) := mem_wb(i)

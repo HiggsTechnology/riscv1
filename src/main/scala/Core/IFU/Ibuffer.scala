@@ -20,7 +20,7 @@ class IBufferIO extends Bundle with Config {
 class Ibuffer extends Module with HasCircularQueuePtrHelper {
   val io = IO(new IBufferIO)
 
-  val data  = Mem(IBufSize, new CtrlFlow)
+  val data  = RegInit(VecInit(Seq.fill(IBufSize)(0.U.asTypeOf(new CtrlFlow))))
   val valid = RegInit(VecInit(Seq.fill(IBufSize)(false.B)))
 
   val enq_vec = RegInit(VecInit((0 until 2).map(_.U.asTypeOf(new IbufPtr))))

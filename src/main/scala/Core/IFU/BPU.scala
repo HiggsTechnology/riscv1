@@ -97,16 +97,16 @@ class BPU extends Module with Config{
 
   val pred_select = RegInit(0.U(3.W))//第2位为高则选GPHT
 
-  val PHT = Mem(GPHT_Size, UInt(2.W))
+  val PHT = RegInit(VecInit(Seq.fill(GPHT_Size)(0.U(2.W))))
   val PHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    PHT_taken(i) := PHT.read(pc2(i)(ghrBits+1,2))(1)//PHT_Idx= pc2(i)(11,2)
+    PHT_taken(i) := PHT(pc2(i)(ghrBits+1,2))(1)//PHT_Idx= pc2(i)(11,2)
   }
 
-  val GPHT = Mem(GPHT_Size, UInt(2.W))//GPHT有异或操作，PHT无异或操作
+  val GPHT = RegInit(VecInit(Seq.fill(GPHT_Size)(0.U(2.W))))//GPHT有异或操作，PHT无异或操作
   val GPHT_taken = Wire(Vec(FETCH_WIDTH, Bool()))
   for(i <- 0 until FETCH_WIDTH){
-    GPHT_taken(i) := GPHT.read(GPHT_Idx2(i))(1)
+    GPHT_taken(i) := GPHT(GPHT_Idx2(i))(1)
   }
 
   val bimPred = Wire(Vec(FETCH_WIDTH, Bool()))
@@ -137,11 +137,11 @@ class BPU extends Module with Config{
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //stage3
-  val GPHT_taken3  =   RegInit(GPHT_taken)
-  val PHT_taken3   =   RegInit(PHT_taken)
+  val GPHT_taken3  =   RegInit(0.U.asTypeOf(GPHT_taken))
+  val PHT_taken3   =   RegInit(0.U.asTypeOf(PHT_taken))
   val GPHT_Idx3    =   RegInit(GPHT_Idx2)
   val pc3          =   RegInit(pc2) //跳转指令的pc
-  val bimPred3     =   RegInit(bimPred)
+  val bimPred3     =   RegInit(0.U.asTypeOf(bimPred))
   val br_taken3    =   RegInit(br_taken2)
   val jump3        =   RegInit(io.jump_pc)
   val btb_hit3     =   RegInit(btb_hit2)

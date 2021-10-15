@@ -65,9 +65,9 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
     validReg1A := decoders(0).io.out.valid
   }
-  val validReg1B = RegInit(decoders(1).io.out.valid)
-  val dataReg1A  = RegInit(decoders(0).io.out.bits)
-  val dataReg1B  = RegInit(decoders(1).io.out.bits)
+  val validReg1B = RegInit(false.B)
+  val dataReg1A  = RegInit(0.U.asTypeOf(decoders(0).io.out.bits))
+  val dataReg1B  = RegInit(0.U.asTypeOf(decoders(1).io.out.bits))
   when(rename.io.in.cfctrl(0).fire || !validReg1A || flush){
     validReg1B := decoders(1).io.out.valid
     dataReg1A  := decoders(0).io.out.bits
@@ -90,8 +90,8 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
     validReg2A := rename.io.out.microop(0).valid
   }
   val validReg2B = RegInit(false.B)
-  val dataReg2A  = RegInit(rename.io.out.microop(0).bits)
-  val dataReg2B  = RegInit(rename.io.out.microop(1).bits)
+  val dataReg2A  = RegInit(0.U.asTypeOf(rename.io.out.microop(0).bits))
+  val dataReg2B  = RegInit(0.U.asTypeOf(rename.io.out.microop(1).bits))
   when((validReg2A && ready3) || !validReg2A || flush){
     validReg2B := rename.io.out.microop(1).valid
     dataReg2A  := rename.io.out.microop(0).bits
