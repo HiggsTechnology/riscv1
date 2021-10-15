@@ -59,7 +59,7 @@ class ExuBlock(is_sim: Boolean) extends Module with ExuBlockConfig{
   val lsu1 = Module(new LSU)  // ExuRes 6
  // val lsu2 = Module(new LSU)
   // 双发射，2*2读端口，6个执行单元，6个写端口，Todo: 限制写端口数量简化布线
-  val preg = Module(new Regfile(numReadPorts = 4,numWritePorts = ExuNum,numPreg = 128))///新写
+  val preg = Module(new Regfile(numReadPorts = 4,numWritePorts = ExuNum,numPreg = NRPhyRegs))///新写
   private val preg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
   private val ExuResult = Wire(Vec(ExuNum,ValidIO(new FuOutPut)))
