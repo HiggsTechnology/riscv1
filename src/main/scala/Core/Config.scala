@@ -75,7 +75,7 @@ trait Config {
 
   def RSNum :Int = ExuNum - 1// nLSU = 1 conect to 1 LSQ regarded as RS,BRU and CSR connect to 1 RS,thus tot is 6
 
-  def rsSize: Int = 8
+  def rsSize: Int =4
 
   def PhyRegIdxWidth : Int = 7
 
@@ -87,7 +87,7 @@ trait Config {
 
   def robSize : Int = 16
 
-  def lsqSize : Int =16
+  def lsqSize : Int = 8
 
   def RasSize = 16
   def VAddrBits = 64

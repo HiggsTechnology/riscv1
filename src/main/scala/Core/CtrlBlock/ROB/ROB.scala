@@ -116,7 +116,7 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
 
   val numEnq   = PopCount(io.in.map(_.valid))
   val can_allocate = RegInit(true.B)
-  can_allocate  := validEntries + numEnq + 2.U <= robSize.U
+  can_allocate  := (validEntries + numEnq + 2.U((2+log2Up(robSize)).W)) <= robSize.U
 
   val allowEnq = can_allocate && !bru_flush
   io.can_allocate := allowEnq

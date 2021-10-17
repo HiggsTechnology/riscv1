@@ -57,12 +57,13 @@ class DispatchQueue extends Module with Config with HasCircularQueuePtrHelper {
   //dequeue 出队操作//todo:冲刷时不发射，保证RS、LSQ不进需要冲刷的指令
   //出队是否有效
   io.out.microop_out(0).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(0).value)) && valid(deq_vec(0).value))
-  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===RSType.lsurs)//rs_num===3.U can allow in 2 instr
+  io.out.microop_out(1).valid := !io.flush && (io.in.rs_can_allocate(rs_num(deq_vec(1).value)) && valid(deq_vec(1).value)) && ((rs_num(deq_vec(0).value) =/= rs_num(deq_vec(1).value)) || rs_num(deq_vec(1).value)===RSType.lsurs) && io.out.microop_out(0).valid//rs_num===3.U can allow in 2 instr
   for (i <- 0 until 2) {
     io.out.microop_out(i).bits  := data(deq_vec(i).value)
     io.out.rs_num_out(i)        := rs_num(deq_vec(i).value)
     when(io.out.microop_out(i).valid){valid(deq_vec(i).value) := false.B}
   }
+  //val deq_num = Mux(io.out.microop_out(0).valid, Mux(io.out.microop_out(1).valid, 2.U, 1.U), 0.U)
   deq_vec := VecInit(deq_vec.map(_ + io.out.microop_out(0).valid + io.out.microop_out(1).valid))
 
   when (io.flush) {

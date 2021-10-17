@@ -44,7 +44,7 @@ class Ibuffer extends Module with HasCircularQueuePtrHelper {
   //Enq
   val numEnq   = PopCount(io.in.map(_.valid))
   val allowEnq = RegInit(true.B)
-  allowEnq  := validEntries + numEnq + 2.U <= IBufSize.U
+  allowEnq  := (validEntries + numEnq + 2.U((2+log2Up(IBufSize)).W)) <= IBufSize.U
 
   for(i <- 0 until 2){
     io.in(i).ready := allowEnq && !io.flush

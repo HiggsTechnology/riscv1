@@ -56,7 +56,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
 
   val numEnq   = PopCount(io.in.map(_.valid))
   val allowEnq = RegInit(true.B)
-  allowEnq  := validEntries + numEnq + 2.U <= lsqSize.U
+  allowEnq  := (validEntries + numEnq + 2.U(((2+log2Up(lsqSize)).W))) <= lsqSize.U
   io.can_allocate := allowEnq
 
   //侦听执行单元结果
@@ -153,7 +153,7 @@ class LSQ extends Module with Config with HasCircularQueuePtrHelper{
   enq_vec := Mux(io.flush, VecInit(enq_vec.map(_ - PopCount(flushed))), VecInit(enq_vec.map(_ + PopCount(vaild_enq))))
 
   //发射
-  val deq0_dataRdy = (dataState(deq_vec(0).value) && isAfter(io.predict_robPtr,decode(deq_vec(0).value).ROBIdx)) || !is_store(deq_vec(0).value)
+  val deq0_dataRdy = (dataState(deq_vec(0).value) && !isBefore(io.predict_robPtr,decode(deq_vec(0).value).ROBIdx)) || !is_store(deq_vec(0).value)
   io.lsu_in.valid := !io.flush && !issued(deq_vec(0).value) && valid(deq_vec(0).value) && addrState(deq_vec(0).value) && deq0_dataRdy
 
 

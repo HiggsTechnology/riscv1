@@ -66,7 +66,7 @@ class RS_DU(size: Int = 8, rsNum: Int = 0, nFu: Int = 7, dispatchSize: Int =2, n
     }
   }
 
-  when(io.in.valid){
+  when(io.in.valid && !io.full){
     decode(enqueueSelect) := io.in.bits
     valid(enqueueSelect) := true.B
     srcState1(enqueueSelect) := io.in.bits.srcState(0)
