@@ -48,6 +48,20 @@ class SimpleBus extends Bundle {
 
   def toAXI4 : AXI4IO = {
     val axi4 = Wire(new AXI4IO())
+
+    val w_not_fire = RegInit(false.B)
+    val w_data = RegInit(0.U.asTypeOf(axi4.w.bits.data))
+    val w_strb = RegInit(0.U.asTypeOf(axi4.w.bits.strb))
+
+    when(req.valid && req.bits.isWrite && !axi4.w.ready){
+      w_not_fire := true.B
+      w_data := req.bits.data
+      w_strb := req.bits.wmask
+    }
+    when(w_not_fire && axi4.w.ready){
+      w_not_fire := false.B
+    }
+
     axi4.aw.valid         := req.valid && req.bits.isWrite
     axi4.aw.bits.addr     := req.bits.addr
     axi4.aw.bits.prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
@@ -60,9 +74,9 @@ class SimpleBus extends Bundle {
     axi4.aw.bits.cache    := 0.U
     axi4.aw.bits.qos      := 0.U
     axi4.aw.bits.region   := 0.U
-    axi4.w.valid          := req.valid && req.bits.isWrite
-    axi4.w.bits.data      := req.bits.data
-    axi4.w.bits.strb      := req.bits.wmask
+    axi4.w.valid          := (req.valid && req.bits.isWrite) || w_not_fire
+    axi4.w.bits.data      := Mux(w_not_fire,w_data,req.bits.data)
+    axi4.w.bits.strb      := Mux(w_not_fire,w_strb,req.bits.wmask)
     axi4.w.bits.last      := true.B
     axi4.w.bits.user      := 0.U
     axi4.b.ready          := resp.ready
