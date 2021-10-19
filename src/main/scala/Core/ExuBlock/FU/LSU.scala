@@ -71,13 +71,13 @@ class LSU extends Module with Config {
     addrReg := io.in.bits.src(0)
   }
 
-  val addr = Mux(io.in.valid, io.in.bits.src(0), 0.U)
+  val addr = Mux(io.in.valid, io.in.bits.src(0), addrReg)
   val storedata = io.in.bits.src(1)
   val isStore = LSUOpType.isStore(io.in.bits.uop.ctrl.funcOpType)
 
   val size = io.in.bits.uop.ctrl.funcOpType(1,0)
-  val wdata_align = genWdata(storedata, size) //<< (addr(2, 0) * 8.U)
-  val mask_align = genWmask(size) //<< (addr(2, 0))
+  val wdata_align = genWdata(storedata, size) << (addr(2, 0) << 3.U)
+  val mask_align = genWmask(size) << (addr(2, 0))
 
   io.toMem.req.valid := io.in.valid
   io.toMem.req.bits.addr := addr
@@ -86,7 +86,7 @@ class LSU extends Module with Config {
   io.toMem.req.bits.data    := wdata_align
   io.toMem.req.bits.size    := size       // 0: 1byte, 1: 2bytes, 2: 4bytes, 3: 8bytes
 
-  val rdataSel = io.toMem.resp.bits.data
+  val rdataSel = io.toMem.resp.bits.data >> (addr(2, 0) << 3.U)
   io.out.bits.res := LookupTree(uop.ctrl.funcOpType, List(
     LSUOpType.lb   -> SignExt(rdataSel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdataSel(15, 0), XLEN),

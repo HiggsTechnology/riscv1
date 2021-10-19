@@ -126,7 +126,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     when(reqValid && writeReg.isWrite && (state === s_lookUp) && addrReg.Offset(OffsetBits-1,OffsetBits-2) === i.U) {
       for (k <- 0 until XLEN / 8) {
         when(writeReg.wmask(k)) {
-          readReg(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
+          readReg(i)(Cat(addrReg.Offset(3), 0.U(3.W)) + k.U) := writeReg.data(k * 8 + 7, k * 8)
         }
       }
       SRam_write(i) := readReg(i)
@@ -216,7 +216,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
       when(reqValid && writeReg.isWrite && addrReg.Offset(5,4) === i.U ) {
         for (k <- 0 until XLEN / 8) {
           when(writeReg.wmask(k)) {
-            mem_wb(i)(addrReg.Offset(3, 0) + k.U) := writeReg.data(k * 8 + 7, k * 8)
+            mem_wb(i)(Cat(addrReg.Offset(3), 0.U(3.W)) + k.U) := writeReg.data(k * 8 + 7, k * 8)
           }
         }
         dirty(addrReg.index) := true.B
@@ -233,7 +233,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val respStateReg = RegInit(state === s_refill_done)
   respStateReg := (state === s_refill_done)
   io.bus.req.ready  := (state ===s_idle) || (state ===s_lookUp)
-  io.bus.resp.bits.data := readReg.asUInt >> addrReg.Offset * 8.U
+  io.bus.resp.bits.data := readReg.asUInt // 跟外设相同，都不做位移处理，位移在LSU中完成
   io.bus.resp.valid := ((state ===s_lookUp) || respStateReg) && reqValid
 
   val cohaddr = io.cohreq.bits.asTypeOf(addrBundle)
