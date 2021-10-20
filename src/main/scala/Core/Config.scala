@@ -83,7 +83,7 @@ trait Config {
 
   def OrderQueueSize : Int = 16
 
-  def DispatchQueueSize : Int = 8
+  def DispatchQueueSize : Int = 4
 
   def robSize : Int = 16
 

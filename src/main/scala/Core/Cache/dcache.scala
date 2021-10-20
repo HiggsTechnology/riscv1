@@ -233,7 +233,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
   val respStateReg = RegInit(state === s_refill_done)
   respStateReg := (state === s_refill_done)
   io.bus.req.ready  := (state ===s_idle) || (state ===s_lookUp)
-  io.bus.resp.bits.data := readReg.asUInt // 跟外设相同，都不做位移处理，位移在LSU中完成
+  io.bus.resp.bits.data := readReg.asUInt >> Cat(addrReg.Offset(5,3), 0.U(3.W)) * 8.U// 跟外设相同，都不做位移处理，位移在LSU中完成
   io.bus.resp.valid := ((state ===s_lookUp) || respStateReg) && reqValid
 
   val cohaddr = io.cohreq.bits.asTypeOf(addrBundle)

@@ -52,9 +52,9 @@ class BTB extends Module with Config {
   val btbAddr = new TableAddr(log2Up(btbRows))//btbRows=256/4=2^6
 
   class btbEntry extends Bundle with Config {
-    val tag = UInt(btbAddr.tagBits.W)
+    val tag = UInt((btbAddr.tagBits-32).W)
     val _type = UInt(2.W)//B,R,ret,J
-    val target = UInt(VAddrBits.W)
+    val target = UInt((VAddrBits-32).W)
   }
 
   val btb_valid = Seq.fill(4)(RegInit(VecInit(Seq.fill(btbRows)(false.B))))

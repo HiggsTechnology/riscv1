@@ -170,7 +170,7 @@ class IFU(is_sim: Boolean) extends Module with Config {
   bpu.io.btb_update.bits.br_pc := io.in.bits.pc
 
   bpu.io.flush := io.in.valid && mispred
-  bpu.io.ras_flush := io.in.bits.ras_flush
+  bpu.io.ras_flush := io.in.valid && io.in.bits.ras_flush
 
   // when(io.toMem(0).req.ready && io.toMem(1).req.ready){
   // printf("-------- stage 1 --------\n")
