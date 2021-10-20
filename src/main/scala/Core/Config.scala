@@ -85,9 +85,9 @@ trait Config {
 
   def DispatchQueueSize : Int = 4
 
-  def robSize : Int = 16
+  def robSize : Int = 12
 
-  def lsqSize : Int = 8
+  def lsqSize : Int = 7
 
   def RasSize = 16
   def VAddrBits = 64

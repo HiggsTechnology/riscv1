@@ -5,7 +5,7 @@ import chisel3.util._
 import Core.Config
 
 class RASEntry extends Bundle with Config{
-  val retAddr = UInt(VAddrBits.W)
+  val retAddr = UInt((VAddrBits-32).W)
   val ctr = UInt(10.W) // layer of nested call functions
 }
 
