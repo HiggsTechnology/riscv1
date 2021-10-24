@@ -1,6 +1,7 @@
 package Core.CtrlBlock.IDU
 
 import Core.ExuBlock.FU.{ALUOpType, BRUOpType, CsrOpType, LSUOpType, MDUOpType}
+import Core.CtrlBlock.ROB.MOUOpType
 import chisel3._
 import chisel3.util._
 
@@ -201,13 +202,19 @@ object RV64M_Instr extends InstrType {
 }
 
 
+object RVZifenceiInstr extends InstrType {
+  def FENCEI = BitPat("b000000000000_00000_001_00000_0001111")
 
+  val table = Array(
+    FENCEI -> List(InstrB, FuncType.mou, MOUOpType.fencei ,SrcType1.pc, SrcType2.imm)
+  )
+}
 
 
 object RVIInstr extends InstrType {
   val table : Array[(BitPat, List[UInt])] =
     RV32I_ALUInstr.table ++ RV32I_BRUInstr.table ++
       RV32I_LSUInstr.table ++ RV64IInstr.table ++ RV64I_CSRInstr.table ++
-      RV64M_Instr.table ++ RV32M_Instr.table
+      RV64M_Instr.table ++ RV32M_Instr.table ++ RVZifenceiInstr.table
   val defaultInst = List(InstrN, FuncType.csr, CsrOpType.INTERRUPT, SrcType1.uimm, SrcType2.imm)
 }

@@ -49,6 +49,29 @@ class SimpleBus extends Bundle {
   def toAXI4 : AXI4IO = {
     val axi4 = Wire(new AXI4IO())
 
+    val ar_not_fire = RegInit(false.B)
+    val aw_not_fire = RegInit(false.B)
+    val req_addr = RegInit(0.U.asTypeOf(req.bits.addr))
+    val req_size = RegInit(0.U.asTypeOf(req.bits.size))
+
+    when(req.valid && !req.bits.isWrite && !axi4.ar.ready){
+      ar_not_fire := true.B
+    }.elsewhen(req.valid && req.bits.isWrite && !axi4.aw.ready){
+      aw_not_fire := true.B
+    }
+    when(ar_not_fire && axi4.ar.ready){
+      ar_not_fire := false.B
+    }
+    when(aw_not_fire && axi4.aw.ready){
+      aw_not_fire := false.B
+    }
+    
+
+    when(req.valid){
+      req_addr := req.bits.addr
+      req_size := req.bits.size
+    }
+
     val w_not_fire = RegInit(false.B)
     val w_data = RegInit(0.U.asTypeOf(axi4.w.bits.data))
     val w_strb = RegInit(0.U.asTypeOf(axi4.w.bits.strb))
@@ -62,13 +85,13 @@ class SimpleBus extends Bundle {
       w_not_fire := false.B
     }
 
-    axi4.aw.valid         := req.valid && req.bits.isWrite
-    axi4.aw.bits.addr     := req.bits.addr
+    axi4.aw.valid         := (req.valid && req.bits.isWrite) || aw_not_fire
+    axi4.aw.bits.addr     := Mux(aw_not_fire,req_addr,req.bits.addr)
     axi4.aw.bits.prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
     axi4.aw.bits.id       := 0.U
     axi4.aw.bits.user     := 0.U
     axi4.aw.bits.len      := 0.U
-    axi4.aw.bits.size     := req.bits.size
+    axi4.aw.bits.size     := Mux(aw_not_fire,req_size,req.bits.size)
     axi4.aw.bits.burst    := AXI4Parameters.BURST_INCR
     axi4.aw.bits.lock     := 0.U
     axi4.aw.bits.cache    := 0.U
@@ -80,13 +103,13 @@ class SimpleBus extends Bundle {
     axi4.w.bits.last      := true.B
     axi4.w.bits.user      := 0.U
     axi4.b.ready          := resp.ready
-    axi4.ar.valid         := req.valid && !req.bits.isWrite
-    axi4.ar.bits.addr     := req.bits.addr
+    axi4.ar.valid         := (req.valid && !req.bits.isWrite) || ar_not_fire
+    axi4.ar.bits.addr     := Mux(ar_not_fire,req_addr,req.bits.addr)
     axi4.ar.bits.prot     := AXI_PROT.PRIVILEGED | AXI_PROT.SECURE | AXI_PROT.DATA
     axi4.ar.bits.id       := 0.U
     axi4.ar.bits.user     := 0.U
     axi4.ar.bits.len      := 0.U
-    axi4.ar.bits.size     := req.bits.size
+    axi4.ar.bits.size     := Mux(ar_not_fire,req_size,req.bits.size)
     axi4.ar.bits.burst    := AXI4Parameters.BURST_INCR
     axi4.ar.bits.lock     := 0.U
     axi4.ar.bits.cache    := 0.U

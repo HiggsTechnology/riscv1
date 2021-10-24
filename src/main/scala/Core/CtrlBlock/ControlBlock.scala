@@ -26,7 +26,7 @@ class ControlBlockIN extends Bundle{
 }
 class ControlBlockOUT extends Bundle{
   val microop         = Vec(2, (ValidIO(new MicroOp)))
-  val rs_num_out      = Vec(2, Output(UInt(log2Up(RSNum).W)))
+  val rs_num_out      = Vec(2, Output(UInt(log2Up(RSNum+1).W)))
   val pregValid       = Vec(4, Output(Bool()))
   val debug_int_rat = Vec(32, Output(UInt(PhyRegIdxWidth.W)))
   val predict_robPtr = Output(new ROBPtr)
@@ -128,7 +128,10 @@ class ControlBlock(is_sim: Boolean) extends Module with Config{
   disQueue.io.in.rs_num_in       := dispatch.io.out.rs_num_out
   disQueue.io.flush              := io.in.redirect.valid && io.in.redirect.bits.mispred
   //Dispatch Queue To Out
-  disQueue.io.in.rs_can_allocate := io.in.rs_can_allocate
+  for(i <- 0 until  RSNum){
+    disQueue.io.in.rs_can_allocate(i) := io.in.rs_can_allocate(i)
+  }
+  disQueue.io.in.rs_can_allocate(RSNum) := true.B
   io.out.microop                 := disQueue.io.out.microop_out
   io.out.rs_num_out              := disQueue.io.out.rs_num_out
   //Busytable To Out

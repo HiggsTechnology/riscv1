@@ -139,8 +139,9 @@ object RSType {
   def alurs: UInt  = 1.U//alu1rs, alu2rs
   def alurs2: UInt = 2.U
   def lsurs: UInt  = 3.U
-  def murs: UInt   = 4.U
-  def durs: UInt   = 5.U
+  def murs: UInt   = 5.U
+  def durs: UInt   = 6.U
+  def mours: UInt  = 4.U
   def width     = log2Up(typeSize).W
   def uwidth    = UInt(width)
 }

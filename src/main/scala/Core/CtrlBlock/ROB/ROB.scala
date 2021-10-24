@@ -11,6 +11,12 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 import utils._
 
+object MOUOpType {
+  def fence  = "b00".U
+  def fencei = "b01".U
+  def sfence_vma = "b10".U
+}
+
 class ROBIO extends Bundle with Config {//todo:
   val in  = Vec(2, Flipped(ValidIO(new MicroOp)))
   val enqPtr = Vec(2, Output(new ROBPtr))
@@ -170,8 +176,8 @@ class ROB(is_sim: Boolean) extends Module with Config with HasCircularQueuePtrHe
 
   //dequeue
   val commitReady = Wire(Vec(2,Bool()))
-  commitReady(0) := !resp_interrupt && !bru_flush && valid(deq_vec(0).value) && wb(deq_vec(0).value)
-  commitReady(1) := !resp_interrupt && !bru_flush && valid(deq_vec(1).value) && wb(deq_vec(1).value) && commitReady(0)
+  commitReady(0) := !resp_interrupt && !bru_flush && valid(deq_vec(0).value) && (wb(deq_vec(0).value) || data(deq_vec(0).value).funcType === FuncType.mou)
+  commitReady(1) := !resp_interrupt && !bru_flush && valid(deq_vec(1).value) && (wb(deq_vec(1).value) || data(deq_vec(1).value).funcType === FuncType.mou) && commitReady(0)
 
   val commitIsCsr = Wire(Vec(2,Bool()))
 

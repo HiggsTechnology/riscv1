@@ -199,3 +199,11 @@ class IFU(is_sim: Boolean) extends Module with Config {
 
 
 }
+
+
+  // val fence_stall = RegInit(false.B)
+  // when((io.out(0).bits.instr(6,0) === "0b0001111" && io.out(0).fire) || (io.out(1).bits.instr(6,0) === "0b0001111" && io.out(1).fire)){
+  //   fence_stall = true.B
+  // }.elsewhen(io.redirect.valid && mispred){
+  //   fence_stall = false.B
+  // }
