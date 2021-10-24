@@ -64,9 +64,11 @@ class LSU extends Module with Config {
   }
 
   val io  = IO(new LSUIO)
+  val io_in_valid = RegInit(false.B)
+  io_in_valid := io.in.valid
   val uop     = RegInit(io.in.bits.uop)
   val addrReg = RegInit(io.in.bits.src(0))
-  when(io.toMem.req.fire()){
+  when(io.toMem.req.fire() || (io.flush && io_in_valid && io.toMem.req.ready)){
     uop     := io.in.bits.uop
     addrReg := io.in.bits.src(0)
   }
