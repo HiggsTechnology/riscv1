@@ -183,7 +183,7 @@ class DCache(cacheNum: Int = 0) extends Module with Config with CacheConfig with
     dirty(addrReg.index) := false.B
   }
 
-  io.to_rw.b.ready := (state === s_replace || state === s_refill) && (writeMemCnt === RetTimes.U)
+  io.to_rw.b.ready := true.B//(state === s_replace || state === s_refill) && (writeMemCnt === RetTimes.U)
 
   //replace
   val readMemCnt = RegInit(0.U(log2Up(RetTimes+1).W))
